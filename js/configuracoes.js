@@ -38,6 +38,7 @@ App.aoIniciar(async () => {
   const form = document.getElementById('form-loja');
   const loja = await Data.obterLoja();
   let logo = loja.logo || '';
+  let envioLogo = null;
 
   // Razão social, CNPJ, IE e endereço são editados na aba "Dados fiscais"
   ['nome', 'telefone', 'email'].forEach((c) => {
@@ -59,7 +60,11 @@ App.aoIniciar(async () => {
     if (!arquivo) return;
     if (!arquivo.type.startsWith('image/')) return App.toast('Escolha um arquivo de imagem.', 'erro');
     if (arquivo.size > 10 * 1024 * 1024) return App.toast('O logo deve ter no máximo 10 MB.', 'erro');
-    App.comprimirImagem(arquivo, 400, true).then(mostrarLogo).catch((er) => App.toast(er.message, 'erro'));
+    App.comprimirImagem(arquivo, 400, true).then(mostrarLogo).catch(() => {});
+    envioLogo = App.enviarImagem(arquivo, { maximo: 600, manterPng: true, subpasta: 'logo' })
+      .then((url) => { logo = url; return url; })
+      .catch((er) => { App.toast(er.message, 'erro', 7000); mostrarLogo(''); throw er; })
+      .finally(() => { envioLogo = null; });
   });
   document.getElementById('btn-remover-logo').addEventListener('click', () => {
     document.getElementById('logo').value = '';
@@ -72,6 +77,7 @@ App.aoIniciar(async () => {
     const dados = App.lerFormulario(form);
     delete dados[''];
     const nomeAnterior = loja.nome;
+    if (envioLogo) { try { await envioLogo; } catch (er) { return; } }
     const salva = await Data.salvarLoja({ ...dados, logo });
     Object.assign(loja, salva);
     // Nome/logo atualizados na hora em toda a tela (menu, título, aba fiscal);

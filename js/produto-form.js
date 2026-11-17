@@ -16,6 +16,7 @@ App.aoIniciar(async () => {
   const selecionados = { tamanhos: new Set(), cores: new Set() };
   let variacoes = []; // [{tamanho, cor, sku, codigoBarras, estoque}]
   let foto = '';
+  let envioFoto = null; // envio da foto em andamento (o salvar espera terminar)
   let produtoOriginal = null;
 
   /* ---------- Carrega listas auxiliares ---------- */
@@ -117,8 +118,12 @@ App.aoIniciar(async () => {
     if (!arquivo) return;
     if (!arquivo.type.startsWith('image/')) return App.toast('Escolha um arquivo de imagem.', 'erro');
     if (arquivo.size > 15 * 1024 * 1024) return App.toast('A imagem deve ter no máximo 15 MB.', 'erro');
-    // Reduz para no máximo 900 px (fica leve para salvar e abrir rápido)
-    App.comprimirImagem(arquivo, 900).then(mostrarFoto).catch((e) => App.toast(e.message, 'erro'));
+    // Mostra na hora (reduzida) e envia ao Cloudinary em segundo plano
+    App.comprimirImagem(arquivo, 900).then(mostrarFoto).catch(() => {});
+    envioFoto = App.enviarImagem(arquivo, { maximo: 1200, subpasta: 'produtos' })
+      .then((url) => { foto = url; if (App.cloudinaryAtivo()) App.toast('Foto enviada.', 'sucesso'); return url; })
+      .catch((e) => { App.toast(e.message, 'erro', 7000); mostrarFoto(''); throw e; })
+      .finally(() => { envioFoto = null; });
   });
   btnRemover.addEventListener('click', () => { inputFoto.value = ''; mostrarFoto(''); });
 
@@ -313,13 +318,17 @@ App.aoIniciar(async () => {
     if (new Set(codigos).size !== codigos.length) return App.toast('Há códigos de barras repetidos na grade.', 'erro');
 
     const dados = App.lerFormulario(form);
+    if (envioFoto) {
+      App.toast('Terminando de enviar a foto…');
+      try { await envioFoto; } catch (er) { return; }
+    }
 
     // NCM: se informado, precisa ter 8 dígitos; se vazio, avisa quando a categoria também não tem
     if (dados.ncm && !ncmValido(dados.ncm)) {
       form.ncm.focus();
       return App.toast('O NCM deve ter 8 dígitos (ex.: 6109.10.00).', 'erro');
     }
-    if (!dados.ncm && !ncmDaCategoria()) {
+    if (!dados.ncm && !ncmDaCategoria() && App.emiteNota) {
       const ok = await App.confirmar({
         titulo: 'Produto sem NCM',
         mensagem: `Nem o produto nem a categoria "${dados.categoria}" têm NCM. Você poderá vender, mas não emitir NFC-e deste produto até informar o NCM.`,

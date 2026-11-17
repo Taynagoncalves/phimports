@@ -64,7 +64,7 @@
                     <label for="fornecedorId">Fornecedor</label>
                     <select class="select" id="fornecedorId" name="fornecedorId"></select>
                   </div>
-                  <div class="campo">
+                  <div class="campo so-nota">
                     <label for="ncm">NCM (classificação fiscal)</label>
                     <div class="flex gap-2">
                       <input class="input mono" id="ncm" name="ncm" inputmode="numeric" data-mascara="ncm" placeholder="0000.00.00" aria-describedby="ncm-ajuda" style="flex:1">
@@ -72,7 +72,7 @@
                     </div>
                     <span class="ajuda" id="ncm-ajuda" aria-live="polite"></span>
                   </div>
-                  <div class="campo">
+                  <div class="campo so-nota">
                     <span class="rotulo">Usado na nota fiscal</span>
                     <div class="alerta info" id="ncm-efetivo" style="min-height:44px;align-items:center"><i data-lucide="landmark"></i><span></span></div>
                   </div>
@@ -201,6 +201,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="../js/firebase-config.js"></script>
+  <script src="../js/cloudinary-config.js"></script>
   <script src="../js/mock-data.js"></script>
   <script src="../js/data.js"></script>
   <script src="../js/app.js"></script>

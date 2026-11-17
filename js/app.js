@@ -949,6 +949,33 @@
     });
   }
 
+  /** O Cloudinary está configurado? */
+  function cloudinaryAtivo() {
+    const c = window.CLOUDINARY_CONFIG;
+    return !!(c && c.cloudName && c.uploadPreset);
+  }
+  /**
+   * Reduz a imagem e envia ao Cloudinary.
+   * @returns {Promise<string>} endereço da imagem (ou dataURL se o Cloudinary não estiver configurado)
+   */
+  async function enviarImagem(arquivo, { maximo = 1200, manterPng = false, subpasta = 'produtos' } = {}) {
+    const dataUrl = await comprimirImagem(arquivo, maximo, manterPng);
+    if (!cloudinaryAtivo()) return dataUrl;
+    const c = window.CLOUDINARY_CONFIG;
+    const corpo = new FormData();
+    corpo.append('file', dataUrl);
+    corpo.append('upload_preset', c.uploadPreset);
+    corpo.append('folder', [c.pasta, subpasta].filter(Boolean).join('/'));
+    let resp;
+    try {
+      resp = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(c.cloudName)}/image/upload`, { method: 'POST', body: corpo });
+    } catch (e) { throw new Error('Sem internet para enviar a foto. Tente de novo.'); }
+    const r = await resp.json().catch(() => ({}));
+    if (!resp.ok || !r.secure_url) throw new Error('Não foi possível enviar a foto: ' + ((r.error && r.error.message) || resp.status));
+    // Entrega otimizada: formato e qualidade automáticos (WebP/AVIF quando o navegador aceita)
+    return r.secure_url.replace('/image/upload/', '/image/upload/f_auto,q_auto/');
+  }
+
   /* ==================================================================
      INICIALIZAÇÃO
      ================================================================== */
@@ -1017,7 +1044,7 @@
     // impressão / cupom
     imprimir, htmlCupom, gerarCupom, gerarVale,
     // marca da loja (nome/logo em toda a tela)
-    comprimirImagem,
+    comprimirImagem, enviarImagem, cloudinaryAtivo,
     aplicarMarcaLoja, aplicarCorPrimaria, variaveisCor, COR_PADRAO,
     // permissões
     pode, podeAcessar, get usuario() { return usuarioAtualCache; },
