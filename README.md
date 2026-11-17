@@ -1,6 +1,6 @@
-# Gestão de Loja de Roupas — Front-end (protótipo)
+# Gestão de Loja de Roupas
 
-HTML, CSS e JavaScript puro. Sem banco de dados: os dados vêm de `js/mock-data.js`, sempre por meio de `js/data.js`.
+Sistema de gestão para loja de roupas em HTML, CSS e JavaScript puro, com login e banco de dados no Firebase (veja "Banco de dados na nuvem"). Todo acesso a dados passa por `js/data.js`; sem configuração do Firebase, roda como protótipo com os dados de exemplo de `js/mock-data.js`.
 
 ## Como rodar
 1. Abra a pasta no VS Code.
