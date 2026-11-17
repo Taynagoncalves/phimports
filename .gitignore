@@ -1,0 +1,14 @@
+# Sistema operacional / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Firebase CLI
+.firebase/
+.firebaserc
+firebase-debug.log
+firestore-debug.log
+
+# Dependencias
+node_modules/

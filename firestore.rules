@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// Regras de segurança do Firestore — Gestão de Loja
+//
+// Estrutura:
+//   acessos/{uid}                  → { lojaId, perfil: 'dono' | 'vendedor', nome, email, ativo }
+//   lojas/{lojaId}                 → { nome, donoUid, criadoEm }
+//   lojas/{lojaId}/ajustes/{nome}  → loja, fiscal, config, cores, tamanhos, categorias
+//   lojas/{lojaId}/{colecao}/{id}  → produtos, vendas, clientes, caixas…
+//
+// Quem não está logado não lê nem grava nada.
+// Cada usuário só enxerga a loja dele. Alguns dados só o dono altera.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function acesso() {
+      return get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data;
+    }
+    function temAcesso() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/acessos/$(request.auth.uid))
+        && acesso().ativo != false;
+    }
+    function membro(lojaId) { return temAcesso() && acesso().lojaId == lojaId; }
+    function dono(lojaId) { return membro(lojaId) && acesso().perfil == 'dono'; }
+
+    // Vínculo usuário → loja
+    match /acessos/{uid} {
+      allow read: if request.auth != null
+        && (request.auth.uid == uid || dono(resource.data.lojaId));
+      // Primeiro acesso: o próprio usuário cria a loja dele (como dono de uma loja nova)
+      // ou o dono cadastra um usuário para a loja dele
+      allow create: if request.auth != null && (
+        (request.auth.uid == uid
+          && request.resource.data.perfil == 'dono'
+          && !exists(/databases/$(database)/documents/lojas/$(request.resource.data.lojaId)))
+        || dono(request.resource.data.lojaId));
+      // Só o dono altera ou remove acessos da própria loja (e não muda a loja de ninguém)
+      allow update: if dono(resource.data.lojaId)
+        && request.resource.data.lojaId == resource.data.lojaId;
+      allow delete: if dono(resource.data.lojaId);
+    }
+
+    match /lojas/{lojaId} {
+      allow read: if membro(lojaId);
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.lojaId == lojaId
+        && request.resource.data.donoUid == request.auth.uid;
+      allow update: if dono(lojaId);
+      allow delete: if false;
+
+      // Dados da loja: todos os membros leem.
+      // O vendedor grava o que o dia a dia exige (vendas, caixa, estoque, clientes…);
+      // o resto (configurações, usuários, fornecedores, contas a pagar, promoções) é só do dono.
+      match /{colecao}/{docId} {
+        allow read: if membro(lojaId);
+        allow write: if dono(lojaId) || (membro(lojaId) && colecao in [
+          'vendas', 'produtos', 'movimentacoes', 'caixas', 'creditos',
+          'clientes', 'contasReceber', 'notas', 'inventarios'
+        ]);
+      }
+    }
+  }
+}

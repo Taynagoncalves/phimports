@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="relatorios" data-titulo="Relatórios">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Relatórios</h1>
+            <p id="periodo-texto">Selecione o período.</p>
+          </div>
+          <div class="pagina-acoes">
+            <button type="button" class="btn btn-secundario" id="btn-csv"><i data-lucide="download"></i>Exportar CSV</button>
+            <button type="button" class="btn btn-primario" id="btn-pdf"><i data-lucide="file-down"></i>Exportar PDF</button>
+          </div>
+        </div>
+
+        <!-- Filtro de período -->
+        <section class="card card-corpo flex gap-4 items-end" style="flex-wrap:wrap" aria-label="Período">
+          <div class="campo" style="flex:1 1 100%">
+            <span class="rotulo" id="rot-periodo">Período</span>
+            <div class="chips" role="radiogroup" aria-labelledby="rot-periodo" id="atalhos-periodo">
+              <button type="button" class="chip" role="radio" data-periodo="hoje">Hoje</button>
+              <button type="button" class="chip" role="radio" data-periodo="7">7 dias</button>
+              <button type="button" class="chip" role="radio" data-periodo="30">30 dias</button>
+              <button type="button" class="chip" role="radio" data-periodo="mes">Este mês</button>
+              <button type="button" class="chip" role="radio" data-periodo="90">90 dias</button>
+            </div>
+          </div>
+          <div class="campo">
+            <label for="inicio">De</label>
+            <input class="input" type="date" id="inicio">
+          </div>
+          <div class="campo">
+            <label for="fim">Até</label>
+            <input class="input" type="date" id="fim">
+          </div>
+        </section>
+
+        <!-- Indicadores -->
+        <section class="grid-stats secao" aria-label="Totais do período">
+          <article class="card stat">
+            <div class="stat-topo"><span class="stat-rotulo">Faturamento</span><span class="stat-icone"><i data-lucide="wallet"></i></span></div>
+            <div class="stat-valor" id="r-faturamento">—</div>
+            <div class="stat-detalhe" id="r-faturamento-det">&nbsp;</div>
+          </article>
+          <article class="card stat">
+            <div class="stat-topo"><span class="stat-rotulo">Lucro bruto</span><span class="stat-icone"><i data-lucide="trending-up"></i></span></div>
+            <div class="stat-valor" id="r-lucro">—</div>
+            <div class="stat-detalhe" id="r-lucro-det">&nbsp;</div>
+          </article>
+          <article class="card stat">
+            <div class="stat-topo"><span class="stat-rotulo">Vendas</span><span class="stat-icone"><i data-lucide="shopping-bag"></i></span></div>
+            <div class="stat-valor" id="r-vendas">—</div>
+            <div class="stat-detalhe" id="r-vendas-det">&nbsp;</div>
+          </article>
+          <article class="card stat">
+            <div class="stat-topo"><span class="stat-rotulo">Peças vendidas</span><span class="stat-icone"><i data-lucide="shirt"></i></span></div>
+            <div class="stat-valor" id="r-pecas">—</div>
+            <div class="stat-detalhe" id="r-pecas-det">&nbsp;</div>
+          </article>
+        </section>
+
+        <!-- Gráficos -->
+        <section class="grid-dash secao">
+          <article class="card">
+            <div class="card-cabecalho"><h2>Vendas por período</h2></div>
+            <div class="card-corpo"><div class="grafico"><canvas id="g-periodo" role="img" aria-label="Faturamento e lucro por dia"></canvas></div></div>
+          </article>
+          <article class="card">
+            <div class="card-cabecalho"><h2>Por categoria</h2></div>
+            <div class="card-corpo"><div class="grafico"><canvas id="g-categoria" role="img" aria-label="Faturamento por categoria"></canvas></div></div>
+          </article>
+        </section>
+
+        <section class="grid-2 secao">
+          <!-- Mais vendidos -->
+          <article class="card">
+            <div class="card-cabecalho"><h2>Produtos mais vendidos</h2></div>
+            <div class="tabela-wrap">
+              <table class="tabela tabela-responsiva">
+                <thead><tr><th>Produto</th><th class="num">Qtd.</th><th class="num">Faturamento</th><th class="num">Lucro</th></tr></thead>
+                <tbody id="t-mais-vendidos"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <!-- Formas de pagamento -->
+          <article class="card">
+            <div class="card-cabecalho"><h2>Formas de pagamento</h2></div>
+            <div class="card-corpo"><div class="grafico-sm"><canvas id="g-pagamento" role="img" aria-label="Faturamento por forma de pagamento"></canvas></div></div>
+          </article>
+        </section>
+
+        <!-- Comissão por vendedor -->
+        <section class="card secao">
+          <div class="card-cabecalho">
+            <div><h2>Comissão por vendedor</h2><p class="texto-sm">Sobre o faturamento líquido do período (sem trocas, devoluções e cancelamentos). O percentual de cada um fica em Configurações → Usuários.</p></div>
+            <span class="badge badge-info" id="total-comissao"></span>
+          </div>
+          <div class="tabela-wrap">
+            <table class="tabela tabela-responsiva">
+              <thead><tr><th>Vendedor(a)</th><th class="num">Vendas</th><th class="num">Faturamento</th><th class="num">Ticket médio</th><th class="num">Comissão (%)</th><th class="num">Comissão (R$)</th></tr></thead>
+              <tbody id="t-comissao"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Estoque parado -->
+        <section class="card secao">
+          <div class="card-cabecalho">
+            <div>
+              <h2>Estoque parado</h2>
+              <p class="texto-sm">Produtos com estoque e sem nenhuma venda no período.</p>
+            </div>
+            <span class="badge badge-alerta" id="valor-parado"></span>
+          </div>
+          <div class="tabela-wrap">
+            <table class="tabela tabela-responsiva">
+              <thead><tr><th>Produto</th><th>Categoria</th><th class="num">Estoque</th><th class="num">Valor parado (custo)</th><th>Última venda</th></tr></thead>
+              <tbody id="t-parado"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <!-- Geração do PDF do relatório -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/pdf.js"></script>
+  <script src="../js/relatorios.js"></script>
+</body>
+</html>

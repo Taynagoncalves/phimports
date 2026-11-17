@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Etiquetas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <style>
+    /* ---------- Etiqueta (tamanho real em mm) ---------- */
+    .etq {
+      background: #fff; color: #000;
+      font-family: Arial, Helvetica, sans-serif;
+      overflow: hidden;
+      display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .etq .etq-loja { font-size: 5.5pt; text-transform: uppercase; letter-spacing: .04em; line-height: 1.1; }
+    .etq .etq-nome { font-size: 7pt; font-weight: 700; line-height: 1.1; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .etq .etq-var { font-size: 6.5pt; line-height: 1.1; }
+    .etq .etq-preco { font-size: 10pt; font-weight: 700; line-height: 1; }
+    .etq svg { display: block; max-width: 100%; }
+    .etq-termica { width: 40mm; height: 25mm; padding: 1.2mm 1.5mm; }
+    .etq-termica svg { height: 9mm; }
+    .etq-pimaco { width: 63.5mm; height: 25.4mm; padding: 1.5mm 2.5mm; }
+    .etq-pimaco svg { height: 10mm; }
+    .etq-pimaco .etq-nome { font-size: 8pt; }
+    .etq-pimaco .etq-preco { font-size: 11pt; }
+    .etq-vazia { visibility: hidden; }
+
+    /* Folha A4 Pimaco A4256: 3 colunas × 11 linhas */
+    .folha-a4 {
+      width: 210mm; height: 297mm; background: #fff;
+      padding: 15.15mm 7.21mm 0;
+      display: grid; grid-template-columns: repeat(3, 63.5mm); grid-auto-rows: 25.4mm; column-gap: 2.54mm;
+      box-sizing: border-box;
+    }
+    .rolo { display: flex; flex-wrap: wrap; gap: 3mm; }
+
+    /* Prévia na tela */
+    .previa { background: var(--cor-superficie-2); border-radius: var(--raio); padding: 16px; overflow: auto; max-height: 70vh; }
+    .previa .etq-termica, .previa .etq-pimaco { outline: 1px dashed #c8ccd6; }
+    .previa .folha-a4 { box-shadow: var(--sombra); transform-origin: top left; }
+
+    /* Impressão: cada etiqueta térmica em uma página do rolo; A4 em folhas */
+    @media print {
+      .area-impressao .rolo { display: block; }
+      .area-impressao .etq-termica { page-break-after: always; break-after: page; outline: none; }
+      .area-impressao .folha-a4 { page-break-after: always; break-after: page; box-shadow: none; }
+    }
+  </style>
+</head>
+<body data-pagina="etiquetas" data-titulo="Etiquetas">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Etiquetas</h1>
+            <p>Etiquetas com código de barras para o leitor da Frente de caixa.</p>
+          </div>
+          <div class="pagina-acoes">
+            <button type="button" class="btn btn-secundario" id="btn-limpar"><i data-lucide="eraser"></i>Limpar fila</button>
+          </div>
+        </div>
+
+        <div class="form-layout etq-layout">
+          <div class="form-secoes">
+            <!-- Passo 1: escolher produtos -->
+            <section class="card">
+              <div class="card-cabecalho">
+                <h2 class="passo-titulo"><span class="passo-num">1</span>Escolha os produtos</h2>
+                <div class="flex items-center gap-2">
+                  <span class="texto-xs texto-3">Ao adicionar:</span>
+                  <div class="chips chips-compactos" role="radiogroup" aria-label="Quantidade ao adicionar">
+                    <button type="button" class="chip" data-qtd-modo="estoque" role="radio" aria-checked="true">= estoque</button>
+                    <button type="button" class="chip" data-qtd-modo="um" role="radio" aria-checked="false">1 de cada</button>
+                  </div>
+                </div>
+              </div>
+              <div class="card-corpo" style="padding-bottom:12px">
+                <div class="etq-busca">
+                  <div class="busca">
+                    <i data-lucide="search"></i>
+                    <label for="etq-termo" class="sr-only">Buscar produto</label>
+                    <input class="input" type="search" id="etq-termo" placeholder="Buscar produto, marca, SKU — ou leia o código de barras" autocomplete="off">
+                  </div>
+                </div>
+                <div class="chips chips-rolagem mt-2" id="etq-categorias" role="group" aria-label="Filtrar por categoria"></div>
+              </div>
+              <ul class="etq-produtos" id="etq-produtos" aria-label="Produtos"></ul>
+            </section>
+
+            <!-- Passo 2: quantidades -->
+            <section class="card">
+              <div class="card-cabecalho">
+                <h2 class="passo-titulo"><span class="passo-num">2</span>Confira as quantidades</h2>
+                <span class="texto-sm texto-3" id="resumo-fila"></span>
+              </div>
+              <div id="fila"></div>
+            </section>
+          </div>
+
+          <!-- Passo 3: modelo, prévia e impressão -->
+          <aside class="form-lateral">
+            <section class="card">
+              <div class="card-cabecalho"><h2 class="passo-titulo"><span class="passo-num">3</span>Modelo e impressão</h2></div>
+              <div class="card-corpo flex-col gap-3">
+                <div class="modelos" role="radiogroup" aria-label="Modelo de etiqueta">
+                  <label class="modelo-opcao">
+                    <input type="radio" name="modelo" value="termica" checked>
+                    <span class="modelo-icone"><i data-lucide="receipt"></i></span>
+                    <span><strong>Térmica (rolo)</strong><small>40 × 25 mm · impressora de etiqueta</small></span>
+                  </label>
+                  <label class="modelo-opcao">
+                    <input type="radio" name="modelo" value="pimaco">
+                    <span class="modelo-icone"><i data-lucide="file"></i></span>
+                    <span><strong>Folha A4</strong><small>Pimaco A4256 · 33 por folha</small></span>
+                  </label>
+                </div>
+                <div class="campo oculto" id="campo-inicio">
+                  <label for="posicao-inicial">Começar na etiqueta nº</label>
+                  <input class="input" type="number" id="posicao-inicial" min="1" max="33" value="1">
+                  <span class="ajuda">Para reaproveitar uma folha já usada.</span>
+                </div>
+                <div class="etq-opcoes">
+                  <span class="rotulo">Mostrar na etiqueta</span>
+                  <label class="interruptor"><input type="checkbox" id="mostrar-loja" checked><span>Nome da loja</span></label>
+                  <label class="interruptor"><input type="checkbox" id="mostrar-preco" checked><span>Preço</span></label>
+                  <label class="interruptor"><input type="checkbox" id="mostrar-numero" checked><span>Números do código</span></label>
+                </div>
+              </div>
+              <div class="etq-imprimir">
+                <button type="button" class="btn btn-primario btn-grande btn-bloco" id="btn-imprimir" disabled><i data-lucide="printer"></i>Imprimir <span id="qtd-botao"></span></button>
+              </div>
+            </section>
+            <section class="card">
+              <div class="card-cabecalho"><h2>Prévia</h2><span class="texto-xs texto-3" id="info-previa"></span></div>
+              <div class="card-corpo"><div class="previa" id="previa"></div></div>
+            </section>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Geração do código de barras (EAN-13 / Code 128) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/etiquetas.js"></script>
+</body>
+</html>

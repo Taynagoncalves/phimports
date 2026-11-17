@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frente de caixa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="pdv" data-titulo="Frente de caixa">
+  <a class="pular-conteudo" href="#pdv-busca">Pular para o código do produto</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pdv">
+
+          <!-- ===== Caixa: leitura e itens da venda ===== -->
+          <section class="caixa-venda" aria-label="Itens da venda">
+            <!-- Barra de status do caixa (aberto/fechado, operador, relógio) -->
+            <div id="aviso-caixa"></div>
+
+            <!-- Entrada: quantidade × código de barras -->
+            <form class="pdv-entrada" id="form-busca" role="search">
+              <label class="pdv-qtd" title="Quantidade (F3)">
+                <span class="sr-only">Quantidade</span>
+                <input id="qtd-mult" inputmode="numeric" value="1" maxlength="3" autocomplete="off" aria-label="Quantidade da próxima leitura (F3)">
+                <span aria-hidden="true">×</span>
+              </label>
+              <div class="pdv-busca">
+                <i data-lucide="scan-barcode"></i>
+                <label for="pdv-busca" class="sr-only">Código de barras ou nome do produto</label>
+                <input class="input" id="pdv-busca" type="search" autocomplete="off" placeholder="Código de barras ou nome" autofocus>
+                <span class="leitor-status" id="leitor-status" role="status" aria-live="polite"><span class="ponto" aria-hidden="true"></span><span>Leitor pronto</span></span>
+              </div>
+              <button type="button" class="btn btn-secundario pdv-btn-consulta" id="btn-consultar"><i data-lucide="search"></i><span>Consultar</span><kbd>F2</kbd></button>
+            </form>
+
+            <!-- Visor do último item lido -->
+            <div class="ultimo-item" id="ultimo-item" aria-live="polite"></div>
+
+            <!-- Itens da venda (estilo cupom) -->
+            <div class="card cupom-itens">
+              <div class="cupom-itens-cabecalho">
+                <h2>Itens da venda</h2>
+                <div class="flex items-center gap-2">
+                  <span class="texto-sm texto-3" id="contagem-itens">0 itens</span>
+                  <button type="button" class="btn btn-fantasma" id="btn-limpar" style="min-height:32px"><i data-lucide="trash-2"></i>Cancelar venda</button>
+                </div>
+              </div>
+              <div class="tabela-wrap cupom-itens-rolagem">
+                <table class="tabela tabela-itens">
+                  <thead>
+                    <tr>
+                      <th style="width:44px">#</th>
+                      <th>Produto</th>
+                      <th class="texto-centro" style="width:120px">Qtd</th>
+                      <th class="num" style="width:110px">Unitário</th>
+                      <th class="num" style="width:120px">Total</th>
+                      <th class="col-acoes"><span class="sr-only">Ações</span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="itens-carrinho" aria-live="polite"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Teclas de atalho (também clicáveis) -->
+            <nav class="teclas-atalho" aria-label="Atalhos do caixa">
+              <button type="button" data-tecla="F2"><kbd>F2</kbd>Consultar</button>
+              <button type="button" data-tecla="F3"><kbd>F3</kbd>Quantidade</button>
+              <button type="button" data-tecla="F4"><kbd>F4</kbd>Cliente</button>
+              <button type="button" data-tecla="F8"><kbd>F8</kbd>Desconto</button>
+              <button type="button" data-tecla="Delete"><kbd>Del</kbd>Remover</button>
+              <button type="button" data-tecla="F9" class="tecla-destaque"><kbd>F9</kbd>Finalizar</button>
+            </nav>
+          </section>
+
+          <!-- ===== Carrinho ===== -->
+          <aside class="carrinho" id="carrinho" aria-label="Fechamento da venda">
+            <!-- Barra resumida (celular/tablet): toca para expandir -->
+            <button type="button" class="carrinho-resumo-mobile" id="toggle-carrinho" aria-expanded="false" aria-controls="carrinho-corpo">
+              <span class="alca" aria-hidden="true"></span>
+              <span class="flex items-center gap-3">
+                <span class="stat-icone" style="background:var(--cor-destaque-suave);color:var(--cor-destaque)"><i data-lucide="shopping-cart"></i></span>
+                <span class="flex-col">
+                  <strong>Pagamento</strong>
+                  <span class="texto-xs texto-3" id="qtd-mobile">0 itens</span>
+                </span>
+              </span>
+              <span class="flex items-center gap-2">
+                <strong style="font-size:var(--fs-lg)" id="total-mobile">R$ 0,00</strong>
+                <i data-lucide="chevron-up"></i>
+              </span>
+            </button>
+
+            <div class="carrinho-corpo" id="carrinho-corpo">
+              <!-- Visor do total (como no display do caixa) -->
+              <div class="visor-total" aria-live="polite">
+                <span class="visor-rotulo">Total a pagar</span>
+                <strong id="total">R$ 0,00</strong>
+                <div class="visor-linhas">
+                  <div><span>Subtotal</span><span id="subtotal">R$ 0,00</span></div>
+                  <div id="linhas-promocao"></div>
+                  <div><span>Desconto</span><span id="valor-desconto">— R$ 0,00</span></div>
+                </div>
+                <div class="visor-destaque oculto" id="visor-destaque" aria-live="polite"></div>
+              </div>
+
+              <!-- Cliente -->
+              <div class="campo mt-4">
+                <label for="cliente">Cliente (opcional)</label>
+                <select class="select" id="cliente"></select>
+              </div>
+
+              <!-- Desconto -->
+              <div class="campo mt-4">
+                <label for="desconto">Desconto</label>
+                <div class="flex gap-2">
+                  <div class="chips" role="radiogroup" aria-label="Tipo de desconto" style="flex-wrap:nowrap">
+                    <button type="button" class="chip" data-desc="valor" role="radio" aria-checked="true" aria-pressed="true">R$</button>
+                    <button type="button" class="chip" data-desc="percentual" role="radio" aria-checked="false" aria-pressed="false">%</button>
+                  </div>
+                  <input class="input" id="desconto" inputmode="decimal" placeholder="0,00" style="flex:1" aria-describedby="aviso-desconto">
+                </div>
+                <span class="ajuda" id="aviso-desconto" aria-live="polite"></span>
+              </div>
+
+              <!-- Pagamento (pode ser dividido em várias formas) -->
+              <div class="campo mt-4">
+                <!-- Partes já pagas (pagamento dividido) -->
+                <div class="partes-pagamento oculto" id="partes-pagamento">
+                  <div class="partes-topo"><strong>Pagamento dividido</strong><span id="partes-resumo"></span></div>
+                  <div class="partes-barra" aria-hidden="true"><span id="partes-progresso"></span></div>
+                  <ul class="lista" id="lista-pagamentos" aria-label="Partes já lançadas"></ul>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="rotulo" id="rot-pagamento">Forma de pagamento</span>
+                  <button type="button" class="btn-dividir" id="btn-dividir" aria-pressed="false"><i data-lucide="split"></i><span>Dividir pagamento</span></button>
+                </div>
+                <div class="chips" role="radiogroup" aria-labelledby="rot-pagamento" id="formas-pagamento">
+                  <button type="button" class="chip" data-forma="pix" role="radio" aria-checked="false"><i data-lucide="qr-code"></i>Pix</button>
+                  <button type="button" class="chip" data-forma="dinheiro" role="radio" aria-checked="false"><i data-lucide="banknote"></i>Dinheiro</button>
+                  <button type="button" class="chip" data-forma="debito" role="radio" aria-checked="false"><i data-lucide="credit-card"></i>Débito</button>
+                  <button type="button" class="chip" data-forma="credito" role="radio" aria-checked="false"><i data-lucide="credit-card"></i>Crédito</button>
+                  <button type="button" class="chip" data-forma="vale" role="radio" aria-checked="false"><i data-lucide="ticket"></i>Vale</button>
+                  <button type="button" class="chip" data-forma="crediario" role="radio" aria-checked="false"><i data-lucide="calendar-clock"></i>Crediário</button>
+                </div>
+              </div>
+
+              <!-- Detalhes da forma escolhida -->
+              <div id="pag-detalhe" class="oculto mt-4">
+                <div class="campo">
+                  <label for="valor-pagamento" id="rot-valor">Valor</label>
+                  <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="valor-pagamento" inputmode="decimal" data-mascara="moeda" placeholder="0,00"></div>
+                  <span class="ajuda" id="ajuda-valor"></span>
+                </div>
+                <div class="chips mt-2 oculto" id="atalhos-dinheiro"></div>
+                <div class="chips mt-2 oculto" id="atalhos-dividir"></div>
+                <div class="campo mt-2 oculto" id="campo-parcelas">
+                  <label for="parcelas">Parcelas</label>
+                  <select class="select" id="parcelas"></select>
+                </div>
+                <div class="campo mt-2 oculto" id="campo-vale">
+                  <label for="codigo-vale">Código do vale-troca</label>
+                  <div class="flex gap-2">
+                    <input class="input mono" id="codigo-vale" placeholder="VT-XXXXXX" autocomplete="off" style="flex:1;text-transform:uppercase">
+                    <button type="button" class="btn btn-secundario" id="btn-consultar-vale">Consultar</button>
+                  </div>
+                  <div class="chips mt-2" id="vales-cliente"></div>
+                  <span class="ajuda" id="info-vale" aria-live="polite"></span>
+                </div>
+                <div class="campo mt-2 oculto" id="campo-crediario">
+                  <div class="flex gap-2" style="flex-wrap:wrap">
+                    <div class="campo" style="flex:1;min-width:140px">
+                      <label for="parcelas-crediario">Parcelas</label>
+                      <select class="select" id="parcelas-crediario"></select>
+                    </div>
+                    <div class="campo" style="flex:1;min-width:140px">
+                      <label for="vencimento-crediario">1º vencimento</label>
+                      <input class="input" type="date" id="vencimento-crediario">
+                    </div>
+                  </div>
+                  <span class="ajuda" id="info-crediario" aria-live="polite"></span>
+                </div>
+                <button type="button" class="btn btn-secundario btn-bloco mt-2" id="btn-add-pagamento"><i data-lucide="plus"></i><span id="texto-add-pagamento">Lançar esta parte</span></button>
+              </div>
+
+              <!-- Pagamentos já lançados (pagamento dividido) -->
+              <div class="resumo-linha mt-2" id="linha-restante"><span>Falta pagar</span><strong id="restante">R$ 0,00</strong></div>
+              <div class="resumo-linha oculto" id="linha-troco"><span>Troco</span><strong id="troco" style="font-size:var(--fs-lg);color:var(--cor-sucesso)">R$ 0,00</strong></div>
+
+              <button type="button" class="btn btn-primario btn-grande btn-bloco mt-4" id="btn-finalizar" disabled>
+                <i data-lucide="check"></i>Finalizar venda <kbd class="kbd-escuro">F9</kbd>
+              </button>
+              <p class="texto-xs texto-3 texto-centro mt-2" id="motivo-bloqueio" aria-live="polite"></p>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/pdv.js"></script>
+</body>
+</html>

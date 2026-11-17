@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+</head>
+<body data-titulo="Entrar">
+  <div class="login-pagina">
+
+    <!-- Lado ilustrativo (tablet/desktop) -->
+    <aside class="login-lado" aria-hidden="true">
+      <div class="flex items-center gap-3" style="position:relative;z-index:1">
+        <div class="logo-marca" style="background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25);box-shadow:none" id="login-logo-lado" data-logo-loja></div>
+        <span id="login-nome-lado" data-nome-loja style="font-size:18px;font-weight:600"></span>
+      </div>
+      <div style="position:relative;z-index:1">
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);font-size:12px;font-weight:500">● Sistema de gestão para lojas de moda</span>
+        <h2 style="font-size:clamp(2rem,3.2vw,3rem);line-height:1.1;max-width:520px;color:#fff;margin-top:20px">A sua loja,<br><em>em um só lugar.</em></h2>
+        <p class="mt-4" style="max-width:420px;font-size:var(--fs-md)">Vendas, estoque por tamanho e cor, crediário, notas fiscais e relatórios, tudo integrado e simples de usar.</p>
+        <div class="login-previa">
+          <div><span>Vendas hoje</span><strong>R$ 2.480</strong></div>
+          <div><span>Peças vendidas</span><strong>37</strong></div>
+          <div><span>Ticket médio</span><strong>R$ 189</strong></div>
+          <div><span>Estoque baixo</span><strong>3 itens</strong></div>
+        </div>
+      </div>
+      <div class="flex justify-between items-center texto-xs" style="position:relative;z-index:1;color:rgba(255,255,255,.65)">
+        <span>© 2026</span><span>Sistema de gestão</span>
+      </div>
+    </aside>
+
+    <!-- Formulário -->
+    <main class="login-form-area">
+      <div class="login-card">
+        <div class="logo-marca" id="login-logo" data-logo-loja></div>
+        <h1>Bem-vindo(a) <em>de volta</em></h1>
+        <p class="mt-2">Entre com seu e-mail e senha para acessar o painel.</p>
+
+        <form id="form-login" novalidate>
+          <div class="campo">
+            <label for="email">E-mail</label>
+            <input class="input" type="email" id="email" name="email" placeholder="voce@sualoja.com.br" autocomplete="email" required value="mariana@lojamodas.com.br">
+          </div>
+          <div class="campo">
+            <div class="flex justify-between items-center">
+              <label for="senha">Senha</label>
+              <a href="#" class="texto-sm" id="esqueci">Esqueci minha senha</a>
+            </div>
+            <input class="input" type="password" id="senha" name="senha" placeholder="••••••••" autocomplete="current-password" required value="123456">
+          </div>
+          <label class="checkbox"><input type="checkbox" name="lembrar" checked> Manter conectado</label>
+          <button type="submit" class="btn btn-primario btn-grande btn-bloco mt-2">Entrar</button>
+          <p class="texto-xs texto-centro texto-3" id="aviso-prototipo">Protótipo: qualquer senha funciona.</p>
+          <p class="texto-sm texto-centro oculto" id="primeiro-acesso">Primeira vez? <a href="#" id="link-criar-loja">Criar a conta da loja</a></p>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/mock-data.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

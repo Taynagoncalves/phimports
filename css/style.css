@@ -1,0 +1,253 @@
+/* ==========================================================================
+   style.css — Identidade visual (tokens), reset e base
+   Visual limpo: fundo branco, cinzas frios, uma cor de destaque (índigo).
+   Para trocar a identidade da loja, altere apenas as variáveis abaixo.
+   Modo escuro: [data-tema="escuro"] no <html> (botão na barra do topo).
+   ========================================================================== */
+
+:root,
+[data-tema="claro"] {
+  color-scheme: light;
+
+  /* ---------- Marca (cor de destaque) ---------- */
+  --cor-destaque: #4F46E5;          /* botões principais, item ativo, gráficos */
+  --cor-destaque-hover: #4338CA;
+  --cor-destaque-suave: #EEF0FF;    /* fundo de itens selecionados */
+  --cor-destaque-borda: #C7CBFB;    /* contorno de itens selecionados */
+  --cor-destaque-texto: #FFFFFF;    /* texto sobre a cor de destaque */
+  --cor-destaque-forte: #3730A3;    /* texto na cor de destaque sobre fundo suave */
+  --cor-marca: #4F46E5;             /* cor pura da marca (logo, painel do login) — igual nos dois temas */
+  --cor-marca-texto: #FFFFFF;
+
+  /* ---------- Neutros ---------- */
+  --cor-fundo: #FFFFFF;
+  --cor-fundo-2: #F8F9FB;           /* faixas, cabeçalho de tabela, áreas recuadas */
+  --cor-superficie: #FFFFFF;
+  --cor-superficie-2: #F4F5F7;      /* campos preenchidos, hover */
+  --cor-borda: #EAECF0;
+  --cor-borda-forte: #D9DCE3;
+  --cor-texto: #101828;
+  --cor-texto-2: #475467;           /* secundário (AA sobre branco) */
+  --cor-texto-3: #667085;           /* legendas (AA sobre branco) */
+
+  /* ---------- Status (só para status) ---------- */
+  --cor-sucesso: #067647;
+  --cor-sucesso-suave: #ECFDF3;
+  --cor-alerta: #B54708;
+  --cor-alerta-suave: #FFFAEB;
+  --cor-perigo: #C01048;
+  --cor-perigo-suave: #FFF1F3;
+  --cor-info: #175CD3;
+  --cor-info-suave: #EFF8FF;
+
+  /* ---------- Tipografia ---------- */
+  --fonte: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fonte-titulo: var(--fonte);
+  --peso-titulo: 650;
+  --fonte-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --fs-xs: 0.75rem;     /* 12 */
+  --fs-sm: 0.8125rem;   /* 13 */
+  --fs-base: 0.875rem;  /* 14 */
+  --fs-md: 0.9375rem;   /* 15 */
+  --fs-lg: 1.0625rem;   /* 17 */
+  --fs-xl: 1.5rem;      /* 24 */
+  --fs-2xl: 1.75rem;    /* 28 */
+  --fs-3xl: 2.25rem;    /* 36 */
+  --fw-normal: 400;
+  --fw-medio: 500;
+  --fw-semi: 600;
+  --fw-bold: 700;
+
+  /* ---------- Espaçamentos ---------- */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-5: 20px;
+  --esp-6: 24px;
+  --esp-8: 32px;
+  --esp-10: 40px;
+  --esp-12: 56px;
+
+  /* ---------- Formas e sombras ---------- */
+  --raio: 14px;
+  --raio-sm: 10px;
+  --raio-xs: 8px;
+  --raio-pill: 999px;
+  --sombra-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --sombra: 0 1px 3px rgba(16, 24, 40, 0.06), 0 6px 16px -4px rgba(16, 24, 40, 0.08);
+  --sombra-lg: 0 24px 48px -12px rgba(16, 24, 40, 0.22), 0 2px 6px rgba(16, 24, 40, 0.05);
+  --vidro: rgba(255, 255, 255, 0.82);   /* barras com desfoque */
+
+  /* ---------- Layout ---------- */
+  --sidebar-largura: 248px;
+  --sidebar-recolhida: 72px;
+  --topbar-altura: 64px;
+  --transicao: 180ms cubic-bezier(.2, .7, .2, 1);
+
+  /* ---------- Foco acessível ---------- */
+  --anel-foco: 0 0 0 4px rgba(79, 70, 229, 0.16);
+}
+
+/* ---------- Modo escuro ---------- */
+[data-tema="escuro"] {
+  color-scheme: dark;
+  --cor-destaque: #8B8CFA;
+  --cor-destaque-hover: #A5A6FB;
+  --cor-destaque-suave: #1E1F3A;
+  --cor-destaque-borda: #3B3D7A;
+  --cor-destaque-texto: #0B0C14;
+  --cor-destaque-forte: #C3C4FD;
+
+  --cor-fundo: #0C0D10;
+  --cor-fundo-2: #111317;
+  --cor-superficie: #14161A;
+  --cor-superficie-2: #1B1E23;
+  --cor-borda: #23262D;
+  --cor-borda-forte: #30343C;
+  --cor-texto: #F2F4F7;
+  --cor-texto-2: #B4BAC6;
+  --cor-texto-3: #8A91A0;
+
+  --cor-sucesso: #47CD89;
+  --cor-sucesso-suave: #0E2419;
+  --cor-alerta: #F5B54A;
+  --cor-alerta-suave: #2A1E0B;
+  --cor-perigo: #F97A9B;
+  --cor-perigo-suave: #2D1119;
+  --cor-info: #84ADFF;
+  --cor-info-suave: #0F1D33;
+
+  --sombra-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sombra: 0 1px 3px rgba(0, 0, 0, 0.4), 0 6px 16px -4px rgba(0, 0, 0, 0.5);
+  --sombra-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
+  --vidro: rgba(12, 13, 16, 0.82);
+  --anel-foco: 0 0 0 4px rgba(139, 140, 250, 0.22);
+}
+
+/* ---------- Reset leve ---------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+* { margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--fonte);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
+  min-height: 100vh;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+button { cursor: pointer; background: none; border: none; }
+
+a { color: var(--cor-destaque); text-decoration: none; font-weight: var(--fw-medio); }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+a.btn, a.nav-link, a.btn-icone { text-decoration: none; }
+
+table { border-collapse: collapse; width: 100%; }
+
+::selection { background: var(--cor-destaque-suave); color: var(--cor-destaque-forte); }
+
+/* ---------- Tipografia ---------- */
+h1 {
+  font-family: var(--fonte-titulo);
+  font-weight: var(--peso-titulo);
+  font-size: var(--fs-2xl);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+h2 { font-size: var(--fs-md); font-weight: var(--fw-semi); letter-spacing: -0.01em; line-height: 1.3; }
+h3 { font-size: var(--fs-md); font-weight: var(--fw-semi); line-height: 1.35; }
+h4 {
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  color: var(--cor-texto-3);
+}
+p { color: var(--cor-texto-2); }
+h1 em, h2 em { font-style: normal; color: var(--cor-texto-3); }
+
+/* Números tabulares (valores alinhados) */
+.num, .stat-valor, .resumo-linha strong, .resumo-total strong, .valor { font-variant-numeric: tabular-nums; }
+
+/* ---------- Foco visível (acessibilidade) ---------- */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--cor-destaque);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Texto apenas para leitores de tela */
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+
+/* Link "pular para o conteúdo" */
+.pular-conteudo {
+  position: absolute; left: var(--esp-4); top: -100px; z-index: 1000;
+  background: var(--cor-destaque); color: var(--cor-destaque-texto);
+  padding: var(--esp-2) var(--esp-4); border-radius: var(--raio-sm);
+  text-decoration: none;
+}
+.pular-conteudo:focus { top: var(--esp-4); }
+
+/* Teclas de atalho */
+kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: 5px; background: var(--cor-superficie);
+  box-shadow: 0 1px 0 var(--cor-borda-forte);
+  font-family: var(--fonte); font-size: 11px; font-weight: var(--fw-medio); color: var(--cor-texto-3);
+  line-height: 1;
+}
+
+/* ---------- Utilitários ---------- */
+.texto-2 { color: var(--cor-texto-2); }
+.texto-3 { color: var(--cor-texto-3); }
+.texto-sm { font-size: var(--fs-sm); }
+.texto-xs { font-size: var(--fs-xs); }
+.texto-direita { text-align: right; }
+.texto-centro { text-align: center; }
+.negrito { font-weight: var(--fw-semi); }
+.mono { font-family: var(--fonte-mono); font-size: 12px; letter-spacing: -0.01em; }
+.nowrap { white-space: nowrap; }
+.oculto { display: none !important; }
+.mt-2 { margin-top: var(--esp-2); }
+.mt-4 { margin-top: var(--esp-4); }
+.mt-6 { margin-top: var(--esp-6); }
+.mb-4 { margin-bottom: var(--esp-4); }
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.items-end { align-items: flex-end; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--esp-2); }
+.gap-3 { gap: var(--esp-3); }
+.gap-4 { gap: var(--esp-4); }
+.w-100 { width: 100%; }
+.valor-positivo { color: var(--cor-sucesso); }
+.valor-negativo { color: var(--cor-perigo); }
+
+/* Entrada suave do conteúdo */
+@keyframes surgir { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* Respeita quem prefere menos animação */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

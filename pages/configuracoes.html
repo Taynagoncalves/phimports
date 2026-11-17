@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="configuracoes" data-titulo="Configurações">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Configurações</h1>
+            <p>Dados da loja, usuários e preferências do sistema.</p>
+          </div>
+        </div>
+
+        <!-- Abas -->
+        <div class="abas" role="tablist" aria-label="Seções de configuração">
+          <button type="button" class="aba" role="tab" id="aba-loja" aria-controls="painel-loja" aria-selected="true">Dados da loja</button>
+          <button type="button" class="aba so-nota" role="tab" id="aba-fiscal" aria-controls="painel-fiscal" aria-selected="false" tabindex="-1">Dados fiscais</button>
+          <button type="button" class="aba" role="tab" id="aba-usuarios" aria-controls="painel-usuarios" aria-selected="false" tabindex="-1">Usuários</button>
+          <button type="button" class="aba" role="tab" id="aba-aparencia" aria-controls="painel-aparencia" aria-selected="false" tabindex="-1">Aparência</button>
+          <button type="button" class="aba" role="tab" id="aba-sistema" aria-controls="painel-sistema" aria-selected="false" tabindex="-1">Sistema</button>
+        </div>
+
+        <!-- ===== Dados da loja ===== -->
+        <section id="painel-loja" role="tabpanel" aria-labelledby="aba-loja">
+          <form id="form-loja" novalidate>
+            <div class="form-layout">
+              <div class="card">
+                <div class="card-cabecalho"><h2>Informações da loja</h2></div>
+                <div class="card-corpo form-grid">
+                  <div class="campo col-span-2">
+                    <label for="loja-nome">Nome da loja (nome fantasia) <span class="obrigatorio" aria-hidden="true">*</span></label>
+                    <input class="input" id="loja-nome" name="nome" required maxlength="60" autocomplete="organization" aria-describedby="loja-nome-ajuda">
+                    <span class="ajuda" id="loja-nome-ajuda">Ao salvar, o nome muda em todo o sistema: menu, tela de login, título das abas, notas fiscais (NFC-e), comprovantes, relatórios e PDFs.</span>
+                    <!-- Prévia de como o nome sai no topo do cupom -->
+                    <div class="flex items-center gap-3 mt-2" style="flex-wrap:wrap">
+                      <span class="texto-xs texto-3">No cupom fiscal:</span>
+                      <span class="mono negrito" style="background:#FFFEF8;color:#111;border:1px dashed var(--cor-borda-forte);padding:4px 12px;border-radius:6px;text-transform:uppercase" id="previa-nome-loja"></span>
+                    </div>
+                  </div>
+                  <div class="campo">
+                    <label for="loja-telefone">Telefone</label>
+                    <input class="input" id="loja-telefone" name="telefone" type="tel" data-mascara="telefone">
+                  </div>
+                  <div class="campo">
+                    <label for="loja-email">E-mail</label>
+                    <input class="input" id="loja-email" name="email" type="email">
+                  </div>
+                  <div class="col-span-2 alerta info">
+                    <i data-lucide="landmark"></i>
+                    <span>Razão social, CNPJ, inscrições e endereço ficam na aba <a href="#fiscal" id="link-aba-fiscal">Dados fiscais</a>, junto com o resto do que aparece na nota.</span>
+                  </div>
+                </div>
+              </div>
+
+              <aside class="form-lateral">
+                <div class="card">
+                  <div class="card-cabecalho"><h2>Logo</h2></div>
+                  <div class="card-corpo" style="display:grid;justify-items:center;gap:12px">
+                    <label class="upload" style="max-width:180px">
+                      <span id="logo-placeholder" class="flex-col items-center gap-2">
+                        <i data-lucide="image-plus"></i>
+                        <span>Enviar logo</span>
+                        <span class="texto-xs">Quadrada, até 1 MB</span>
+                      </span>
+                      <img id="logo-preview" alt="Pré-visualização do logo" class="oculto">
+                      <input type="file" id="logo" accept="image/*" aria-label="Enviar logo da loja">
+                    </label>
+                    <button type="button" class="btn btn-fantasma oculto" id="btn-remover-logo"><i data-lucide="trash-2"></i>Remover logo</button>
+                    <p class="texto-xs texto-centro">Aparece no menu, no login e nos comprovantes.</p>
+                  </div>
+                </div>
+              </aside>
+            </div>
+
+            <div class="barra-acoes">
+              <button type="submit" class="btn btn-primario"><i data-lucide="check"></i>Salvar alterações</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- ===== Dados fiscais (NFC-e) ===== -->
+        <section id="painel-fiscal" role="tabpanel" aria-labelledby="aba-fiscal" hidden>
+          <div id="aviso-permissao" class="mb-4"></div>
+
+          <form id="form-fiscal" novalidate>
+            <fieldset id="campos-fiscais" style="border:none;min-width:0">
+            <div class="form-layout">
+              <div class="form-secoes">
+
+                <!-- Emitente -->
+                <section class="card">
+                  <div class="card-cabecalho">
+                    <div>
+                      <h2>Emitente</h2>
+                      <p class="texto-sm">Dados da empresa como estão no cadastro da Receita e da SEFAZ.</p>
+                    </div>
+                  </div>
+                  <div class="card-corpo form-grid">
+                    <div class="campo col-span-2">
+                      <span class="rotulo">Nome da loja (nome fantasia)</span>
+                      <div class="flex items-center gap-3 justify-between" style="flex-wrap:wrap;min-height:44px;padding:8px 12px;border:1px solid var(--cor-borda);border-radius:var(--raio-sm);background:var(--cor-fundo)">
+                        <strong data-nome-loja></strong>
+                        <a href="#loja" class="texto-sm">Alterar em Dados da loja</a>
+                      </div>
+                      <span class="ajuda">Sai no topo da NFC-e, acima da razão social.</span>
+                    </div>
+                    <div class="campo col-span-2">
+                      <label for="f-razao">Razão social <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input" id="f-razao" name="razaoSocial" required autocomplete="organization">
+                    </div>
+                    <div class="campo">
+                      <label for="f-cnpj">CNPJ <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input" id="f-cnpj" name="cnpj" inputmode="numeric" data-mascara="documento" required placeholder="00.000.000/0000-00" aria-describedby="f-cnpj-ajuda">
+                      <span class="ajuda" id="f-cnpj-ajuda" aria-live="polite"></span>
+                    </div>
+                    <div class="campo">
+                      <label for="f-ie">Inscrição estadual (IE) <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input" id="f-ie" name="inscricaoEstadual" required>
+                    </div>
+                    <div class="campo">
+                      <label for="f-im">Inscrição municipal (IM)</label>
+                      <input class="input" id="f-im" name="inscricaoMunicipal">
+                    </div>
+                    <div class="campo">
+                      <label for="f-cnae">CNAE principal</label>
+                      <input class="input" id="f-cnae" name="cnae" placeholder="0000-0/00">
+                    </div>
+                    <div class="campo col-span-2">
+                      <label for="f-regime">Regime tributário (CRT) <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <select class="select" id="f-regime" name="regimeTributario" required>
+                        <option value="">Selecione…</option>
+                        <option value="1">1 — Simples Nacional</option>
+                        <option value="2">2 — Simples Nacional (excesso de sublimite de receita)</option>
+                        <option value="3">3 — Regime normal (Lucro Presumido ou Real)</option>
+                        <option value="4">4 — MEI (Microempreendedor Individual)</option>
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Endereço fiscal -->
+                <section class="card">
+                  <div class="card-cabecalho">
+                    <div>
+                      <h2>Endereço do estabelecimento</h2>
+                      <p class="texto-sm">Precisa ser igual ao cadastrado na SEFAZ.</p>
+                    </div>
+                  </div>
+                  <div class="card-corpo form-grid">
+                    <div class="campo">
+                      <label for="f-cep">CEP <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <div class="flex gap-2">
+                        <input class="input" id="f-cep" name="cep" inputmode="numeric" data-mascara="cep" required placeholder="00000-000" style="flex:1">
+                        <button type="button" class="btn btn-secundario" id="btn-buscar-cep"><i data-lucide="search"></i>Buscar</button>
+                      </div>
+                    </div>
+                    <div class="campo">
+                      <label for="f-uf">UF <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <select class="select" id="f-uf" name="uf" required></select>
+                    </div>
+                    <div class="campo col-span-2">
+                      <label for="f-logradouro">Logradouro <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input" id="f-logradouro" name="logradouro" required placeholder="Rua, avenida…">
+                    </div>
+                    <div class="campo">
+                      <label for="f-numero">Número <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input" id="f-numero" name="numero" required placeholder="Ex.: 1200 ou S/N">
+                    </div>
+                    <div class="campo">
+                      <label for="f-complemento">Complemento</label>
+                      <input class="input" id="f-complemento" name="complemento" placeholder="Loja 2, sala 10…">
+                    </div>
+                    <div class="campo">
+                      <label for="f-bairro">Bairro <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input" id="f-bairro" name="bairro" required>
+                    </div>
+                    <div class="campo">
+                      <label for="f-municipio">Município <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input" id="f-municipio" name="municipio" required>
+                    </div>
+                    <div class="campo">
+                      <label for="f-ibge">Código IBGE do município <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input mono" id="f-ibge" name="codigoMunicipio" inputmode="numeric" maxlength="7" required placeholder="7 dígitos">
+                      <span class="ajuda">Preenchido automaticamente ao buscar o CEP.</span>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- NFC-e -->
+                <section class="card">
+                  <div class="card-cabecalho">
+                    <div>
+                      <h2>NFC-e</h2>
+                      <p class="texto-sm">Credenciamento da loja na SEFAZ para emitir a nota do consumidor.</p>
+                    </div>
+                  </div>
+                  <div class="card-corpo form-grid">
+                    <div class="campo col-span-2">
+                      <span class="rotulo" id="rot-ambiente">Ambiente de emissão</span>
+                      <div class="chips" role="radiogroup" aria-labelledby="rot-ambiente">
+                        <button type="button" class="chip" role="radio" data-ambiente="homologacao" aria-checked="false"><i data-lucide="flask-conical"></i>Homologação (testes)</button>
+                        <button type="button" class="chip" role="radio" data-ambiente="producao" aria-checked="false"><i data-lucide="badge-check"></i>Produção (valor fiscal)</button>
+                      </div>
+                      <span class="ajuda" id="ajuda-ambiente"></span>
+                    </div>
+                    <div class="campo">
+                      <label for="f-serie">Série <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input" id="f-serie" name="serie" type="number" min="1" max="999" required>
+                    </div>
+                    <div class="campo">
+                      <label for="f-proximo">Próximo número da NFC-e <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input" id="f-proximo" name="proximoNumero" type="number" min="1" required>
+                      <span class="ajuda">Ao trocar de sistema, continue a numeração do anterior.</span>
+                    </div>
+                    <div class="campo">
+                      <label for="f-csc-id">ID do CSC (token) <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <input class="input mono" id="f-csc-id" name="cscId" inputmode="numeric" required placeholder="000001">
+                    </div>
+                    <div class="campo">
+                      <label for="f-csc">Código CSC <span class="obrigatorio" aria-hidden="true">*</span></label>
+                      <div class="flex gap-2">
+                        <input class="input mono" id="f-csc" name="csc" type="password" required autocomplete="off" style="flex:1">
+                        <button type="button" class="btn-icone" id="btn-ver-csc" aria-label="Mostrar código CSC" aria-pressed="false"><i data-lucide="eye"></i></button>
+                      </div>
+                      <span class="ajuda">Gerado no portal da SEFAZ do seu estado.</span>
+                    </div>
+                    <div class="campo col-span-2">
+                      <label for="f-url">Endereço de consulta da NFC-e (impresso no cupom)</label>
+                      <input class="input" id="f-url" name="urlConsulta" placeholder="Ex.: www.nfce.fazenda.sp.gov.br/consulta">
+                    </div>
+
+                    <!-- Certificado digital -->
+                    <div class="campo col-span-2">
+                      <span class="rotulo">Certificado digital A1 <span class="obrigatorio" aria-hidden="true">*</span></span>
+                      <div class="card card-corpo flex items-center gap-3" style="flex-wrap:wrap;box-shadow:none;background:var(--cor-fundo)" id="certificado-info"></div>
+                      <div class="flex gap-2 mt-2 items-end" style="flex-wrap:wrap">
+                        <label class="btn btn-secundario" for="f-certificado" style="cursor:pointer"><i data-lucide="upload"></i>Enviar arquivo .pfx</label>
+                        <input type="file" id="f-certificado" accept=".pfx,.p12,application/x-pkcs12" class="sr-only">
+                        <div class="campo" style="flex:1;min-width:200px">
+                          <label for="f-cert-senha">Senha do certificado</label>
+                          <input class="input" id="f-cert-senha" type="password" autocomplete="new-password" placeholder="Informe ao enviar um novo arquivo">
+                        </div>
+                      </div>
+                      <span class="ajuda">No sistema real, o certificado e a senha são enviados só para o servidor (nunca ficam no navegador).</span>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Tributação padrão -->
+                <section class="card">
+                  <div class="card-cabecalho">
+                    <div>
+                      <h2>Tributação padrão dos produtos</h2>
+                      <p class="texto-sm">Usada em todos os itens da nota. Confirme os códigos com seu contador.</p>
+                    </div>
+                  </div>
+                  <div class="card-corpo form-grid">
+                    <div class="campo">
+                      <label for="f-origem">Origem da mercadoria</label>
+                      <select class="select" id="f-origem" name="origem">
+                        <option value="0">0 — Nacional</option>
+                        <option value="1">1 — Estrangeira (importação direta)</option>
+                        <option value="2">2 — Estrangeira (mercado interno)</option>
+                      </select>
+                    </div>
+                    <div class="campo">
+                      <label for="f-cfop">CFOP</label>
+                      <select class="select" id="f-cfop" name="cfop">
+                        <option value="5102">5102 — Venda de mercadoria de terceiros</option>
+                        <option value="5405">5405 — Venda com substituição tributária</option>
+                        <option value="5101">5101 — Venda de produção própria</option>
+                      </select>
+                    </div>
+                    <div class="campo" id="campo-csosn">
+                      <label for="f-csosn">CSOSN (Simples Nacional)</label>
+                      <select class="select" id="f-csosn" name="csosn">
+                        <option value="102">102 — Sem permissão de crédito</option>
+                        <option value="103">103 — Isenção por faixa de receita</option>
+                        <option value="300">300 — Imune</option>
+                        <option value="400">400 — Não tributada</option>
+                        <option value="500">500 — ICMS cobrado anteriormente por ST</option>
+                      </select>
+                    </div>
+                    <div class="campo oculto" id="campo-cst">
+                      <label for="f-cst">CST do ICMS (regime normal)</label>
+                      <select class="select" id="f-cst" name="cst">
+                        <option value="00">00 — Tributada integralmente</option>
+                        <option value="20">20 — Com redução de base de cálculo</option>
+                        <option value="40">40 — Isenta</option>
+                        <option value="41">41 — Não tributada</option>
+                        <option value="60">60 — ICMS cobrado anteriormente por ST</option>
+                      </select>
+                    </div>
+                    <div class="campo">
+                      <label for="f-aliquota">Tributos aproximados (%)</label>
+                      <input class="input" id="f-aliquota" name="aliquotaTributos" inputmode="decimal" placeholder="31,45">
+                      <span class="ajuda">Lei 12.741/2012 (tabela IBPT).</span>
+                    </div>
+                    <div class="campo col-span-2" style="grid-column:1/-1">
+                      <label for="f-info">Informações complementares (rodapé do cupom)</label>
+                      <textarea class="textarea" id="f-info" name="informacoesComplementares" maxlength="500" placeholder="Ex.: Trocas em até 30 dias mediante apresentação deste documento."></textarea>
+                      <span class="ajuda"><span id="contador-info">0</span>/500 caracteres</span>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- NCM por categoria -->
+                <section class="card">
+                  <div class="card-cabecalho">
+                    <div>
+                      <h2>NCM por categoria</h2>
+                      <p class="texto-sm">Classificação fiscal de cada tipo de peça. Vem com sugestões — confirme com seu contador.</p>
+                    </div>
+                  </div>
+                  <div class="tabela-wrap">
+                    <table class="tabela tabela-responsiva">
+                      <thead><tr><th>Categoria</th><th>NCM</th></tr></thead>
+                      <tbody id="tabela-ncm"></tbody>
+                    </table>
+                  </div>
+                </section>
+              </div>
+
+              <!-- Lateral: prontidão -->
+              <aside class="form-lateral">
+                <section class="card">
+                  <div class="card-cabecalho"><h2>Pronto para emitir?</h2></div>
+                  <ul class="lista" id="checklist-fiscal" aria-live="polite"></ul>
+                  <div class="card-corpo" style="border-top:1px solid var(--cor-borda)">
+                    <button type="button" class="btn btn-secundario btn-bloco" id="btn-previa"><i data-lucide="receipt"></i>Ver prévia do cupom</button>
+                  </div>
+                </section>
+              </aside>
+            </div>
+            </fieldset>
+
+            <div class="barra-acoes" id="barra-fiscal">
+              <button type="submit" class="btn btn-primario"><i data-lucide="check"></i>Salvar dados fiscais</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- ===== Usuários ===== -->
+        <section id="painel-usuarios" role="tabpanel" aria-labelledby="aba-usuarios" hidden>
+          <!-- Regras de venda -->
+          <div class="card mb-4">
+            <div class="card-cabecalho"><div><h2>Regras de venda</h2><p class="texto-sm">Vale para os vendedores. O dono não tem limite.</p></div></div>
+            <form class="card-corpo flex gap-3 items-end" id="form-regras" style="flex-wrap:wrap" novalidate>
+              <div class="campo" style="width:220px">
+                <label for="limite-desconto">Desconto máximo do vendedor (%)</label>
+                <input class="input" type="number" id="limite-desconto" min="0" max="100" step="0.5" required>
+              </div>
+              <p class="texto-sm" style="flex:1;min-width:220px">Acima disso, o PDV pede o e-mail e a senha do dono para liberar. A venda registra quem autorizou.</p>
+              <button type="submit" class="btn btn-primario"><i data-lucide="check"></i>Salvar regra</button>
+            </form>
+          </div>
+          <div class="card">
+            <div class="card-cabecalho">
+              <div>
+                <h2>Usuários</h2>
+                <p class="texto-sm"><strong>Dono</strong>: acesso total. <strong>Vendedor</strong>: PDV, caixa, vendas e trocas, clientes, etiquetas e consulta de produtos/estoque (sem custos, relatórios, cancelamentos ou configurações).</p>
+              </div>
+              <button type="button" class="btn btn-primario" id="btn-novo-usuario"><i data-lucide="user-plus"></i>Novo usuário</button>
+            </div>
+            <div class="tabela-wrap">
+              <table class="tabela tabela-responsiva">
+                <thead><tr><th>Usuário</th><th>Perfil</th><th class="num">Comissão</th><th>Status</th><th class="col-acoes"><span class="sr-only">Ações</span></th></tr></thead>
+                <tbody id="lista-usuarios"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== Aparência (cor principal e tema) ===== -->
+        <section id="painel-aparencia" role="tabpanel" aria-labelledby="aba-aparencia" hidden>
+          <div class="form-layout">
+            <div class="form-secoes">
+              <div class="card">
+                <div class="card-cabecalho">
+                  <div>
+                    <h2>Cor principal</h2>
+                    <p class="texto-sm">Botões, links, menu, gráficos e tela de login. A versão do modo escuro é ajustada automaticamente.</p>
+                  </div>
+                </div>
+                <div class="card-corpo">
+                  <span class="rotulo" id="rot-paleta">Cores prontas</span>
+                  <div class="paleta-cores mt-2" id="paleta-cores" role="radiogroup" aria-labelledby="rot-paleta"></div>
+
+                  <div class="campo mt-6">
+                    <label for="cor-hex">Ou escolha qualquer cor</label>
+                    <div class="flex items-center gap-3" style="flex-wrap:wrap">
+                      <label class="seletor-cor" title="Abrir seletor de cor">
+                        <input type="color" id="cor-picker" aria-label="Seletor de cor">
+                        <i data-lucide="pipette"></i>
+                      </label>
+                      <input class="input mono" id="cor-hex" maxlength="7" placeholder="#4F46E5" autocomplete="off" spellcheck="false" style="max-width:150px;text-transform:uppercase" aria-describedby="cor-ajuda">
+                      <span class="ajuda" id="cor-ajuda">Código hexadecimal, ex.: #E11D48</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-cabecalho">
+                  <div>
+                    <h2>Prévia</h2>
+                    <p class="texto-sm">Como a cor fica no modo claro e no escuro.</p>
+                  </div>
+                </div>
+                <div class="card-corpo previas">
+                  <div class="previa-tema" data-tema="claro" id="previa-claro"></div>
+                  <div class="previa-tema" data-tema="escuro" id="previa-escuro"></div>
+                </div>
+              </div>
+            </div>
+
+            <aside class="form-lateral">
+              <div class="card">
+                <div class="card-cabecalho"><h2>Tema</h2></div>
+                <div class="card-corpo">
+                  <div class="chips" role="radiogroup" aria-label="Tema" id="opcoes-tema" style="display:grid;grid-template-columns:1fr;gap:8px">
+                    <button type="button" class="chip" role="radio" data-tema-opcao="claro" style="justify-content:flex-start"><i data-lucide="sun"></i>Claro</button>
+                    <button type="button" class="chip" role="radio" data-tema-opcao="escuro" style="justify-content:flex-start"><i data-lucide="moon"></i>Escuro</button>
+                    <button type="button" class="chip" role="radio" data-tema-opcao="auto" style="justify-content:flex-start"><i data-lucide="monitor"></i>Automático (segue o aparelho)</button>
+                  </div>
+                  <p class="texto-xs texto-3 mt-4">O tema vale só para este computador. A cor principal vale para todos que usam o sistema.</p>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div class="barra-acoes">
+            <button type="button" class="btn btn-secundario" id="btn-cor-padrao"><i data-lucide="rotate-ccw"></i>Voltar à cor padrão</button>
+            <button type="button" class="btn btn-primario" id="btn-salvar-cor"><i data-lucide="check"></i>Salvar cor</button>
+          </div>
+        </section>
+
+        <!-- ===== Sistema ===== -->
+        <section id="painel-sistema" role="tabpanel" aria-labelledby="aba-sistema" hidden>
+          <div class="grid-2">
+            <div class="card card-corpo">
+              <h2>Vendas e recibo</h2>
+              <p class="texto-sm mt-2">Toda venda finalizada gera um <strong>recibo de compra</strong> (não fiscal) para imprimir ou enviar no WhatsApp.</p>
+              <div class="etq-opcoes mt-4">
+                <label class="interruptor"><input type="checkbox" id="cfg-recibo-auto"><span>Abrir a impressão do recibo automaticamente</span></label>
+                <label class="interruptor"><input type="checkbox" id="cfg-emitir-nota"><span>Emitir nota fiscal (NFC-e)</span></label>
+              </div>
+              <p class="texto-xs texto-3 mt-2" id="cfg-nota-ajuda"></p>
+            </div>
+            <div class="card card-corpo">
+              <h2>Dados de exemplo</h2>
+              <p class="texto-sm mt-2">Este protótipo guarda suas alterações no navegador. Restaure para voltar aos produtos, vendas e clientes de exemplo.</p>
+              <button type="button" class="btn btn-perigo mt-4" id="btn-resetar"><i data-lucide="rotate-ccw"></i>Restaurar dados de exemplo</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/configuracoes.js"></script>
+</body>
+</html>

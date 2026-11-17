@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="vendas" data-titulo="Vendas">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Vendas</h1>
+            <p id="resumo">Carregando…</p>
+          </div>
+          <div class="pagina-acoes">
+            <button type="button" class="btn btn-secundario" id="btn-pdf"><i data-lucide="file-down"></i>Exportar PDF</button>
+            <a href="pdv.html" class="btn btn-primario"><i data-lucide="plus"></i>Nova venda</a>
+          </div>
+        </div>
+
+        <form id="filtros" role="search">
+          <input type="hidden" name="status" id="f-status">
+          <input type="hidden" name="forma" id="f-forma">
+
+          <!-- Período -->
+          <div class="periodo-barra">
+            <div class="alternar-visao periodo-rapido" role="radiogroup" aria-label="Período" id="periodo-rapido">
+              <button type="button" role="radio" data-periodo="hoje" aria-checked="false">Hoje</button>
+              <button type="button" role="radio" data-periodo="ontem" aria-checked="false">Ontem</button>
+              <button type="button" role="radio" data-periodo="7" aria-checked="false">7 dias</button>
+              <button type="button" role="radio" data-periodo="30" aria-checked="true">30 dias</button>
+              <button type="button" role="radio" data-periodo="mes" aria-checked="false">Este mês</button>
+              <button type="button" role="radio" data-periodo="personalizado" aria-checked="false"><i data-lucide="calendar-range"></i><span>Personalizado</span></button>
+            </div>
+            <div class="periodo-datas oculto" id="periodo-datas">
+              <label for="f-inicio" class="sr-only">Data inicial</label>
+              <input class="input" type="date" id="f-inicio" name="dataInicio" title="Data inicial">
+              <span class="texto-3">até</span>
+              <label for="f-fim" class="sr-only">Data final</label>
+              <input class="input" type="date" id="f-fim" name="dataFim" title="Data final">
+            </div>
+          </div>
+
+          <!-- Indicadores do período -->
+          <section class="grid-stats mt-4" id="indicadores" aria-label="Resumo do período"></section>
+
+          <!-- Formas de pagamento -->
+          <section class="card card-corpo mt-4 pagamentos-resumo" aria-label="Como os clientes pagaram">
+            <div class="flex items-center justify-between gap-3">
+              <h2>Como os clientes pagaram</h2>
+              <span class="texto-xs texto-3">Clique numa forma para filtrar</span>
+            </div>
+            <div class="barra-formas mt-4" id="barra-formas" aria-hidden="true"></div>
+            <div class="legenda-formas mt-4" id="legenda-formas"></div>
+          </section>
+
+          <!-- Situação + busca -->
+          <div class="abas mt-6" role="tablist" aria-label="Situação das vendas" id="abas-status" style="margin-bottom:var(--esp-4)"></div>
+          <div class="vendas-busca">
+            <div class="busca">
+              <i data-lucide="search"></i>
+              <label for="f-busca" class="sr-only">Buscar</label>
+              <input class="input" type="search" id="f-busca" name="busca" placeholder="Nº da venda, cliente ou produto">
+            </div>
+            <div class="filtros-ativos" id="filtros-ativos" style="margin:0"></div>
+          </div>
+        </form>
+
+        <section class="card mt-4" id="lista-vendas"></section>
+        <div id="paginacao" class="card mt-4 oculto"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <!-- Geração de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="../js/pdf.js"></script>
+  <script src="../js/vendas.js"></script>
+</body>
+</html>

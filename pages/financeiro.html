@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financeiro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="financeiro" data-titulo="Financeiro">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Financeiro</h1>
+            <p>Crediário dos clientes (a receber) e contas da loja (a pagar).</p>
+          </div>
+          <div class="pagina-acoes">
+            <button type="button" class="btn btn-primario" id="btn-nova-conta"><i data-lucide="plus"></i>Nova conta a pagar</button>
+          </div>
+        </div>
+
+        <section class="grid-stats" aria-label="Resumo financeiro">
+          <article class="card stat"><div class="stat-topo"><span class="stat-rotulo">A receber (crediário)</span><span class="stat-icone"><i data-lucide="hand-coins"></i></span></div>
+            <div class="stat-valor" id="k-receber">—</div><div class="stat-detalhe">Parcelas em aberto</div></article>
+          <article class="card stat"><div class="stat-topo"><span class="stat-rotulo">Recebimentos vencidos</span><span class="stat-icone" style="background:var(--cor-perigo-suave);color:var(--cor-perigo)"><i data-lucide="calendar-x"></i></span></div>
+            <div class="stat-valor" id="k-receber-venc">—</div><div class="stat-detalhe">Cobrar dos clientes</div></article>
+          <article class="card stat"><div class="stat-topo"><span class="stat-rotulo">A pagar nos próximos 7 dias</span><span class="stat-icone"><i data-lucide="calendar-clock"></i></span></div>
+            <div class="stat-valor" id="k-pagar7">—</div><div class="stat-detalhe" id="k-pagar-total">&nbsp;</div></article>
+          <article class="card stat stat-alerta"><div class="stat-topo"><span class="stat-rotulo">Contas vencidas</span><span class="stat-icone"><i data-lucide="triangle-alert"></i></span></div>
+            <div class="stat-valor" id="k-pagar-venc">—</div><div class="stat-detalhe">Pagar com urgência</div></article>
+        </section>
+
+        <div class="abas secao" role="tablist" aria-label="Contas">
+          <button type="button" class="aba" role="tab" id="aba-receber" aria-controls="painel-receber" aria-selected="true">A receber (crediário)</button>
+          <button type="button" class="aba" role="tab" id="aba-pagar" aria-controls="painel-pagar" aria-selected="false" tabindex="-1">A pagar</button>
+        </div>
+
+        <!-- A receber -->
+        <section id="painel-receber" role="tabpanel" aria-labelledby="aba-receber">
+          <form class="filtros" id="filtros-receber" role="search" style="--filtros-colunas: 3">
+            <div class="busca"><i data-lucide="search"></i><label for="r-busca" class="sr-only">Buscar</label>
+              <input class="input" type="search" id="r-busca" name="busca" placeholder="Cliente ou nº da venda"></div>
+            <div class="campo"><label for="r-status" class="sr-only">Situação</label>
+              <select class="select" id="r-status" name="status">
+                <option value="">Em aberto e vencidas</option>
+                <option value="vencido">Só vencidas</option>
+                <option value="aberto">Só a vencer</option>
+                <option value="pago">Pagas</option>
+              </select></div>
+            <div class="campo"><label for="r-inicio" class="sr-only">Vencimento de</label><input class="input" type="date" id="r-inicio" name="dataInicio" title="Vencimento de"></div>
+            <div class="campo"><label for="r-fim" class="sr-only">Vencimento até</label><input class="input" type="date" id="r-fim" name="dataFim" title="Vencimento até"></div>
+          </form>
+          <section class="card">
+            <div class="tabela-wrap">
+              <table class="tabela tabela-responsiva">
+                <thead><tr><th>Cliente</th><th>Venda</th><th>Parcela</th><th>Vencimento</th><th class="num">Valor</th><th class="num">Falta</th><th>Situação</th><th class="col-acoes"><span class="sr-only">Ações</span></th></tr></thead>
+                <tbody id="lista-receber"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- A pagar -->
+        <section id="painel-pagar" role="tabpanel" aria-labelledby="aba-pagar" hidden>
+          <form class="filtros" id="filtros-pagar" role="search" style="--filtros-colunas: 3">
+            <div class="busca"><i data-lucide="search"></i><label for="p-busca" class="sr-only">Buscar</label>
+              <input class="input" type="search" id="p-busca" name="busca" placeholder="Descrição, fornecedor, documento"></div>
+            <div class="campo"><label for="p-status" class="sr-only">Situação</label>
+              <select class="select" id="p-status" name="status">
+                <option value="">Todas</option>
+                <option value="vencido">Vencidas</option>
+                <option value="aberto">A vencer</option>
+                <option value="pago">Pagas</option>
+              </select></div>
+            <div class="campo"><label for="p-inicio" class="sr-only">Vencimento de</label><input class="input" type="date" id="p-inicio" name="dataInicio" title="Vencimento de"></div>
+            <div class="campo"><label for="p-fim" class="sr-only">Vencimento até</label><input class="input" type="date" id="p-fim" name="dataFim" title="Vencimento até"></div>
+          </form>
+          <section class="card">
+            <div class="tabela-wrap">
+              <table class="tabela tabela-responsiva">
+                <thead><tr><th>Conta</th><th>Fornecedor</th><th>Categoria</th><th>Vencimento</th><th class="num">Valor</th><th>Situação</th><th class="col-acoes"><span class="sr-only">Ações</span></th></tr></thead>
+                <tbody id="lista-pagar"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/financeiro.js"></script>
+</body>
+</html>
