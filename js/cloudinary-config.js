@@ -7,7 +7,7 @@
    Vazio      → as fotos ficam dentro do próprio registro (reduzidas).
    ========================================================================== */
 window.CLOUDINARY_CONFIG = {
-  cloudName: '',     // ex.: 'dxyz123ab'
-  uploadPreset: '',  // ex.: 'phimports_fotos' (sem assinatura)
+  cloudName: 'dbr6ytslw',
+  uploadPreset: 'phimports_fotos', // preset "Não assinado"
   pasta: 'phimports'
 };
