@@ -60,7 +60,7 @@ O sistema funciona em dois modos, escolhidos sozinhos:
 1. No [console do Firebase](https://console.firebase.google.com), crie o projeto, ative **Authentication → E-mail/senha** e crie o **Firestore** (região `southamerica-east1`).
 2. Em **Configurações do projeto → Seus apps → Web**, copie o `firebaseConfig` para `js/firebase-config.js`.
 3. Em **Firestore → Regras**, cole o conteúdo de `firestore.rules` e publique.
-4. Abra o sistema e clique em **"Primeira vez? Criar a conta da loja"**. Quem cria vira o **dono**. Vendedoras são convidadas em **Configurações → Usuários** (recebem um e-mail para criar a senha).
+4. Abra `index.html#criar-loja` (o link "Criar a conta da loja" só aparece com esse final no endereço). Quem cria vira o **dono**. Vendedoras são convidadas em **Configurações → Usuários** (recebem um e-mail para criar a senha).
 
 ### Estrutura no Firestore
 - `acessos/{uid}` — liga cada login à loja e ao perfil (dono/vendedor).

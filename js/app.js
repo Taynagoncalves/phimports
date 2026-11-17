@@ -596,11 +596,9 @@
     // Se for igual ao guardado, o menu mostrado na abertura da página é mantido (sem piscar).
     const sidebarHtml = `
       <div class="sidebar-logo">
-        <div class="logo-marca">${loja.logo ? `<img src="${loja.logo}" alt="">` : escapeHtml(iniciais(loja.nome))}</div>
-        <div class="logo-texto">
-          <div class="logo-nome">${escapeHtml(loja.nome)}</div>
-          <div class="logo-sub">Gestão da loja</div>
-        </div>
+        <a href="dashboard.html" class="sidebar-logo-img" title="${escapeHtml(loja.nome)} — início">
+          <img src="../img/logo-phimports.png" alt="${escapeHtml(loja.nome || 'PH Imports')}">
+        </a>
         <button type="button" class="btn-icone btn-recolher" id="btn-recolher" aria-label="Recolher menu" title="Recolher menu">${icone('panel-left-close')}</button>
       </div>
       <nav class="sidebar-nav" aria-label="Menu principal">

@@ -753,3 +753,31 @@
 .partes-pagamento .lista-item { padding: 6px 0 !important; border-color: var(--cor-destaque-borda); }
 #btn-add-pagamento { white-space: normal; text-align: left; min-height: 44px; }
 #btn-add-pagamento:not(:disabled) { border-color: var(--cor-destaque); color: var(--cor-destaque-forte); background: var(--cor-destaque-suave); }
+
+/* ---------- Login simples (logo + e-mail + senha) ---------- */
+.login-simples {
+  min-height: 100vh;
+  display: grid; place-items: center;
+  padding: var(--esp-6) var(--esp-4);
+  background: var(--cor-fundo);
+}
+.login-caixa { width: 100%; max-width: 360px; display: grid; gap: var(--esp-8); }
+.login-logo { width: 100%; max-width: 300px; height: auto; margin: 0 auto; }
+[data-tema="escuro"] .login-logo { filter: invert(1); }
+.login-caixa form { display: grid; gap: var(--esp-3); }
+.login-caixa .input { min-height: 48px; font-size: var(--fs-md); }
+.login-caixa .checkbox { margin: 2px 0 6px; }
+
+/* ---------- Logo no topo do menu lateral ---------- */
+.sidebar-logo-img { flex: 1; min-width: 0; display: flex; align-items: center; height: 100%; padding: 6px 0; text-decoration: none !important; }
+.sidebar-logo-img img { max-width: 150px; max-height: 44px; width: auto; height: auto; object-fit: contain; }
+[data-tema="escuro"] .sidebar-logo-img img { filter: invert(1); }
+/* Menu só com ícones (tablet ou recolhido): logo pequeno e centralizado */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .sidebar-logo-img { justify-content: center; padding: 0 8px; }
+  .sidebar-logo-img img { max-width: 52px; }
+}
+@media (min-width: 1200px) {
+  .menu-recolhido .sidebar-logo { padding: 0 6px; }
+  .menu-recolhido .sidebar-logo .sidebar-logo-img { display: none; }
+}

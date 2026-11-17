@@ -380,7 +380,7 @@
      ================================================================== */
 
   /** Faz login. Nuvem: e-mail e senha de verdade. Local: aceita qualquer senha (protótipo). */
-  async function entrar(email, senha) {
+  async function entrar(email, senha, lembrar = true) {
     if (MODO === 'local') {
       const usuario = db.usuarios.find((u) => normalizar(u.email) === normalizar(email)) || db.usuarios[0];
       try { localStorage.setItem(CHAVE_SESSAO, JSON.stringify(usuario)); } catch (e) { /* ignora */ }
@@ -388,7 +388,11 @@
     }
     iniciarFirebase();
     let cred;
-    try { cred = await fb.auth.signInWithEmailAndPassword(String(email).trim(), senha); } catch (e) { throw new Error(traduzirErro(e)); }
+    try {
+      // Lembrar de mim: continua logado ao fechar o navegador; senão, só nesta janela
+      await fb.auth.setPersistence(lembrar ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION);
+      cred = await fb.auth.signInWithEmailAndPassword(String(email).trim(), senha);
+    } catch (e) { throw new Error(traduzirErro(e)); }
     try {
       const acesso = await lerAcesso(cred.user);
       return { id: cred.user.uid, nome: acesso.nome, email: acesso.email, perfil: acesso.perfil };

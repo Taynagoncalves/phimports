@@ -8,18 +8,24 @@ App.aoIniciar(async () => {
   const nuvem = Data.modo === 'nuvem';
   const form = document.getElementById('form-login');
 
+  const CHAVE_EMAIL = 'gestaoloja:lembrar-email';
   if (nuvem) {
     // Já está logado? Vai direto para o sistema
     const logado = await Data.pronto().catch(() => null);
     if (logado) { location.replace('pages/dashboard.html'); return; }
-    form.email.value = '';
-    form.senha.value = '';
-    document.getElementById('aviso-prototipo').classList.add('oculto');
-    document.getElementById('primeiro-acesso').classList.remove('oculto');
+    // Primeiro acesso (criar a loja) só pelo endereço index.html#criar-loja
+    if (location.hash === '#criar-loja') document.getElementById('primeiro-acesso').classList.remove('oculto');
+  } else {
+    document.getElementById('aviso-prototipo').classList.remove('oculto');
   }
+  // Lembrar de mim: e-mail já preenchido na próxima vez
+  try {
+    const salvo = localStorage.getItem(CHAVE_EMAIL);
+    if (salvo) { form.email.value = salvo; form.senha.focus(); } else form.email.focus();
+  } catch (e) { /* ignora */ }
 
-  /* ---------- Esqueci minha senha ---------- */
-  document.getElementById('esqueci').addEventListener('click', async (e) => {
+  /* ---------- Esqueci minha senha (se o link existir na tela) ---------- */
+  document.getElementById('esqueci')?.addEventListener('click', async (e) => {
     e.preventDefault();
     if (!nuvem) return App.toast('Enviamos um link de recuperação para o seu e-mail (simulação).', 'sucesso');
     const email = form.email.value.trim();
@@ -38,7 +44,9 @@ App.aoIniciar(async () => {
     botao.disabled = true;
     botao.textContent = 'Entrando…';
     try {
-      await Data.entrar(form.email.value, form.senha.value);
+      const lembrar = form.lembrar.checked;
+      await Data.entrar(form.email.value, form.senha.value, lembrar);
+      try { lembrar ? localStorage.setItem(CHAVE_EMAIL, form.email.value.trim()) : localStorage.removeItem(CHAVE_EMAIL); } catch (er) { /* ignora */ }
       location.href = 'pages/dashboard.html';
     } catch (erro) {
       App.toast(erro.message, 'erro', 6000);
