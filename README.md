@@ -60,7 +60,7 @@ O sistema funciona em dois modos, escolhidos sozinhos:
 1. No [console do Firebase](https://console.firebase.google.com), crie o projeto, ative **Authentication → E-mail/senha** e crie o **Firestore** (região `southamerica-east1`).
 2. Em **Configurações do projeto → Seus apps → Web**, copie o `firebaseConfig` para `js/firebase-config.js`.
 3. Em **Firestore → Regras**, cole o conteúdo de `firestore.rules` e publique.
-4. Abra `index.html#criar-loja` (o link "Criar a conta da loja" só aparece com esse final no endereço). Quem cria vira o **dono**. Vendedoras são convidadas em **Configurações → Usuários** (recebem um e-mail para criar a senha).
+4. **Lojas e senhas são do suporte:** abra `suporte/nova-loja.html` pelo Live Server (no seu computador) para criar a loja de uma cliente (conta da dona + loja na nuvem) ou mandar o e-mail de troca de senha. Essa pasta **não vai para o site publicado**. A tela de entrada da cliente tem só e-mail, senha e "Lembrar de mim". Quem cria vira o **dono**. Vendedoras são convidadas em **Configurações → Usuários** (recebem um e-mail para criar a senha).
 
 ### Estrutura no Firestore
 - `acessos/{uid}` — liga cada login à loja e ao perfil (dono/vendedor).
@@ -69,7 +69,14 @@ O sistema funciona em dois modos, escolhidos sozinhos:
 
 As regras de negócio continuam em `js/data.js`: as funções alteram os dados em memória e `persistir()` envia ao Firestore só o que mudou.
 
-### Publicar o site (Firebase Hosting)
+### Publicar o site
+**Render (Static Site, grátis):** New → Static Site → repositório `phimports`, branch `main`.
+- Build Command: `mkdir -p dist && cp -r index.html css js img pages dist/`
+- Publish Directory: `dist`
+
+(O build copia só o sistema, sem a pasta `suporte/`.)
+
+**Ou Firebase Hosting:**
 ```
 npm install -g firebase-tools
 firebase login

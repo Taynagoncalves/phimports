@@ -9,6 +9,7 @@
       "firestore.rules",
       "README.md",
       "exemplos/**",
+      "suporte/**",
       "**/.*",
       "**/node_modules/**"
     ],

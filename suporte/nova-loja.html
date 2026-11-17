@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suporte — PH Imports</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <style>
+    .suporte { max-width: 720px; margin: 0 auto; padding: 40px 16px 80px; display: grid; gap: 24px; }
+    .suporte header img { width: 160px; height: auto; }
+    [data-tema="escuro"] .suporte header img { filter: invert(1); }
+  </style>
+</head>
+<!--
+  Ferramenta do SUPORTE (não vai para o site publicado: está no "ignore" do firebase.json).
+  Use pelo Live Server, no seu computador:
+  - Criar a loja de uma cliente nova (cria a conta da dona e a loja na nuvem).
+  - Mandar o e-mail para alguém criar uma senha nova.
+-->
+<body data-titulo="Suporte">
+  <main class="suporte">
+    <header class="flex items-center justify-between gap-4" style="flex-wrap:wrap">
+      <img src="../img/logo-phimports.png" alt="PH Imports">
+      <span class="badge badge-info">Ferramenta do suporte</span>
+    </header>
+
+    <section class="card">
+      <div class="card-cabecalho"><div><h2>Criar a loja de uma cliente</h2><p class="texto-sm">Cria a conta da dona (perfil dono) e a loja na nuvem. Passe o e-mail e a senha para a cliente.</p></div></div>
+      <form class="card-corpo form-grid" id="form-loja" novalidate>
+        <div class="campo col-span-2">
+          <label for="s-loja">Nome da loja <span class="obrigatorio">*</span></label>
+          <input class="input" id="s-loja" required maxlength="60">
+        </div>
+        <div class="campo col-span-2">
+          <label for="s-nome">Nome da dona <span class="obrigatorio">*</span></label>
+          <input class="input" id="s-nome" required>
+        </div>
+        <div class="campo">
+          <label for="s-email">E-mail de acesso <span class="obrigatorio">*</span></label>
+          <input class="input" id="s-email" type="email" required autocomplete="off">
+        </div>
+        <div class="campo">
+          <label for="s-senha">Senha inicial (mín. 6) <span class="obrigatorio">*</span></label>
+          <input class="input" id="s-senha" type="text" required minlength="6" autocomplete="off">
+        </div>
+        <label class="checkbox col-span-2"><input type="checkbox" id="s-exemplo"> Com produtos e vendas de exemplo (loja de demonstração)</label>
+        <div class="col-span-2"><button type="submit" class="btn btn-primario"><i data-lucide="store"></i>Criar loja</button></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card-cabecalho"><div><h2>Esqueceu a senha</h2><p class="texto-sm">Envia para o e-mail da pessoa um link para ela criar uma senha nova.</p></div></div>
+      <form class="card-corpo flex gap-2 items-end" id="form-senha" novalidate style="flex-wrap:wrap">
+        <div class="campo" style="flex:1;min-width:240px">
+          <label for="s-email-senha">E-mail da pessoa</label>
+          <input class="input" id="s-email-senha" type="email" required autocomplete="off">
+        </div>
+        <button type="submit" class="btn btn-secundario"><i data-lucide="mail"></i>Enviar link</button>
+      </form>
+    </section>
+
+    <p class="texto-xs texto-3">Também dá para fazer isso pelo console do Firebase, em <strong>Authentication → Usuários</strong>.</p>
+  </main>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script>
+    App.aoIniciar(() => {
+      if (Data.modo !== 'nuvem') App.toast('O Firebase não está configurado (js/firebase-config.js).', 'erro', 8000);
+
+      const formLoja = document.getElementById('form-loja');
+      formLoja.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!App.validarFormulario(formLoja)) return;
+        const senha = document.getElementById('s-senha').value;
+        if (senha.length < 6) return App.toast('A senha precisa ter pelo menos 6 caracteres.', 'erro');
+        const botao = formLoja.querySelector('button[type=submit]');
+        botao.disabled = true;
+        const dados = {
+          nomeLoja: document.getElementById('s-loja').value.trim(),
+          nome: document.getElementById('s-nome').value.trim(),
+          email: document.getElementById('s-email').value.trim(),
+          senha,
+          exemplo: document.getElementById('s-exemplo').checked
+        };
+        try {
+          await Data.criarLoja(dados);
+          await Data.sair(); // não deixa o suporte logado como a cliente
+          App.abrirModal({
+            titulo: 'Loja criada',
+            tamanho: 'sm',
+            corpo: `<p class="texto-sm">Passe estes dados para a cliente:</p>
+              <dl class="detalhes mt-4">
+                <div><dt>Loja</dt><dd>${App.escapeHtml(dados.nomeLoja)}</dd></div>
+                <div><dt>E-mail</dt><dd>${App.escapeHtml(dados.email)}</dd></div>
+                <div><dt>Senha inicial</dt><dd class="mono">${App.escapeHtml(dados.senha)}</dd></div>
+              </dl>`,
+            acoes: [{ texto: 'Fechar', classe: 'btn-primario' }]
+          });
+          formLoja.reset();
+        } catch (erro) {
+          App.toast(erro.message, 'erro', 8000);
+        }
+        botao.disabled = false;
+      });
+
+      const formSenha = document.getElementById('form-senha');
+      formSenha.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!App.validarFormulario(formSenha)) return;
+        const email = document.getElementById('s-email-senha').value.trim();
+        try {
+          await Data.recuperarSenha(email);
+          App.toast(`Link enviado para ${email} (se houver uma conta com esse e-mail). Peça para olhar também o spam.`, 'sucesso', 8000);
+          formSenha.reset();
+        } catch (erro) { App.toast(erro.message, 'erro'); }
+      });
+    });
+  </script>
+</body>
+</html>
