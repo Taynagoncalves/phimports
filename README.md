@@ -51,5 +51,28 @@ Visual limpo: fundo branco, cinzas frios, índigo como cor de destaque e fonte *
 - `js/cadastro.js`: tela genérica de cadastro, usada por clientes e fornecedores
 - `js/<página>.js`: lógica de cada tela
 
-## Trocando para o Firebase
-Reescreva só o corpo das funções de `js/data.js`, mantendo os mesmos nomes, parâmetros e retornos. Todas já retornam `Promise`, então as páginas não mudam.
+## Banco de dados na nuvem (Firebase)
+O sistema funciona em dois modos, escolhidos sozinhos:
+- **Local** (`js/firebase-config.js` vazio): protótipo com dados de exemplo guardados no navegador.
+- **Nuvem** (`js/firebase-config.js` preenchido): login de verdade (Firebase Authentication) e dados no Firestore, sincronizados em tempo real entre computadores e celulares, com cache para continuar funcionando se a internet cair.
+
+### Configurar
+1. No [console do Firebase](https://console.firebase.google.com), crie o projeto, ative **Authentication → E-mail/senha** e crie o **Firestore** (região `southamerica-east1`).
+2. Em **Configurações do projeto → Seus apps → Web**, copie o `firebaseConfig` para `js/firebase-config.js`.
+3. Em **Firestore → Regras**, cole o conteúdo de `firestore.rules` e publique.
+4. Abra o sistema e clique em **"Primeira vez? Criar a conta da loja"**. Quem cria vira o **dono**. Vendedoras são convidadas em **Configurações → Usuários** (recebem um e-mail para criar a senha).
+
+### Estrutura no Firestore
+- `acessos/{uid}` — liga cada login à loja e ao perfil (dono/vendedor).
+- `lojas/{lojaId}/ajustes/{loja|fiscal|config|cores|tamanhos|categorias}`
+- `lojas/{lojaId}/{produtos|vendas|clientes|caixas|…}/{id}` — um documento por registro.
+
+As regras de negócio continuam em `js/data.js`: as funções alteram os dados em memória e `persistir()` envia ao Firestore só o que mudou.
+
+### Publicar o site (Firebase Hosting)
+```
+npm install -g firebase-tools
+firebase login
+firebase use --add      (escolha o projeto)
+firebase deploy
+```
