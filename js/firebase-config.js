@@ -8,14 +8,11 @@
    Estes dados não são secretos (ficam visíveis no site de qualquer forma).
    Quem protege as informações são as regras em firestore.rules.
    ========================================================================== */
-window.FIREBASE_CONFIG = null;
-/* Exemplo:
 window.FIREBASE_CONFIG = {
-  apiKey: 'AIza...',
-  authDomain: 'seu-projeto.firebaseapp.com',
-  projectId: 'seu-projeto',
-  storageBucket: 'seu-projeto.appspot.com',
-  messagingSenderId: '000000000000',
-  appId: '1:000000000000:web:0000000000000000'
+  apiKey: 'AIzaSyDB5QA502gyWmvaEd0ABhfrZvyUL1oWmhE',
+  authDomain: 'phimports.firebaseapp.com',
+  projectId: 'phimports',
+  storageBucket: 'phimports.firebasestorage.app',
+  messagingSenderId: '9872726574',
+  appId: '1:9872726574:web:c12279d9cda7e4a5ed5dbf'
 };
-*/
