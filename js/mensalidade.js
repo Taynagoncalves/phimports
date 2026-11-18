@@ -17,9 +17,9 @@ App.aoIniciar(async () => {
   async function desenhar() {
     let m;
     try { m = await Data.obterMensalidade(); } catch (e) { el.innerHTML = `<div class="alerta">${App.escapeHtml(e.message)}</div>`; return; }
-    const { assinatura, pagamentos, situacao } = m;
+    const { assinatura, pagamentos, situacao, implantacao } = m;
 
-    if (!assinatura || situacao.status === 'sem') {
+    if (!assinatura || (situacao.status === 'sem' && implantacao.status === 'sem')) {
       el.innerHTML = `<div class="card">${App.estadoVazio({ icone: 'badge-check', titulo: 'Nenhuma mensalidade cadastrada', texto: 'Quando o suporte cadastrar a mensalidade do sistema, ela aparece aqui com o Pix para pagamento.' })}</div>`;
       App.icones();
       return;
@@ -38,7 +38,37 @@ App.aoIniciar(async () => {
       try { codigo = Pix.gerarCodigo({ chave: pix.chave, nome: pix.nome, cidade: pix.cidade, valor: assinatura.valor, txid, descricao: `Mensalidade ${situacao.competencia}` }); } catch (e) { codigo = ''; }
     }
 
-    el.innerHTML = `
+    // Implantação pendente: Pix de pagamento único
+    let codigoImpl = '';
+    if (implantacao.status === 'pendente' && pix.chave) {
+      try { codigoImpl = Pix.gerarCodigo({ chave: pix.chave, nome: pix.nome, cidade: pix.cidade, valor: implantacao.valor, txid: `PHIMPL${String(m.lojaId).slice(-10)}`, descricao: 'Implantacao do sistema' }); } catch (e) { codigoImpl = ''; }
+    }
+    const blocoImplantacao = implantacao.status === 'sem' ? '' : `
+      <section class="card card-corpo implantacao mb-4">
+        <div class="implantacao-topo">
+          <div>
+            <span class="texto-sm texto-3">Implantação do sistema · pagamento único</span>
+            <div class="mensalidade-valor" style="font-size:2rem">${moeda(implantacao.valor)}</div>
+          </div>
+          ${{ paga: '<span class="badge badge-sucesso">Paga</span>', informada: '<span class="badge badge-info">Pagamento informado — aguardando confirmação</span>', pendente: '<span class="badge badge-alerta">Pendente</span>' }[implantacao.status]}
+        </div>
+        ${implantacao.status === 'paga' ? `<p class="texto-sm mt-2">Paga em ${App.formatarData(implantacao.pagamento.pagoEm)}. Obrigado!</p>` : ''}
+        ${implantacao.status === 'pendente' ? (codigoImpl ? `
+          <div class="implantacao-pix">
+            <div class="pix-qr" style="width:180px;margin:0">${Pix.qrSvg(codigoImpl, 5)}</div>
+            <div style="flex:1;min-width:240px">
+              <p class="texto-sm texto-3">Pague pelo Pix (QR Code ou copia e cola). O valor já vem preenchido.</p>
+              <label class="rotulo mt-2" for="pix-impl">Pix copia e cola</label>
+              <div class="flex gap-2 mt-2">
+                <input class="input mono" id="pix-impl" readonly value="${App.escapeHtml(codigoImpl)}" style="flex:1">
+                <button type="button" class="btn btn-secundario" data-copiar="pix-impl"><i data-lucide="copy"></i>Copiar</button>
+              </div>
+              <button type="button" class="btn btn-primario mt-4" id="btn-impl-paguei"><i data-lucide="check-check"></i>Já paguei a implantação</button>
+            </div>
+          </div>` : '<p class="texto-sm mt-2">Fale com o suporte para pagar a implantação.</p>') : ''}
+      </section>`;
+
+    el.innerHTML = blocoImplantacao + (situacao.status === 'sem' ? '' : `
       <div class="mensalidade-grade">
         <section class="card card-corpo mensalidade-resumo">
           <span class="texto-sm texto-3">Mensalidade do sistema</span>
@@ -72,19 +102,29 @@ App.aoIniciar(async () => {
               <h3>${situacao.status === 'pago' ? 'Mensalidade em dia' : 'Aguardando confirmação'}</h3>
               <p>${situacao.status === 'pago' ? 'Nada a pagar neste mês.' : 'O suporte vai conferir o seu Pix.'}</p></div>`}
         </section>
-      </div>
+      </div>`) + `
 
       <section class="card mt-4">
         <div class="card-cabecalho"><h2>Histórico de pagamentos</h2></div>
         ${pagamentos.length ? `<ul class="lista">${pagamentos.map((p) => `
           <li class="lista-item">
             <span class="stat-icone" style="width:32px;height:32px;background:var(--cor-sucesso-suave);color:var(--cor-sucesso)"><i data-lucide="check"></i></span>
-            <div class="info"><div class="titulo">${nomeMes(p.competencia)}</div><div class="sub">Pago em ${App.formatarData(p.pagoEm)} · ${App.escapeHtml(p.forma === 'pix' ? 'Pix' : p.forma || '')}</div></div>
+            <div class="info"><div class="titulo">${p.competencia === 'implantacao' ? 'Implantação do sistema' : nomeMes(p.competencia)}</div><div class="sub">Pago em ${App.formatarData(p.pagoEm)} · ${App.escapeHtml(p.forma === 'pix' ? 'Pix' : p.forma || '')}</div></div>
             <span class="valor">${moeda(p.valor)}</span>
           </li>`).join('')}</ul>`
         : '<p class="card-corpo texto-sm texto-3">Nenhum pagamento registrado ainda.</p>'}
       </section>`;
 
+    document.querySelectorAll('[data-copiar]').forEach((b) => b.addEventListener('click', async () => {
+      const campo = document.getElementById(b.dataset.copiar);
+      try { await navigator.clipboard.writeText(campo.value); } catch (e) { campo.select(); document.execCommand('copy'); }
+      App.toast('Código Pix copiado! Cole no app do banco em "Pix copia e cola".', 'sucesso');
+    }));
+    document.getElementById('btn-impl-paguei')?.addEventListener('click', async () => {
+      const ok = await App.confirmar({ titulo: 'Avisar pagamento da implantação?', mensagem: `Confirme que você já pagou ${moeda(implantacao.valor)} pelo Pix referente à implantação do sistema.`, textoConfirmar: 'Sim, já paguei' });
+      if (!ok) return;
+      try { await Data.informarPagamentoMensalidade('implantacao'); App.toast('Aviso enviado ao suporte. Obrigado!', 'sucesso'); desenhar(); } catch (e) { App.toast(e.message, 'erro'); }
+    });
     document.getElementById('btn-copiar')?.addEventListener('click', async () => {
       const campo = document.getElementById('pix-copia');
       try { await navigator.clipboard.writeText(campo.value); } catch (e) { campo.select(); document.execCommand('copy'); }

@@ -493,7 +493,8 @@
       const dadosLoja = ajuste && ajuste.exists ? ajuste.data() : {};
       l.nome = dadosLoja.nome || l.nome || (l.assinatura && l.assinatura.nomeLoja) || 'Loja sem nome';
       l.telefone = dadosLoja.telefone || '';
-      l.situacao = situacaoMensalidade(l.assinatura, l.pagamentos, l.avisos);
+      l.situacao = situacaoMensalidade(l.assinatura, l.pagamentos.filter((p) => p.competencia !== 'implantacao'), l.avisos);
+      l.implantacao = situacaoImplantacao(l.assinatura, l.pagamentos, l.avisos);
     }));
     return Object.values(mapa).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   }
@@ -504,14 +505,15 @@
     const dia = Math.min(28, Math.max(1, parseInt(dados.diaVencimento, 10) || 10));
     await fb.fs.collection('assinaturas').doc(id).set({
       nomeLoja: dados.nomeLoja || '', valor, diaVencimento: dia, inicio: dados.inicio || new Date().toISOString().slice(0, 7),
-      ativa: dados.ativa !== false, observacao: dados.observacao || '', atualizadoEm: new Date().toISOString()
+      ativa: dados.ativa !== false, observacao: dados.observacao || '', atualizadoEm: new Date().toISOString(),
+      ...(dados.implantacaoValor !== undefined ? { implantacaoValor: Math.round(Number(dados.implantacaoValor || 0) * 100) / 100 } : {})
     }, { merge: true });
     return true;
   }
 
   async function adminRegistrarPagamento(id, { competencia, valor, pagoEm, forma = 'pix', observacao = '' }) {
     exigirSuperAdmin();
-    if (!/^\d{4}-\d{2}$/.test(competencia || '')) throw new Error('Informe o mês de referência.');
+    if (competencia !== 'implantacao' && !/^\d{4}-\d{2}$/.test(competencia || '')) throw new Error('Informe o mês de referência.');
     await fb.fs.collection('assinaturas').doc(id).collection('pagamentos').doc(competencia).set({
       competencia, valor: Math.round(Number(valor || 0) * 100) / 100, pagoEm: pagoEm || new Date().toISOString().slice(0, 10),
       forma, observacao, registradoEm: new Date().toISOString()
@@ -546,7 +548,7 @@
   }
 
   /** Cria a loja de uma cliente nova (conta do dono + loja vazia + mensalidade), sem sair do painel */
-  async function adminCriarLoja({ nomeLoja, nome, email, senha, valor = 0, diaVencimento = 10 }) {
+  async function adminCriarLoja({ nomeLoja, nome, email, senha, valor = 0, diaVencimento = 10, implantacaoValor = 300 }) {
     exigirSuperAdmin();
     if (!nomeLoja || !email || !senha) throw new Error('Preencha nome da loja, e-mail e senha.');
     if (String(senha).length < 6) throw new Error('A senha precisa ter pelo menos 6 caracteres.');
@@ -568,7 +570,7 @@
     AJUSTES.forEach((n) => lote.set(ref.collection('ajustes').doc(n), ajusteParaDoc(n, clonar(base[n]))));
     base.usuarios.forEach((u) => lote.set(ref.collection('usuarios').doc(u.id), clonar(u)));
     await lote.commit();
-    await adminSalvarAssinatura(novaLoja, { nomeLoja, valor, diaVencimento, ativa: true });
+    await adminSalvarAssinatura(novaLoja, { nomeLoja, valor, diaVencimento, ativa: true, implantacaoValor });
     return { lojaId: novaLoja, uid };
   }
 
@@ -587,6 +589,16 @@
     return { status: dias > 0 ? 'atrasado' : 'aberto', competencia, vencimento, diasAtraso: Math.max(0, dias) };
   }
 
+  /** Implantação (pagamento único): sem, paga, informada ou pendente */
+  function situacaoImplantacao(assinatura, pagamentos, avisos) {
+    const valor = assinatura && assinatura.implantacaoValor > 0 ? assinatura.implantacaoValor : 0;
+    if (!valor) return { status: 'sem', valor: 0 };
+    const pago = pagamentos.find((p) => p.competencia === 'implantacao');
+    if (pago) return { status: 'paga', valor, pagamento: pago };
+    if (avisos.find((a) => a.competencia === 'implantacao' && a.status !== 'recusado')) return { status: 'informada', valor };
+    return { status: 'pendente', valor };
+  }
+
   /** Mensalidade da loja de quem está logado (dono) */
   async function obterMensalidade() {
     if (MODO !== 'nuvem') return { assinatura: null, pagamentos: [], avisos: [], situacao: { status: 'sem' } };
@@ -596,7 +608,9 @@
     const assinatura = doc.exists ? doc.data() : null;
     const pagamentos = pags.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.competencia).localeCompare(String(a.competencia)));
     const avisos = avs.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm)));
-    return { lojaId, assinatura, pagamentos, avisos, situacao: situacaoMensalidade(assinatura, pagamentos, avisos) };
+    // A mensalidade (situação do mês) ignora o pagamento da implantação
+    const mensais = pagamentos.filter((p) => p.competencia !== 'implantacao');
+    return { lojaId, assinatura, pagamentos, avisos, situacao: situacaoMensalidade(assinatura, mensais, avisos), implantacao: situacaoImplantacao(assinatura, pagamentos, avisos) };
   }
 
   /** Dono avisa que pagou (o suporte confirma no painel) */
@@ -604,7 +618,8 @@
     if (MODO !== 'nuvem') throw new Error('Disponível só com o sistema na nuvem.');
     if (usuarioLogado().perfil !== 'dono') throw new Error('Apenas o dono da loja pode informar o pagamento.');
     const doc = await fb.fs.collection('assinaturas').doc(lojaId).get();
-    const valor = doc.exists ? doc.data().valor || 0 : 0;
+    const dados = doc.exists ? doc.data() : {};
+    const valor = competencia === 'implantacao' ? dados.implantacaoValor || 0 : dados.valor || 0;
     await fb.fs.collection('assinaturas').doc(lojaId).collection('avisos').doc(competencia).set({
       competencia, valor, observacao, status: 'pendente', criadoEm: new Date().toISOString(),
       informadoPor: usuarioLogado().nome || '', uid: uidAtual

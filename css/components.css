@@ -1113,3 +1113,7 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 .pix-qr { width: 240px; max-width: 100%; margin: var(--esp-4) auto var(--esp-2); padding: 10px; background: #fff; border: 1px solid var(--cor-borda); border-radius: var(--raio-sm); }
 .pix-qr svg { width: 100%; height: auto; display: block; }
 .pix-valor { text-align: center; font-size: var(--fs-xl); font-weight: var(--fw-bold); margin-bottom: var(--esp-4); font-variant-numeric: tabular-nums; }
+
+.implantacao { border-color: var(--cor-destaque-borda); }
+.implantacao-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--esp-3); flex-wrap: wrap; }
+.implantacao-pix { display: flex; gap: var(--esp-5); flex-wrap: wrap; align-items: flex-start; margin-top: var(--esp-4); padding-top: var(--esp-4); border-top: 1px dashed var(--cor-borda-forte); }
