@@ -654,6 +654,9 @@
   /** Situação de um mês: pago, informado (aguardando confirmação), atrasado ou em aberto */
   function situacaoMensalidade(assinatura, pagamentos, avisos, competencia = mesAtual()) {
     if (!assinatura || assinatura.ativa === false || !(assinatura.valor > 0)) return { status: 'sem', competencia };
+    if (assinatura.inicio && competencia < assinatura.inicio) {
+      return { status: 'futuro', competencia: assinatura.inicio, vencimento: `${assinatura.inicio}-${String(assinatura.diaVencimento || 10).padStart(2, '0')}`, valor: valorDaMensalidade(assinatura, assinatura.inicio) };
+    }
     const valorMes = valorDaMensalidade(assinatura, competencia);
     const pago = pagamentos.find((p) => p.competencia === competencia);
     if (pago) return { status: 'pago', competencia, pagamento: pago, valor: valorMes };

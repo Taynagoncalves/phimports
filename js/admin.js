@@ -28,7 +28,8 @@ App.aoIniciar(async () => {
     informado: '<span class="badge badge-info">Informou que pagou</span>',
     atrasado: `<span class="badge badge-perigo">Atrasada ${s.diasAtraso} dia${s.diasAtraso === 1 ? '' : 's'}</span>`,
     aberto: `<span class="badge badge-alerta">Vence ${App.formatarData(s.vencimento)}</span>`,
-    sem: '<span class="badge">Sem mensalidade</span>'
+    sem: '<span class="badge">Sem mensalidade</span>',
+    futuro: `<span class="badge badge-info">1ª cobrança em ${s.vencimento ? App.formatarData(s.vencimento) : ''}</span>`
   }[s.status] || '');
 
   async function carregar() {
@@ -43,7 +44,8 @@ App.aoIniciar(async () => {
 
   function desenhar() {
     const ativas = lojas.filter((l) => l.assinatura && l.assinatura.ativa !== false && l.assinatura.valor > 0);
-    const prevista = ativas.reduce((s, l) => s + Data.valorDaMensalidade(l.assinatura, mesAtual()), 0);
+    // Lojas que ainda não começaram a pagar não entram na receita do mês
+    const prevista = ativas.filter((l) => !l.situacao || l.situacao.status !== 'futuro').reduce((s, l) => s + Data.valorDaMensalidade(l.assinatura, mesAtual()), 0);
     const recebido = lojas.reduce((s, l) => s + l.pagamentos.filter((p) => p.competencia === mesAtual()).reduce((x, p) => x + (p.valor || 0), 0), 0);
     const atrasadas = lojas.filter((l) => l.situacao && l.situacao.status === 'atrasado');
     const pendentes = lojas.flatMap((l) => l.avisos.filter((a) => a.status === 'pendente').map((a) => ({ ...a, loja: l })));

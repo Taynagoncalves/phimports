@@ -26,9 +26,12 @@ App.aoIniciar(async () => {
     if (!assinatura || assinatura.ativa === false || !(assinatura.valor > 0)) return [];
     const inicio = assinatura.inicio && /^\d{4}-\d{2}$/.test(assinatura.inicio) ? assinatura.inicio : mesAtual();
     const lista = [];
-    for (let c = somarMes(mesAtual(), -11); c <= mesAtual(); c = somarMes(c, 1)) {
+    const dia = String(assinatura.diaVencimento || 10).padStart(2, '0');
+    for (let c = somarMes(mesAtual(), -11); c <= somarMes(mesAtual(), 1); c = somarMes(c, 1)) {
       if (c < inicio) continue;
-      const venc = `${c}-${String(assinatura.diaVencimento || 10).padStart(2, '0')}`;
+      const venc = `${c}-${dia}`;
+      // Meses futuros só aparecem quando faltam até 30 dias para vencer
+      if (c > mesAtual() && diasEntre(hoje(), venc) > 30) continue;
       const pago = pagamentos.find((p) => p.competencia === c);
       const aviso = avisos.find((a) => a.competencia === c && a.status === 'pendente');
       const atraso = diasEntre(venc, hoje());
@@ -47,7 +50,10 @@ App.aoIniciar(async () => {
     const { assinatura, pagamentos, avisos, implantacao } = m;
     const listaMeses = meses(assinatura, pagamentos, avisos);
 
-    if (!assinatura || (!listaMeses.length && implantacao.status === 'sem')) {
+    const cobrancaAtiva = !!(assinatura && assinatura.ativa !== false && assinatura.valor > 0);
+    const inicioCobranca = assinatura && assinatura.inicio ? assinatura.inicio : mesAtual();
+    const primeiraFutura = cobrancaAtiva && !listaMeses.length ? `${inicioCobranca}-${String(assinatura.diaVencimento || 10).padStart(2, '0')}` : null;
+    if (!assinatura || (!cobrancaAtiva && implantacao.status === 'sem')) {
       el.innerHTML = `<div class="card">${App.estadoVazio({ icone: 'badge-check', titulo: 'Nenhuma mensalidade cadastrada', texto: 'Quando o suporte cadastrar a mensalidade do sistema, ela aparece aqui com o Pix para pagamento.' })}</div>`;
       App.icones();
       return;
@@ -93,7 +99,7 @@ App.aoIniciar(async () => {
         <span class="mens-resumo-icone"><i data-lucide="${informados.length ? 'hourglass' : 'badge-check'}"></i></span>
         <div class="mens-resumo-texto">
           <strong>${informados.length ? 'Pagamento informado — aguardando confirmação' : 'Tudo em dia!'}</strong>
-          <span>${informados.length ? 'O suporte vai conferir o Pix e confirmar em breve.' : (proximo ? `Próxima mensalidade: ${moeda(Data.valorDaMensalidade(assinatura, proximo))} em ${App.formatarData(`${proximo}-${String(assinatura.diaVencimento).padStart(2, '0')}`)}.` : 'Nenhum pagamento pendente.')}</span>
+          <span>${informados.length ? 'O suporte vai conferir o Pix e confirmar em breve.' : (primeiraFutura ? `A 1ª mensalidade (${moeda(Data.valorDaMensalidade(assinatura, inicioCobranca))}) vence em ${App.formatarData(primeiraFutura)}.` : proximo ? `Próxima mensalidade: ${moeda(Data.valorDaMensalidade(assinatura, proximo))} em ${App.formatarData(`${proximo}-${String(assinatura.diaVencimento).padStart(2, '0')}`)}.` : 'Nenhum pagamento pendente.')}</span>
         </div>
       </section>`;
 
@@ -149,10 +155,12 @@ App.aoIniciar(async () => {
     const plano = `
       <section class="card card-corpo mens-plano">
         <span class="texto-sm texto-3">Seu plano</span>
-        ${listaMeses.length ? (() => {
+        ${cobrancaAtiva ? (() => {
           const fim = Data.fimDaPromocao(assinatura);
-          const emPromo = fim && mesAtual() <= fim;
-          return `<div class="mensalidade-valor">${moeda(Data.valorDaMensalidade(assinatura, mesAtual()))}<small>/mês</small></div>
+          const ref = mesAtual() < inicioCobranca ? inicioCobranca : mesAtual();
+          const emPromo = fim && ref <= fim;
+          return `<div class="mensalidade-valor">${moeda(Data.valorDaMensalidade(assinatura, ref))}<small>/mês</small></div>
+          ${primeiraFutura ? `<div class="texto-sm texto-2">1ª mensalidade em <strong>${App.formatarData(primeiraFutura)}</strong></div>` : ''}
           ${emPromo ? `<div class="mens-promo"><i data-lucide="tag"></i>Valor promocional até ${nomeMes(fim).toLowerCase()} · depois <strong>${moeda(assinatura.valor)}/mês</strong></div>` : ''}
           <div class="texto-sm texto-2">Vence todo dia <strong>${assinatura.diaVencimento}</strong></div>`;
         })() : '<div class="texto-sm texto-2 mt-2">Sem mensalidade ativa.</div>'}
