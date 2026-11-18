@@ -20,7 +20,7 @@ window.FIREBASE_CONFIG = {
 /* Suporte (super admin): UID da conta em Firebase → Authentication → Usuários.
    Quem estiver aqui entra no Painel do Suporte (admin.html) em vez de uma loja.
    As regras (firestore.rules) precisam ter a MESMA lista. */
-window.SUPER_ADMIN_UIDS = [];
+window.SUPER_ADMIN_UIDS = ['WLmBJby1xoRFC95wPOcKdoad0uo1'];
 
 /* Pix do suporte: recebe as mensalidades das lojas (aba "Mensalidade").
    chave: CPF, CNPJ, e-mail, celular (+55DDDNÚMERO) ou chave aleatória. */

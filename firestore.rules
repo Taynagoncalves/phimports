@@ -20,7 +20,7 @@ service cloud.firestore {
     // ⚠ Mesma lista de window.SUPER_ADMIN_UIDS em js/firebase-config.js
     function superAdmin() {
       return request.auth != null && request.auth.uid in [
-        'COLE_AQUI_O_UID_DO_SUPORTE'
+        'WLmBJby1xoRFC95wPOcKdoad0uo1'
       ];
     }
 
