@@ -112,6 +112,7 @@
   const ehSuperAdmin = (uid) => !!uid && SUPER_ADMINS.includes(uid);
   const MSG_BLOQUEIO = 'O acesso desta loja está suspenso. Entre em contato com o suporte.';
   const CHAVE_AVISO_LOGIN = 'gestaoloja:aviso-login';
+  const CHAVE_ACESSO = 'gestaoloja:acesso:';   // acesso do usuário guardado neste computador
   let lojaId = null;
   let uidAtual = null;
   let perfilAcesso = null;  // documento acessos/{uid}
@@ -261,8 +262,34 @@
       perfilAcesso = { perfil: 'superadmin', nome: 'Suporte', email: user.email };
       return usuarioSuporte(user);
     }
-    perfilAcesso = await lerAcesso(user);
-    if (await lojaBloqueada(perfilAcesso.lojaId)) throw new Error(MSG_BLOQUEIO);
+    // Acesso já conhecido neste computador: abre a loja na hora (dados do cache)
+    // e confere no servidor em segundo plano (bloqueio, acesso desativado…).
+    const chaveAcesso = CHAVE_ACESSO + user.uid;
+    let guardado = null;
+    try { guardado = JSON.parse(localStorage.getItem(chaveAcesso) || 'null'); } catch (e) { guardado = null; }
+    const conferir = async () => {
+      const real = await lerAcesso(user);
+      if (await lojaBloqueada(real.lojaId)) throw new Error(MSG_BLOQUEIO);
+      try { localStorage.setItem(chaveAcesso, JSON.stringify(real)); } catch (e) { /* ignora */ }
+      return real;
+    };
+    if (guardado && guardado.lojaId && guardado.ativo !== false) {
+      perfilAcesso = guardado;
+      uidAtual = user.uid;
+      conferir().then((real) => {
+        if (real.lojaId !== guardado.lojaId) throw new Error('O acesso deste usuário mudou. Entre novamente.');
+        perfilAcesso = real;
+      }).catch((e) => {
+        // Rede fora do ar: segue com o cache. Bloqueio/desativação: sai do sistema.
+        if (e && (e.code === 'unavailable' || /offline|network/i.test(e.message || ''))) return;
+        try { localStorage.removeItem(chaveAcesso); } catch (_) { /* ignora */ }
+        try { sessionStorage.setItem(CHAVE_AVISO_LOGIN, (e && e.message) || MSG_BLOQUEIO); } catch (_) { /* ignora */ }
+        fb.auth.signOut().finally(() => location.reload());
+      });
+      await abrirLoja(guardado.lojaId);
+      return usuarioLogado();
+    }
+    perfilAcesso = await conferir();
     uidAtual = user.uid;
     await abrirLoja(perfilAcesso.lojaId);
     return usuarioLogado();
