@@ -9,7 +9,8 @@ App.aoIniciar(async () => {
     location.replace('../index.html');
     return;
   }
-  document.getElementById('admin-email').textContent = usuario.email || '';
+  const elEmail = document.getElementById('admin-email');
+  if (elEmail) elEmail.textContent = usuario.email || '';
 
   const moeda = App.formatarMoeda;
   const mesAtual = () => new Date().toISOString().slice(0, 7);
@@ -314,13 +315,13 @@ App.aoIniciar(async () => {
   }
 
   /* ---------- Eventos ---------- */
-  document.getElementById('admin-lista').addEventListener('click', (e) => {
+  document.getElementById('admin-lista')?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-acao]');
     if (!b) return;
     const l = achar(b.dataset.id);
     ({ pagamento: () => registrarPagamento(l), mensalidade: () => editarMensalidade(l), historico: () => historico(l), bloqueio: () => alternarBloqueio(l), senha: () => enviarSenha(l), backup: () => abrirBackup(l) })[b.dataset.acao]();
   });
-  document.getElementById('admin-avisos').addEventListener('click', async (e) => {
+  document.getElementById('admin-avisos')?.addEventListener('click', async (e) => {
     const conf = e.target.closest('[data-confirmar]');
     const rec = e.target.closest('[data-recusar]');
     if (!conf && !rec) return;
@@ -333,10 +334,10 @@ App.aoIniciar(async () => {
       carregar();
     } catch (er) { App.toast(er.message, 'erro'); }
   });
-  document.getElementById('btn-nova-loja').addEventListener('click', novaLoja);
-  document.getElementById('btn-atualizar').addEventListener('click', carregar);
-  document.getElementById('btn-backup-todas').addEventListener('click', (e) => backupDeTodas(e.currentTarget));
-  document.getElementById('btn-sair-admin').addEventListener('click', async () => { await Data.sair(); location.replace('../index.html'); });
+  document.getElementById('btn-nova-loja')?.addEventListener('click', novaLoja);
+  document.getElementById('btn-atualizar')?.addEventListener('click', carregar);
+  document.getElementById('btn-backup-todas')?.addEventListener('click', (e) => backupDeTodas(e.currentTarget));
+  document.getElementById('btn-sair-admin')?.addEventListener('click', async () => { await Data.sair(); location.replace('../index.html'); });
 
   await carregar();
 });
