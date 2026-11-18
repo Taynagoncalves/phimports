@@ -964,7 +964,9 @@
       valorLiquido: valorLiquido(v),
       valorDevolvido: valorDevolvido(v),
       clienteNome: c ? c.nome : 'Consumidor final',
-      vendedorNome: u ? u.nome : '—',
+      clienteDocumento: c ? c.documento || '' : '',
+      clienteTelefone: c ? c.telefone || '' : '',
+      vendedorNome: u ? u.nome : (v.vendedorNome || (v.vendedorId && v.vendedorId === usuarioLogadoId() ? usuarioLogado().nome : '') || '—'),
       qtdItens,
       credito: credito || null,
       cancelamento: v.cancelamento ? { ...v.cancelamento, usuarioNome: cancelador ? cancelador.nome : '—' } : null,
@@ -1096,6 +1098,7 @@
       data: new Date().toISOString(),
       clienteId: dados.clienteId || null,
       vendedorId: usuarioLogadoId(),
+      vendedorNome: usuarioLogado().nome || '', // guardado na venda (não depende do cadastro de usuários)
       caixaId: caixa ? caixa.id : null,
       itens,
       subtotal,

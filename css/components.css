@@ -1117,3 +1117,6 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 .implantacao { border-color: var(--cor-destaque-borda); }
 .implantacao-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--esp-3); flex-wrap: wrap; }
 .implantacao-pix { display: flex; gap: var(--esp-5); flex-wrap: wrap; align-items: flex-start; margin-top: var(--esp-4); padding-top: var(--esp-4); border-top: 1px dashed var(--cor-borda-forte); }
+
+.cupom .c-economia { text-align: center; font-weight: 700; margin-top: 8px; padding: 4px 0; border: 1px dashed #555; }
+.cupom .c-mensagem { white-space: pre-line; }

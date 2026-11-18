@@ -72,6 +72,19 @@
                     <input class="input" id="loja-endereco" name="endereco" placeholder="Rua, número — bairro, cidade/UF — CEP" autocomplete="street-address">
                     <span class="ajuda">Aparece no recibo de compra.</span>
                   </div>
+                  <div class="campo">
+                    <label for="loja-instagram">Instagram</label>
+                    <input class="input" id="loja-instagram" name="instagram" placeholder="@sualoja" autocomplete="off">
+                  </div>
+                  <div class="campo">
+                    <label for="loja-site">Site ou catálogo</label>
+                    <input class="input" id="loja-site" name="site" placeholder="www.sualoja.com.br" autocomplete="url">
+                  </div>
+                  <div class="campo col-span-2">
+                    <label for="loja-mensagem">Mensagem no fim do recibo</label>
+                    <textarea class="textarea" id="loja-mensagem" name="mensagemRecibo" rows="2" maxlength="240" placeholder="Trocas em até 30 dias com este recibo."></textarea>
+                    <span class="ajuda">Política de troca, recado ou promoção. Vazio = "Trocas em até 30 dias com este recibo."</span>
+                  </div>
                   <div class="col-span-2 alerta info so-nota">
                     <i data-lucide="landmark"></i>
                     <span>Razão social, CNPJ, inscrições e endereço ficam na aba <a href="#fiscal" id="link-aba-fiscal">Dados fiscais</a>, junto com o resto do que aparece na nota.</span>

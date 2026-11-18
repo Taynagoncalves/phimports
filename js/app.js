@@ -883,7 +883,9 @@
       ${loja.cnpj && (nota || loja.emitirNota) ? `<div class="c-centro">CNPJ: ${e(loja.cnpj)} ${loja.inscricaoEstadual ? 'IE: ' + e(loja.inscricaoEstadual) : ''}</div>` : ''}
       ${(nota || loja.emitirNota) && fiscal && fiscal.inscricaoMunicipal ? `<div class="c-centro">IM: ${e(fiscal.inscricaoMunicipal)}</div>` : ''}
       ${enderecoHtml ? `<div class="c-centro">${enderecoHtml}</div>` : ""}
-      ${loja.telefone ? `<div class="c-centro">Tel.: ${e(loja.telefone)}</div>` : ''}
+      ${loja.telefone ? `<div class="c-centro">Tel./WhatsApp: ${e(loja.telefone)}</div>` : ''}
+      ${loja.instagram ? `<div class="c-centro">Instagram: ${e(String(loja.instagram).startsWith('@') ? loja.instagram : '@' + loja.instagram)}</div>` : ''}
+      ${loja.site ? `<div class="c-centro">${e(loja.site)}</div>` : ''}
       <div class="c-sep"></div>
       ${nota
         ? '<div class="c-centro c-negrito">DANFE NFC-e — Documento Auxiliar da Nota Fiscal de Consumidor Eletrônica</div>'
@@ -907,6 +909,7 @@
       <div class="c-linha c-negrito mt-2"><span>FORMA DE PAGAMENTO</span><span>VALOR PAGO</span></div>
       ${linhaPag}
       ${venda.pagamento.troco ? `<div class="c-linha"><span>Troco R$</span><span>${m(venda.pagamento.troco)}</span></div>` : ''}
+      ${!nota && venda.subtotal - venda.total > 0.004 ? `<div class="c-economia">Você economizou R$ ${m(venda.subtotal - venda.total)}</div>` : ''}
       <div class="c-sep"></div>
       ${nota ? `
         <div class="c-centro c-negrito">Consulte pela Chave de Acesso em</div>
@@ -925,6 +928,8 @@
       ` : `
         <div class="c-centro">Venda #${venda.numero} · ${formatarDataHora(venda.data)}</div>
         <div class="c-centro">Cliente: ${e(venda.clienteNome || 'Consumidor final')}</div>
+        ${venda.clienteDocumento ? `<div class="c-centro">CPF/CNPJ: ${e(venda.clienteDocumento)}</div>` : ''}
+        ${venda.clienteTelefone ? `<div class="c-centro">Telefone: ${e(venda.clienteTelefone)}</div>` : ''}
         <div class="c-centro">Vendedor(a): ${e(venda.vendedorNome || '—')}</div>
         ${venda.parcelasCrediario && venda.parcelasCrediario.length ? `
           <div class="c-sep"></div>
@@ -933,7 +938,7 @@
           <div class="c-centro" style="margin-top:16px">_______________________________</div>
           <div class="c-centro">Assinatura do cliente</div>` : ''}
         <div class="c-sep"></div>
-        <div class="c-centro">Trocas em até 30 dias com este recibo.</div>
+        <div class="c-centro c-mensagem">${e(loja.mensagemRecibo || 'Trocas em até 30 dias com este recibo.')}</div>
         <div class="c-centro c-negrito">Obrigado pela preferência!</div>
       `}
     </div>`;
