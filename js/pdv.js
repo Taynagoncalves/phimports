@@ -701,7 +701,15 @@ App.aoIniciar(async () => {
   /* ---------- Cliente ---------- */
   const clientes = await Data.listarClientes();
   App.preencherSelect($('cliente'), clientes.map((c) => ({ valor: c.id, texto: `${c.nome} — ${c.documento}` })), { vazio: 'Consumidor final (não identificado)' });
+  // Nome do cliente sem cadastro: só aparece com "Consumidor final" escolhido
+  function atualizarClienteAvulso() {
+    const comCadastro = !!$('cliente').value;
+    $('cliente-avulso').classList.toggle('oculto', comCadastro);
+    $('cliente-salvar-rotulo').classList.toggle('oculto', comCadastro || !$('cliente-nome').value.trim());
+  }
+  $('cliente-nome').addEventListener('input', atualizarClienteAvulso);
   $('cliente').addEventListener('change', () => {
+    atualizarClienteAvulso();
     if (formaPagamento === 'vale') carregarValesCliente();
     crediarioInfo = null;
     carregarCrediario();
@@ -795,6 +803,9 @@ App.aoIniciar(async () => {
     inputVale.value = '';
     $('info-vale').textContent = '';
     $('cliente').value = '';
+    $('cliente-nome').value = '';
+    $('cliente-salvar').checked = false;
+    atualizarClienteAvulso();
     dividindo = false;
     ultimoItem = null;
     linhaSel = -1;
@@ -1066,8 +1077,16 @@ App.aoIniciar(async () => {
 
     btnFinalizar.disabled = true;
     try {
+      let clienteIdFinal = $('cliente').value || null;
+      const nomeAvulso = $('cliente-nome').value.trim();
+      if (!clienteIdFinal && nomeAvulso && $('cliente-salvar').checked) {
+        const novo = await Data.salvarCliente({ nome: nomeAvulso });
+        clienteIdFinal = novo.id;
+        App.toast(`${nomeAvulso} foi salvo(a) nos clientes.`);
+      }
       const venda = await Data.registrarVenda({
-        clienteId: $('cliente').value || null,
+        clienteId: clienteIdFinal,
+        clienteNomeAvulso: clienteIdFinal ? '' : $('cliente-nome').value.trim(),
         itens: carrinho.map((i) => ({ produtoId: i.produtoId, sku: i.sku, qtd: i.qtd })),
         desconto: t.desconto,
         pagamentos: todos,

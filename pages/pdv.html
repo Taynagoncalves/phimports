@@ -124,6 +124,10 @@
               <div class="campo mt-4">
                 <label for="cliente">Cliente (opcional)</label>
                 <select class="select" id="cliente"></select>
+                <div id="cliente-avulso" class="flex-col gap-2 mt-2">
+                  <input class="input" id="cliente-nome" maxlength="60" autocomplete="off" placeholder="Ou digite o nome do cliente (sai no recibo)" aria-label="Nome do cliente">
+                  <label class="checkbox oculto" id="cliente-salvar-rotulo"><input type="checkbox" id="cliente-salvar"> Salvar nos clientes</label>
+                </div>
               </div>
 
               <!-- Desconto -->

@@ -1020,7 +1020,7 @@
       pagamentos: pagamentosDe(v),
       valorLiquido: valorLiquido(v),
       valorDevolvido: valorDevolvido(v),
-      clienteNome: c ? c.nome : 'Consumidor final',
+      clienteNome: c ? c.nome : (v.clienteNomeAvulso || 'Consumidor final'),
       clienteDocumento: c ? c.documento || '' : '',
       clienteTelefone: c ? c.telefone || '' : '',
       vendedorNome: u ? u.nome : (v.vendedorNome || (v.vendedorId && v.vendedorId === usuarioLogadoId() ? usuarioLogado().nome : '') || '—'),
@@ -1154,6 +1154,7 @@
       numero,
       data: new Date().toISOString(),
       clienteId: dados.clienteId || null,
+      clienteNomeAvulso: dados.clienteId ? '' : String(dados.clienteNomeAvulso || '').trim().slice(0, 60), // nome digitado sem cadastro
       vendedorId: usuarioLogadoId(),
       vendedorNome: usuarioLogado().nome || '', // guardado na venda (não depende do cadastro de usuários)
       caixaId: caixa ? caixa.id : null,
