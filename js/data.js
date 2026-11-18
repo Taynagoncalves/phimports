@@ -547,6 +547,63 @@
     return true;
   }
 
+  /* ---------- Backup (arquivo .json) ---------- */
+  const COLECOES_BACKUP = [...COLECOES, 'ajustes'];
+  const docsDe = (snap) => Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+
+  /** Tudo de uma loja num objeto (para baixar como arquivo) */
+  async function adminExportarLoja(id) {
+    exigirSuperAdmin();
+    const ref = fb.fs.collection('lojas').doc(id);
+    const assin = fb.fs.collection('assinaturas').doc(id);
+    const [cabecalho, acessos, assinatura, pagamentos, avisos, ...colecoes] = await Promise.all([
+      ref.get(), fb.fs.collection('acessos').where('lojaId', '==', id).get(),
+      assin.get(), assin.collection('pagamentos').get(), assin.collection('avisos').get(),
+      ...COLECOES_BACKUP.map((c) => ref.collection(c).get())
+    ]);
+    const backup = {
+      tipo: 'backup-loja', versao: 1, geradoEm: new Date().toISOString(), lojaId: id,
+      loja: cabecalho.exists ? cabecalho.data() : null,
+      colecoes: Object.fromEntries(COLECOES_BACKUP.map((c, i) => [c, docsDe(colecoes[i])])),
+      acessos: docsDe(acessos),
+      assinatura: assinatura.exists ? assinatura.data() : null,
+      pagamentos: docsDe(pagamentos),
+      avisos: docsDe(avisos)
+    };
+    // Lembra quando foi o último backup (aparece no painel)
+    await assin.set({ ultimoBackup: backup.geradoEm }, { merge: true }).catch(() => {});
+    return backup;
+  }
+
+  /**
+   * Restaura uma loja a partir do arquivo de backup.
+   * Grava de volta tudo o que está no arquivo (não apaga o que foi criado depois).
+   * @returns {Promise<number>} quantidade de registros gravados
+   */
+  async function adminRestaurarLoja(id, backup) {
+    exigirSuperAdmin();
+    if (!backup || backup.tipo !== 'backup-loja' || !backup.colecoes) throw new Error('Este arquivo não é um backup de loja do sistema.');
+    if (backup.lojaId !== id) throw new Error('Este backup é de outra loja.');
+    const ref = fb.fs.collection('lojas').doc(id);
+    const assin = fb.fs.collection('assinaturas').doc(id);
+    const ops = [];
+    if (backup.loja) ops.push([ref, backup.loja, true]);
+    Object.entries(backup.colecoes).forEach(([c, docs]) => {
+      if (!COLECOES_BACKUP.includes(c)) return;
+      Object.entries(docs || {}).forEach(([docId, dados]) => ops.push([ref.collection(c).doc(docId), dados]));
+    });
+    Object.entries(backup.acessos || {}).forEach(([uid, dados]) => { if (dados && dados.lojaId === id) ops.push([fb.fs.collection('acessos').doc(uid), dados]); });
+    if (backup.assinatura) ops.push([assin, backup.assinatura, true]);
+    Object.entries(backup.pagamentos || {}).forEach(([docId, dados]) => ops.push([assin.collection('pagamentos').doc(docId), dados]));
+    Object.entries(backup.avisos || {}).forEach(([docId, dados]) => ops.push([assin.collection('avisos').doc(docId), dados]));
+    for (let i = 0; i < ops.length; i += 400) {
+      const lote = fb.fs.batch();
+      ops.slice(i, i + 400).forEach(([r, dados, mesclar]) => (mesclar ? lote.set(r, dados, { merge: true }) : lote.set(r, dados)));
+      await lote.commit();
+    }
+    return ops.length;
+  }
+
   /** Cria a loja de uma cliente nova (conta do dono + loja vazia + mensalidade), sem sair do painel */
   async function adminCriarLoja({ nomeLoja, nome, email, senha, valor = 0, diaVencimento = 10, implantacaoValor = 300 }) {
     exigirSuperAdmin();
@@ -2429,7 +2486,8 @@
     admin: {
       listarLojas: adminListarLojas, salvarAssinatura: adminSalvarAssinatura,
       registrarPagamento: adminRegistrarPagamento, excluirPagamento: adminExcluirPagamento,
-      bloquearLoja: adminBloquearLoja, criarLoja: adminCriarLoja, responderAviso: adminResponderAviso
+      bloquearLoja: adminBloquearLoja, criarLoja: adminCriarLoja, responderAviso: adminResponderAviso,
+      exportarLoja: adminExportarLoja, restaurarLoja: adminRestaurarLoja
     },
     // Mensalidade (dono da loja)
     obterMensalidade, informarPagamentoMensalidade,

@@ -23,7 +23,9 @@
     .admin-topo .marca { display: flex; align-items: center; gap: 16px; }
     .admin-topo .marca span { font-size: var(--fs-sm); color: var(--cor-texto-3); letter-spacing: .14em; text-transform: uppercase; }
     .admin-lojas td { vertical-align: middle; }
-    .acoes-loja { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap; }
+    .acoes-loja { display: flex; gap: 2px; justify-content: flex-end; flex-wrap: nowrap; }
+    .admin-lojas .acoes-loja .btn-icone { width: 32px; height: 32px; }
+    .admin .grid-stats { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
     .aviso-pagamento { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--cor-borda); }
     .aviso-pagamento:last-child { border-bottom: none; }
   </style>
@@ -35,6 +37,7 @@
       <div class="flex items-center gap-2">
         <span class="texto-sm texto-3" id="admin-email"></span>
         <button type="button" class="btn btn-secundario" id="btn-atualizar"><i data-lucide="refresh-cw"></i>Atualizar</button>
+        <button type="button" class="btn btn-secundario" id="btn-backup-todas"><i data-lucide="database-backup"></i>Backup de todas</button>
         <button type="button" class="btn btn-primario" id="btn-nova-loja"><i data-lucide="store"></i>Nova loja</button>
         <button type="button" class="btn-icone" id="btn-sair-admin" title="Sair" aria-label="Sair"><i data-lucide="log-out"></i></button>
       </div>

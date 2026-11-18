@@ -81,6 +81,7 @@ App.aoIniciar(async () => {
         <td class="cel-principal">
           <div class="titulo negrito">${App.escapeHtml(l.nome)}</div>
           <div class="texto-xs texto-3">${App.escapeHtml(dono.email || 'sem dono')}${l.telefone ? ' · ' + App.escapeHtml(l.telefone) : ''} · ${l.usuarios.length} usuário(s)</div>
+          <div class="texto-xs ${diasDesdeBackup(l) === null || diasDesdeBackup(l) > 7 ? 'valor-negativo' : 'texto-3'}">${textoBackup(l)}</div>
         </td>
         <td data-label="Mensalidade">${l.assinatura && l.assinatura.valor > 0 ? `<strong>${moeda(l.assinatura.valor)}</strong><div class="texto-xs texto-3">vence dia ${l.assinatura.diaVencimento}${l.assinatura.ativa === false ? ' · pausada' : ''}</div>` : '<span class="texto-3">—</span>'}
           ${l.implantacao && l.implantacao.status !== 'sem' ? `<div class="texto-xs mt-2">Implantação ${moeda(l.implantacao.valor)}: ${{ paga: '<span class="valor-positivo">paga</span>', informada: '<span style="color:var(--cor-info)">informada</span>', pendente: '<span class="valor-negativo">pendente</span>' }[l.implantacao.status]}</div>` : ''}</td>
@@ -91,6 +92,7 @@ App.aoIniciar(async () => {
           <button type="button" class="btn-icone" data-acao="pagamento" data-id="${l.id}" title="Registrar pagamento" aria-label="Registrar pagamento"><i data-lucide="hand-coins"></i></button>
           <button type="button" class="btn-icone" data-acao="mensalidade" data-id="${l.id}" title="Editar mensalidade" aria-label="Editar mensalidade"><i data-lucide="badge-dollar-sign"></i></button>
           <button type="button" class="btn-icone" data-acao="historico" data-id="${l.id}" title="Histórico de pagamentos" aria-label="Histórico de pagamentos"><i data-lucide="history"></i></button>
+          <button type="button" class="btn-icone" data-acao="backup" data-id="${l.id}" title="Backup da loja" aria-label="Backup da loja"><i data-lucide="database-backup"></i></button>
           <button type="button" class="btn-icone" data-acao="senha" data-id="${l.id}" title="Enviar link de nova senha ao dono" aria-label="Enviar link de nova senha"><i data-lucide="key-round"></i></button>
           <button type="button" class="btn-icone ${l.bloqueada ? '' : 'perigo'}" data-acao="bloqueio" data-id="${l.id}" title="${l.bloqueada ? 'Desbloquear loja' : 'Bloquear loja'}" aria-label="${l.bloqueada ? 'Desbloquear loja' : 'Bloquear loja'}"><i data-lucide="${l.bloqueada ? 'lock-open' : 'lock'}"></i></button>
         </div></td>
@@ -100,6 +102,92 @@ App.aoIniciar(async () => {
   }
 
   const achar = (id) => lojas.find((l) => l.id === id);
+
+  /* ---------- Backup ---------- */
+  function diasDesdeBackup(l) {
+    const d = l.assinatura && l.assinatura.ultimoBackup;
+    return d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null;
+  }
+  function textoBackup(l) {
+    const dias = diasDesdeBackup(l);
+    if (dias === null) return 'Nunca fez backup';
+    return dias === 0 ? 'Backup feito hoje' : `Último backup há ${dias} dia${dias === 1 ? '' : 's'}`;
+  }
+  const nomeArquivo = (t) => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+  function baixarArquivo(nome, dados) {
+    const blob = new Blob([JSON.stringify(dados, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  const contarRegistros = (b) => Object.values(b.colecoes || {}).reduce((s, docs) => s + Object.keys(docs || {}).length, 0);
+
+  async function baixarBackup(l) {
+    const backup = await Data.admin.exportarLoja(l.id);
+    baixarArquivo(`backup-${nomeArquivo(l.nome)}-${App.dataInput()}.json`, backup);
+    return backup;
+  }
+
+  function abrirBackup(l) {
+    const { el, fechar } = App.abrirModal({
+      titulo: `Backup — ${l.nome}`,
+      corpo: `
+        <p class="texto-sm">${textoBackup(l)}. O arquivo traz <strong>tudo da loja</strong>: produtos, estoque, vendas, clientes, configurações, usuários e mensalidade. Guarde no seu computador ou no Google Drive.</p>
+        <button type="button" class="btn btn-primario mt-4" id="bk-baixar"><i data-lucide="download"></i>Baixar backup agora</button>
+        <div class="alerta mt-6" style="align-items:flex-start"><i data-lucide="triangle-alert"></i>
+          <span><strong>Restaurar</strong> grava de volta tudo o que está no arquivo (o que foi apagado volta, e o que foi alterado volta como estava no dia do backup). O que foi criado depois do backup continua lá.</span></div>
+        <label class="btn btn-secundario mt-4" style="cursor:pointer"><i data-lucide="upload"></i>Restaurar de um arquivo…
+          <input type="file" id="bk-arquivo" accept=".json,application/json" hidden></label>`,
+      acoes: [{ texto: 'Fechar' }]
+    });
+    el.querySelector('#bk-baixar').addEventListener('click', async (e) => {
+      const b = e.currentTarget;
+      b.disabled = true;
+      try {
+        const backup = await baixarBackup(l);
+        App.toast(`Backup baixado: ${contarRegistros(backup)} registros.`, 'sucesso');
+        fechar(); carregar();
+      } catch (er) { App.toast(er.message, 'erro'); b.disabled = false; }
+    });
+    el.querySelector('#bk-arquivo').addEventListener('change', async (e) => {
+      const arquivo = e.target.files[0];
+      if (!arquivo) return;
+      let backup;
+      try { backup = JSON.parse(await arquivo.text()); } catch (er) { App.toast('Não foi possível ler o arquivo.', 'erro'); return; }
+      // Arquivo 'Backup de todas': usa a parte desta loja
+      if (backup && backup.tipo === 'backup-todas') backup = (backup.lojas || []).find((x) => x.lojaId === l.id) || { tipo: 'backup-loja', lojaId: '?' };
+      if (!backup || backup.tipo !== 'backup-loja') return App.toast('Este arquivo não é um backup de loja do sistema.', 'erro');
+      if (backup.lojaId !== l.id) return App.toast('Este backup é de outra loja.', 'erro');
+      const ok = await App.confirmar({
+        titulo: 'Restaurar este backup?',
+        mensagem: `Backup de ${App.formatarDataHora(backup.geradoEm)} com ${contarRegistros(backup)} registros. Os dados da loja voltam a ficar como estavam nesse dia (o que foi criado depois continua).`,
+        textoConfirmar: 'Restaurar', perigo: true
+      });
+      if (!ok) { e.target.value = ''; return; }
+      try {
+        const n = await Data.admin.restaurarLoja(l.id, backup);
+        App.toast(`Backup restaurado: ${n} registros gravados.`, 'sucesso', 7000);
+        fechar(); carregar();
+      } catch (er) { App.toast(er.message, 'erro', 7000); }
+    });
+    App.icones();
+  }
+
+  async function backupDeTodas(botao) {
+    if (!lojas.length) return App.toast('Nenhuma loja para copiar.', 'aviso');
+    botao.disabled = true;
+    try {
+      const todas = [];
+      for (const l of lojas) todas.push(await Data.admin.exportarLoja(l.id));
+      baixarArquivo(`backup-todas-as-lojas-${App.dataInput()}.json`, { tipo: 'backup-todas', versao: 1, geradoEm: new Date().toISOString(), lojas: todas });
+      App.toast(`Backup de ${todas.length} loja(s) baixado.`, 'sucesso');
+      carregar();
+    } catch (er) { App.toast(er.message, 'erro'); }
+    botao.disabled = false;
+  }
 
   /* ---------- Ações ---------- */
   function editarMensalidade(l) {
@@ -230,7 +318,7 @@ App.aoIniciar(async () => {
     const b = e.target.closest('[data-acao]');
     if (!b) return;
     const l = achar(b.dataset.id);
-    ({ pagamento: () => registrarPagamento(l), mensalidade: () => editarMensalidade(l), historico: () => historico(l), bloqueio: () => alternarBloqueio(l), senha: () => enviarSenha(l) })[b.dataset.acao]();
+    ({ pagamento: () => registrarPagamento(l), mensalidade: () => editarMensalidade(l), historico: () => historico(l), bloqueio: () => alternarBloqueio(l), senha: () => enviarSenha(l), backup: () => abrirBackup(l) })[b.dataset.acao]();
   });
   document.getElementById('admin-avisos').addEventListener('click', async (e) => {
     const conf = e.target.closest('[data-confirmar]');
@@ -247,6 +335,7 @@ App.aoIniciar(async () => {
   });
   document.getElementById('btn-nova-loja').addEventListener('click', novaLoja);
   document.getElementById('btn-atualizar').addEventListener('click', carregar);
+  document.getElementById('btn-backup-todas').addEventListener('click', (e) => backupDeTodas(e.currentTarget));
   document.getElementById('btn-sair-admin').addEventListener('click', async () => { await Data.sair(); location.replace('../index.html'); });
 
   await carregar();
