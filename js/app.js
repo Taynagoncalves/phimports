@@ -602,7 +602,7 @@
         <button type="button" class="btn-icone btn-recolher" id="btn-recolher" aria-label="Recolher menu" title="Recolher menu">${icone('panel-left-close')}</button>
       </div>
       <nav class="sidebar-nav" aria-label="Menu principal">
-        ${MENU.map((g) => ({ ...g, itens: g.itens.filter((it) => podeAcessar(it.id) && (it.id !== 'notas' || loja.emitirNota)) })).filter((g) => g.itens.length).map((g) => `
+        ${MENU.map((g) => ({ ...g, itens: g.itens.filter((it) => podeAcessar(it.id) && (it.id !== 'notas' || loja.emitirNota) && (it.id !== 'caixa' || loja.controlarCaixa)) })).filter((g) => g.itens.length).map((g) => `
           <div class="nav-grupo">
             <div class="nav-grupo-titulo">${g.grupo}</div>
             ${g.itens.map((it) => `

@@ -787,10 +787,13 @@
    *   - "vale" usa o saldo de um vale-troca (codigoVale).
    * Exige caixa aberto.
    */
+  /** A loja controla caixa (abrir com troco e fechar com conferência)? Configurações → Sistema */
+  function usaCaixa() { return !!(db.loja && db.loja.controlarCaixa); }
+
   function registrarVenda(dados) {
     if (!dados.itens || !dados.itens.length) return falhar('O carrinho está vazio.');
     const caixa = caixaAberto();
-    if (!caixa) return falhar('O caixa está fechado. Abra o caixa para registrar vendas.');
+    if (!caixa && usaCaixa()) return falhar('O caixa está fechado. Abra o caixa para registrar vendas.');
 
     // 1) Valida estoque de todos os itens antes de gravar
     for (const it of dados.itens) {
@@ -873,7 +876,7 @@
       data: new Date().toISOString(),
       clienteId: dados.clienteId || null,
       vendedorId: usuarioLogadoId(),
-      caixaId: caixa.id,
+      caixaId: caixa ? caixa.id : null,
       itens,
       subtotal,
       descontoPromocao,
@@ -937,7 +940,7 @@
     const aDevolver = arred(valorPago - abatidoCrediario);
     const dinheiroDevolvido = tipo === 'devolucao' ? arred(Math.min(aDevolver, dinheiroDa(venda))) : 0;
     const caixa = caixaAberto();
-    if (dinheiroDevolvido > 0 && !caixa) return falhar('Abra o caixa para devolver o dinheiro ao cliente.');
+    if (dinheiroDevolvido > 0 && !caixa && usaCaixa()) return falhar('Abra o caixa para devolver o dinheiro ao cliente.');
     if (abatidoCrediario > 0) abaterCrediario(venda.id, abatidoCrediario);
 
     itens.forEach((it) => {
@@ -969,7 +972,7 @@
       db.creditos = db.creditos || [];
       db.creditos.push(credito);
       venda.devolucao.creditoId = credito.id;
-    } else if (dinheiroDevolvido > 0) {
+    } else if (dinheiroDevolvido > 0 && caixa) {
       // Devolução em dinheiro sai da gaveta do caixa aberto
       caixa.movimentos.push({ id: gerarId('mc'), tipo: 'devolucao', valor: dinheiroDevolvido, motivo: `Devolução — venda #${venda.numero}`, data: agora, usuarioId: usuarioLogadoId() });
     }
@@ -995,7 +998,7 @@
     const caixa = caixaAberto();
     const outroCaixa = venda.caixaId !== (caixa && caixa.id);
     const dinheiro = arred(dinheiroDa(venda));
-    if (outroCaixa && dinheiro > 0 && !caixa) return falhar('Abra o caixa para devolver o dinheiro desta venda.');
+    if (outroCaixa && dinheiro > 0 && !caixa && usaCaixa()) return falhar('Abra o caixa para devolver o dinheiro desta venda.');
     // Crediário: com parcela já paga, o caminho é devolução (não cancelamento)
     const parcelas = (db.contasReceber || []).filter((c) => c.vendaId === venda.id && c.status !== 'cancelada');
     if (parcelas.some((c) => c.valorPago > 0)) return falhar('Esta venda tem parcela do crediário já paga. Use Troca / devolução.');
@@ -1019,7 +1022,7 @@
     });
     // 3) Dinheiro de venda de outro dia/caixa sai do caixa atual
     //    (se for do caixa aberto, a venda cancelada já deixa de contar no caixa)
-    if (outroCaixa && dinheiro > 0) {
+    if (outroCaixa && dinheiro > 0 && caixa) {
       caixa.movimentos.push({ id: gerarId('mc'), tipo: 'estorno', valor: dinheiro, motivo: `Cancelamento — venda #${venda.numero}`, data: agora, usuarioId: usuarioLogadoId() });
     }
     // 4) NFC-e cancelada junto (na SEFAZ real: até 30 min após a emissão)
@@ -1318,7 +1321,7 @@
     if (!(v > 0) || v > saldo + 0.004) return falhar(`Informe um valor entre R$ 0,01 e R$ ${saldo.toFixed(2).replace('.', ',')}.`);
     if (!['dinheiro', 'pix', 'debito', 'credito'].includes(forma)) return falhar('Escolha a forma de recebimento.');
     const caixa = caixaAberto();
-    if (forma === 'dinheiro' && !caixa) return falhar('Abra o caixa para receber em dinheiro.');
+    if (forma === 'dinheiro' && !caixa && usaCaixa()) return falhar('Abra o caixa para receber em dinheiro.');
     const agora = new Date().toISOString();
     c.valorPago = arred(c.valorPago + v);
     c.pagamentos.push({ data: agora, valor: v, forma, usuarioId: usuarioLogadoId() });

@@ -712,7 +712,10 @@ App.aoIniciar(async () => {
   /* ---------- Caixa: só vende com caixa aberto ---------- */
   let proximoNumero = '—';
   async function verificarCaixa() {
+    const controlaCaixa = !!(App.loja && App.loja.controlarCaixa);
     caixa = await Data.obterCaixaAberto();
+    // Sem controle de caixa: vende direto, sem abrir/fechar
+    if (!controlaCaixa) caixa = { livre: true };
     const vendas = await Data.listarVendas();
     proximoNumero = vendas.reduce((m, v) => Math.max(m, Number(v.numero) || 0), 0) + 1;
     const aviso = $('aviso-caixa');
@@ -726,7 +729,9 @@ App.aoIniciar(async () => {
     } else {
       aviso.innerHTML = `<div class="caixa-status">
         <span class="caixa-luz" aria-hidden="true"></span>
-        <div class="caixa-status-info"><strong>Caixa aberto</strong><span>desde ${App.formatarDataHora(caixa.abertoEm)} · <a href="caixa.html">ver caixa</a></span></div>
+        ${caixa.livre
+          ? `<div class="caixa-status-info"><strong>Frente de caixa</strong><span>${App.escapeHtml((App.loja && App.loja.nome) || '')}</span></div>`
+          : `<div class="caixa-status-info"><strong>Caixa aberto</strong><span>desde ${App.formatarDataHora(caixa.abertoEm)} · <a href="caixa.html">ver caixa</a></span></div>`}
         <div class="caixa-status-item"><span>Operador(a)</span><strong>${App.escapeHtml(operador)}</strong></div>
         <div class="caixa-status-item"><span>Data</span><strong id="relogio-data"></strong></div>
         <div class="caixa-status-item"><span>Hora</span><strong id="relogio-hora" class="num"></strong></div>

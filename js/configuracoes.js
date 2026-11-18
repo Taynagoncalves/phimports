@@ -614,6 +614,15 @@ App.aoIniciar(async () => {
     const chkNota = document.getElementById('cfg-emitir-nota');
     const ajuda = document.getElementById('cfg-nota-ajuda');
     chkAuto.checked = !!lojaAtual.imprimirReciboAuto;
+    const chkCaixa = document.getElementById('cfg-controlar-caixa');
+    chkCaixa.checked = !!lojaAtual.controlarCaixa;
+    chkCaixa.addEventListener('change', async () => {
+      try {
+        await Data.salvarLoja({ controlarCaixa: chkCaixa.checked });
+        App.toast(chkCaixa.checked ? 'Controle de caixa ligado: o menu "Caixa" volta e é preciso abrir o caixa para vender. Atualizando…' : 'Controle de caixa desligado: vende direto. Atualizando…');
+        setTimeout(() => location.reload(), 1200);
+      } catch (e) { App.toast(e.message, 'erro'); chkCaixa.checked = !chkCaixa.checked; }
+    });
     chkNota.checked = !!lojaAtual.emitirNota;
     const textoAjuda = () => {
       ajuda.textContent = chkNota.checked
