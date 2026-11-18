@@ -503,8 +503,14 @@
     exigirSuperAdmin();
     const valor = Math.round(Number(dados.valor || 0) * 100) / 100;
     const dia = Math.min(28, Math.max(1, parseInt(dados.diaVencimento, 10) || 10));
+    // Mês de início: só na primeira vez (ou quando informado)
+    const atual = await fb.fs.collection('assinaturas').doc(id).get();
+    if (!dados.inicio && !(atual.exists && atual.data().inicio)) dados.inicio = mesAtual();
     await fb.fs.collection('assinaturas').doc(id).set({
-      nomeLoja: dados.nomeLoja || '', valor, diaVencimento: dia, inicio: dados.inicio || new Date().toISOString().slice(0, 7),
+      nomeLoja: dados.nomeLoja || '', valor, diaVencimento: dia,
+      ...(dados.inicio ? { inicio: dados.inicio } : {}),
+      ...(dados.valorPromocional !== undefined ? { valorPromocional: Math.round(Number(dados.valorPromocional || 0) * 100) / 100 } : {}),
+      ...(dados.mesesPromocionais !== undefined ? { mesesPromocionais: Math.max(0, parseInt(dados.mesesPromocionais, 10) || 0) } : {}),
       ativa: dados.ativa !== false, observacao: dados.observacao || '', atualizadoEm: new Date().toISOString(),
       ...(dados.implantacaoValor !== undefined ? { implantacaoValor: Math.round(Number(dados.implantacaoValor || 0) * 100) / 100 } : {})
     }, { merge: true });
@@ -605,7 +611,7 @@
   }
 
   /** Cria a loja de uma cliente nova (conta do dono + loja vazia + mensalidade), sem sair do painel */
-  async function adminCriarLoja({ nomeLoja, nome, email, senha, valor = 0, diaVencimento = 10, implantacaoValor = 300 }) {
+  async function adminCriarLoja({ nomeLoja, nome, email, senha, valor = 0, diaVencimento = 10, implantacaoValor = 300, valorPromocional = 0, mesesPromocionais = 0, inicio = '' }) {
     exigirSuperAdmin();
     if (!nomeLoja || !email || !senha) throw new Error('Preencha nome da loja, e-mail e senha.');
     if (String(senha).length < 6) throw new Error('A senha precisa ter pelo menos 6 caracteres.');
@@ -627,23 +633,36 @@
     AJUSTES.forEach((n) => lote.set(ref.collection('ajustes').doc(n), ajusteParaDoc(n, clonar(base[n]))));
     base.usuarios.forEach((u) => lote.set(ref.collection('usuarios').doc(u.id), clonar(u)));
     await lote.commit();
-    await adminSalvarAssinatura(novaLoja, { nomeLoja, valor, diaVencimento, ativa: true, implantacaoValor });
+    await adminSalvarAssinatura(novaLoja, { nomeLoja, valor, diaVencimento, ativa: true, implantacaoValor, valorPromocional, mesesPromocionais, inicio: inicio || mesAtual() });
     return { lojaId: novaLoja, uid };
   }
 
   /* ---------- Mensalidade (lado da loja) ---------- */
   const mesAtual = () => new Date().toISOString().slice(0, 7);
+  const somarMesesComp = (c, n) => { const [a, m] = c.split('-').map(Number); const d = new Date(a, m - 1 + n, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+  /** Mês em que termina a promoção (último mês com valor promocional) ou null */
+  function fimDaPromocao(a) {
+    if (!a || !(a.valorPromocional > 0) || !(a.mesesPromocionais > 0) || !a.inicio) return null;
+    return somarMesesComp(a.inicio, a.mesesPromocionais - 1);
+  }
+  /** Valor da mensalidade num mês: promocional nos primeiros meses, depois o normal */
+  function valorDaMensalidade(a, competencia = mesAtual()) {
+    if (!a) return 0;
+    const fim = fimDaPromocao(a);
+    return fim && competencia >= (a.inicio || competencia) && competencia <= fim ? a.valorPromocional : (a.valor || 0);
+  }
   /** Situação de um mês: pago, informado (aguardando confirmação), atrasado ou em aberto */
   function situacaoMensalidade(assinatura, pagamentos, avisos, competencia = mesAtual()) {
     if (!assinatura || assinatura.ativa === false || !(assinatura.valor > 0)) return { status: 'sem', competencia };
+    const valorMes = valorDaMensalidade(assinatura, competencia);
     const pago = pagamentos.find((p) => p.competencia === competencia);
-    if (pago) return { status: 'pago', competencia, pagamento: pago };
+    if (pago) return { status: 'pago', competencia, pagamento: pago, valor: valorMes };
     const vencimento = `${competencia}-${String(assinatura.diaVencimento || 10).padStart(2, '0')}`;
     const aviso = avisos.find((a) => a.competencia === competencia && a.status !== 'recusado');
-    if (aviso) return { status: 'informado', competencia, vencimento, aviso };
+    if (aviso) return { status: 'informado', competencia, vencimento, aviso, valor: valorMes };
     const hoje = new Date().toISOString().slice(0, 10);
     const dias = Math.floor((new Date(hoje + 'T12:00:00') - new Date(vencimento + 'T12:00:00')) / 86400000);
-    return { status: dias > 0 ? 'atrasado' : 'aberto', competencia, vencimento, diasAtraso: Math.max(0, dias) };
+    return { status: dias > 0 ? 'atrasado' : 'aberto', competencia, vencimento, diasAtraso: Math.max(0, dias), valor: valorMes };
   }
 
   /** Implantação (pagamento único): sem, paga, informada ou pendente */
@@ -676,7 +695,7 @@
     if (usuarioLogado().perfil !== 'dono') throw new Error('Apenas o dono da loja pode informar o pagamento.');
     const doc = await fb.fs.collection('assinaturas').doc(lojaId).get();
     const dados = doc.exists ? doc.data() : {};
-    const valor = competencia === 'implantacao' ? dados.implantacaoValor || 0 : dados.valor || 0;
+    const valor = competencia === 'implantacao' ? dados.implantacaoValor || 0 : valorDaMensalidade(dados, competencia);
     await fb.fs.collection('assinaturas').doc(lojaId).collection('avisos').doc(competencia).set({
       competencia, valor, observacao, status: 'pendente', criadoEm: new Date().toISOString(),
       informadoPor: usuarioLogado().nome || '', uid: uidAtual
@@ -2491,7 +2510,7 @@
       exportarLoja: adminExportarLoja, restaurarLoja: adminRestaurarLoja
     },
     // Mensalidade (dono da loja)
-    obterMensalidade, informarPagamentoMensalidade,
+    obterMensalidade, informarPagamentoMensalidade, valorDaMensalidade, fimDaPromocao,
     // Loja e usuários
     obterLoja, salvarLoja, listarUsuarios, salvarUsuario, excluirUsuario,
     // Catálogo auxiliar

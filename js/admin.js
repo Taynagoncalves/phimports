@@ -43,7 +43,7 @@ App.aoIniciar(async () => {
 
   function desenhar() {
     const ativas = lojas.filter((l) => l.assinatura && l.assinatura.ativa !== false && l.assinatura.valor > 0);
-    const prevista = ativas.reduce((s, l) => s + l.assinatura.valor, 0);
+    const prevista = ativas.reduce((s, l) => s + Data.valorDaMensalidade(l.assinatura, mesAtual()), 0);
     const recebido = lojas.reduce((s, l) => s + l.pagamentos.filter((p) => p.competencia === mesAtual()).reduce((x, p) => x + (p.valor || 0), 0), 0);
     const atrasadas = lojas.filter((l) => l.situacao && l.situacao.status === 'atrasado');
     const pendentes = lojas.flatMap((l) => l.avisos.filter((a) => a.status === 'pendente').map((a) => ({ ...a, loja: l })));
@@ -58,7 +58,7 @@ App.aoIniciar(async () => {
       + card(`Recebido em ${nomeMes(mesAtual())}`, 'wallet', moeda(recebido), `falta ${moeda(Math.max(0, prevista - recebido))}`)
       + card('Implantações a receber', 'rocket', lojas.filter((l) => l.implantacao && l.implantacao.status !== 'paga' && l.implantacao.status !== 'sem').length,
         moeda(lojas.filter((l) => l.implantacao && l.implantacao.status !== 'paga' && l.implantacao.status !== 'sem').reduce((s, l) => s + l.implantacao.valor, 0)) + ' a receber')
-      + card('Em atraso', 'triangle-alert', atrasadas.length, atrasadas.length ? moeda(atrasadas.reduce((s, l) => s + l.assinatura.valor, 0)) + ' a receber' : 'ninguém atrasado', atrasadas.length > 0);
+      + card('Em atraso', 'triangle-alert', atrasadas.length, atrasadas.length ? moeda(atrasadas.reduce((s, l) => s + (l.situacao.valor || l.assinatura.valor), 0)) + ' a receber' : 'ninguém atrasado', atrasadas.length > 0);
 
     // Avisos "Já paguei" aguardando confirmação
     const avisos = document.getElementById('admin-avisos');
@@ -84,7 +84,8 @@ App.aoIniciar(async () => {
           <div class="texto-xs texto-3">${App.escapeHtml(dono.email || 'sem dono')}${l.telefone ? ' · ' + App.escapeHtml(l.telefone) : ''} · ${l.usuarios.length} usuário(s)</div>
           <div class="texto-xs ${diasDesdeBackup(l) === null || diasDesdeBackup(l) > 7 ? 'valor-negativo' : 'texto-3'}">${textoBackup(l)}</div>
         </td>
-        <td data-label="Mensalidade">${l.assinatura && l.assinatura.valor > 0 ? `<strong>${moeda(l.assinatura.valor)}</strong><div class="texto-xs texto-3">vence dia ${l.assinatura.diaVencimento}${l.assinatura.ativa === false ? ' · pausada' : ''}</div>` : '<span class="texto-3">—</span>'}
+        <td data-label="Mensalidade">${l.assinatura && l.assinatura.valor > 0 ? `<strong>${moeda(Data.valorDaMensalidade(l.assinatura, mesAtual()))}</strong><div class="texto-xs texto-3">vence dia ${l.assinatura.diaVencimento}${l.assinatura.ativa === false ? ' · pausada' : ''}</div>
+          ${Data.fimDaPromocao(l.assinatura) && mesAtual() <= Data.fimDaPromocao(l.assinatura) ? `<div class="texto-xs" style="color:var(--cor-info)">promoção até ${nomeMes(Data.fimDaPromocao(l.assinatura))}, depois ${moeda(l.assinatura.valor)}</div>` : ''}` : '<span class="texto-3">—</span>'}
           ${l.implantacao && l.implantacao.status !== 'sem' ? `<div class="texto-xs mt-2">Implantação ${moeda(l.implantacao.valor)}: ${{ paga: '<span class="valor-positivo">paga</span>', informada: '<span style="color:var(--cor-info)">informada</span>', pendente: '<span class="valor-negativo">pendente</span>' }[l.implantacao.status]}</div>` : ''}</td>
         <td data-label="Este mês">${badgeSituacao(l.situacao || { status: 'sem' })}</td>
         <td data-label="Último pagamento">${ultimo ? `${nomeMes(ultimo.competencia)}<div class="texto-xs texto-3">${moeda(ultimo.valor)} em ${App.formatarData(ultimo.pagoEm)}</div>` : '<span class="texto-3">—</span>'}</td>
@@ -197,7 +198,13 @@ App.aoIniciar(async () => {
       titulo: `Mensalidade — ${l.nome}`,
       tamanho: 'sm',
       corpo: `<form class="flex-col gap-4" id="f-mens" novalidate>
-        <div class="campo"><label for="m-valor">Valor por mês (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="m-valor" inputmode="decimal" data-mascara="moeda" value="${App.formatarValorInput(a.valor || 0)}"></div></div>
+        <div class="campo"><label for="m-valor">Valor normal por mês (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="m-valor" inputmode="decimal" data-mascara="moeda" value="${App.formatarValorInput(a.valor || 0)}"></div></div>
+        <div class="flex gap-2" style="flex-wrap:wrap">
+          <div class="campo" style="flex:1;min-width:150px"><label for="m-promo">Valor promocional (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="m-promo" inputmode="decimal" data-mascara="moeda" value="${App.formatarValorInput(a.valorPromocional || 0)}"></div></div>
+          <div class="campo" style="width:150px"><label for="m-meses">Nos primeiros</label><div class="input-grupo"><input class="input" id="m-meses" type="number" min="0" max="24" value="${a.mesesPromocionais || 0}" style="padding-left:12px"><span class="prefixo" style="left:auto;right:12px">meses</span></div></div>
+        </div>
+        <span class="ajuda" style="margin-top:-8px">Ex.: R$ 109,00 nos primeiros 3 meses e depois o valor normal. 0 = sem promoção.</span>
+        <div class="campo"><label for="m-inicio">Início da cobrança (1º mês)</label><input class="input" id="m-inicio" type="month" value="${a.inicio || mesAtual()}"></div>
         <div class="campo"><label for="m-dia">Dia do vencimento (1 a 28)</label><input class="input" id="m-dia" type="number" min="1" max="28" value="${a.diaVencimento || 10}"></div>
         <div class="campo"><label for="m-impl">Implantação — pagamento único (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="m-impl" inputmode="decimal" data-mascara="moeda" value="${App.formatarValorInput(a.implantacaoValor ?? 300)}"></div><span class="ajuda">0,00 = sem implantação.</span></div>
         <div class="campo"><label for="m-obs">Observação (aparece para a loja)</label><input class="input" id="m-obs" value="${App.escapeHtml(a.observacao || '')}" placeholder="Ex.: 3 primeiros meses com desconto"></div>
@@ -206,7 +213,7 @@ App.aoIniciar(async () => {
       acoes: [{ texto: 'Cancelar' }, { texto: 'Salvar', classe: 'btn-primario', icone: 'check', aoClicar: async (_, b) => {
         b.disabled = true;
         try {
-          await Data.admin.salvarAssinatura(l.id, { nomeLoja: l.nome, valor: App.lerNumero(el.querySelector('#m-valor').value), implantacaoValor: App.lerNumero(el.querySelector('#m-impl').value), diaVencimento: el.querySelector('#m-dia').value, observacao: el.querySelector('#m-obs').value.trim(), ativa: el.querySelector('#m-ativa').checked });
+          await Data.admin.salvarAssinatura(l.id, { nomeLoja: l.nome, valor: App.lerNumero(el.querySelector('#m-valor').value), valorPromocional: App.lerNumero(el.querySelector('#m-promo').value), mesesPromocionais: el.querySelector('#m-meses').value, inicio: el.querySelector('#m-inicio').value, implantacaoValor: App.lerNumero(el.querySelector('#m-impl').value), diaVencimento: el.querySelector('#m-dia').value, observacao: el.querySelector('#m-obs').value.trim(), ativa: el.querySelector('#m-ativa').checked });
           fechar(); App.toast('Mensalidade salva.', 'sucesso'); carregar();
         } catch (e) { App.toast(e.message, 'erro'); b.disabled = false; }
       } }]
@@ -221,7 +228,7 @@ App.aoIniciar(async () => {
       corpo: `<form class="flex-col gap-4" novalidate>
         <div class="campo"><label for="p-tipo">Referente a</label><select class="select" id="p-tipo"><option value="mes">Mensalidade</option><option value="implantacao">Implantação (pagamento único)</option></select></div>
         <div class="campo" id="p-mes-campo"><label for="p-mes">Mês de referência</label><input class="input" id="p-mes" type="month" value="${competencia}"></div>
-        <div class="campo"><label for="p-valor">Valor recebido (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="p-valor" inputmode="decimal" data-mascara="moeda" value="${App.formatarValorInput((l.assinatura && l.assinatura.valor) || 0)}"></div></div>
+        <div class="campo"><label for="p-valor">Valor recebido (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="p-valor" inputmode="decimal" data-mascara="moeda" value="${App.formatarValorInput(Data.valorDaMensalidade(l.assinatura, competencia))}"></div></div>
         <div class="campo"><label for="p-data">Pago em</label><input class="input" id="p-data" type="date" value="${App.dataInput()}"></div>
         <div class="campo"><label for="p-forma">Forma</label><select class="select" id="p-forma"><option value="pix">Pix</option><option value="dinheiro">Dinheiro</option><option value="transferencia">Transferência</option><option value="boleto">Boleto</option><option value="cartao">Cartão</option></select></div>
       </form>`,
@@ -239,7 +246,10 @@ App.aoIniciar(async () => {
     tipo.addEventListener('change', () => {
       const impl = tipo.value === 'implantacao';
       el.querySelector('#p-mes-campo').classList.toggle('oculto', impl);
-      el.querySelector('#p-valor').value = App.formatarValorInput(impl ? ((l.assinatura && l.assinatura.implantacaoValor) || 300) : ((l.assinatura && l.assinatura.valor) || 0));
+      el.querySelector('#p-valor').value = App.formatarValorInput(impl ? ((l.assinatura && l.assinatura.implantacaoValor) || 300) : Data.valorDaMensalidade(l.assinatura, el.querySelector('#p-mes').value));
+    });
+    el.querySelector('#p-mes').addEventListener('change', (e) => {
+      if (tipo.value !== 'implantacao') el.querySelector('#p-valor').value = App.formatarValorInput(Data.valorDaMensalidade(l.assinatura, e.target.value));
     });
   }
 
@@ -292,8 +302,11 @@ App.aoIniciar(async () => {
         <div class="campo col-span-2"><label for="n-loja">Nome da loja *</label><input class="input" id="n-loja" required></div>
         <div class="campo"><label for="n-email">E-mail do dono *</label><input class="input" id="n-email" type="email" required autocomplete="off"></div>
         <div class="campo"><label for="n-senha">Senha inicial (mín. 6) *</label><input class="input" id="n-senha" type="text" required minlength="6" autocomplete="off"></div>
-        <div class="campo"><label for="n-valor">Mensalidade (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="n-valor" inputmode="decimal" data-mascara="moeda" value="0,00"></div></div>
+        <div class="campo"><label for="n-promo">Valor promocional (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="n-promo" inputmode="decimal" data-mascara="moeda" value="109,00"></div></div>
+        <div class="campo"><label for="n-meses">Promoção nos primeiros (meses)</label><input class="input" id="n-meses" type="number" min="0" max="24" value="3"></div>
+        <div class="campo"><label for="n-valor">Mensalidade normal (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="n-valor" inputmode="decimal" data-mascara="moeda" value="139,00"></div></div>
         <div class="campo"><label for="n-dia">Dia do vencimento</label><input class="input" id="n-dia" type="number" min="1" max="28" value="10"></div>
+        <div class="campo"><label for="n-inicio">Início da cobrança (1º mês)</label><input class="input" id="n-inicio" type="month" value="${mesAtual()}"></div>
         <div class="campo col-span-2"><label for="n-impl">Implantação — pagamento único (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="n-impl" inputmode="decimal" data-mascara="moeda" value="300,00"></div></div>
       </form>
       <p class="texto-xs texto-3 mt-4">O usuário do dono é criado com o nome da loja. A loja começa vazia, com tamanhos, categorias e cores prontos.</p>`,
@@ -301,7 +314,7 @@ App.aoIniciar(async () => {
         const f = el.querySelector('form');
         if (!App.validarFormulario(f)) return;
         b.disabled = true;
-        const dados = { nomeLoja: el.querySelector('#n-loja').value.trim(), nome: el.querySelector('#n-loja').value.trim(), email: el.querySelector('#n-email').value.trim(), senha: el.querySelector('#n-senha').value, valor: App.lerNumero(el.querySelector('#n-valor').value), diaVencimento: el.querySelector('#n-dia').value, implantacaoValor: App.lerNumero(el.querySelector('#n-impl').value) };
+        const dados = { nomeLoja: el.querySelector('#n-loja').value.trim(), nome: el.querySelector('#n-loja').value.trim(), email: el.querySelector('#n-email').value.trim(), senha: el.querySelector('#n-senha').value, valor: App.lerNumero(el.querySelector('#n-valor').value), diaVencimento: el.querySelector('#n-dia').value, implantacaoValor: App.lerNumero(el.querySelector('#n-impl').value), valorPromocional: App.lerNumero(el.querySelector('#n-promo').value), mesesPromocionais: el.querySelector('#n-meses').value, inicio: el.querySelector('#n-inicio').value };
         try {
           await Data.admin.criarLoja(dados);
           fechar();

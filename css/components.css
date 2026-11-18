@@ -1179,3 +1179,9 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 .mens-incluso { list-style: none; margin-top: var(--esp-4); padding-top: var(--esp-4); border-top: 1px dashed var(--cor-borda-forte); display: grid; gap: 8px; font-size: var(--fs-sm); color: var(--cor-texto-2); }
 .mens-incluso li { display: flex; gap: 8px; align-items: flex-start; }
 .mens-incluso svg { width: 16px; height: 16px; color: var(--cor-sucesso); flex-shrink: 0; margin-top: 2px; }
+
+.mens-promo { display: inline-flex; align-items: center; gap: 6px; margin: 2px 0 6px; padding: 4px 10px; border-radius: var(--raio-pill); background: var(--cor-info-suave); color: var(--cor-info); font-size: var(--fs-xs); font-weight: var(--fw-medio); }
+.mens-promo svg { width: 13px; height: 13px; }
+.mens-resumo .btn { color: var(--cor-destaque-texto); text-decoration: none !important; }
+.mens-promo { display: block; border-radius: var(--raio-sm); line-height: 1.45; }
+.mens-promo svg { display: inline-block; vertical-align: -2px; margin-right: 4px; }

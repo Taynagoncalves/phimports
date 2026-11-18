@@ -32,7 +32,7 @@ App.aoIniciar(async () => {
       const pago = pagamentos.find((p) => p.competencia === c);
       const aviso = avisos.find((a) => a.competencia === c && a.status === 'pendente');
       const atraso = diasEntre(venc, hoje());
-      lista.push({ competencia: c, vencimento: venc, valor: assinatura.valor, status: pago ? 'pago' : aviso ? 'informado' : atraso > 0 ? 'atrasado' : 'aberto', diasAtraso: Math.max(0, atraso), diasParaVencer: Math.max(0, -atraso), pagamento: pago });
+      lista.push({ competencia: c, vencimento: venc, valor: Data.valorDaMensalidade(assinatura, c), status: pago ? 'pago' : aviso ? 'informado' : atraso > 0 ? 'atrasado' : 'aberto', diasAtraso: Math.max(0, atraso), diasParaVencer: Math.max(0, -atraso), pagamento: pago });
     }
     return lista;
   }
@@ -93,7 +93,7 @@ App.aoIniciar(async () => {
         <span class="mens-resumo-icone"><i data-lucide="${informados.length ? 'hourglass' : 'badge-check'}"></i></span>
         <div class="mens-resumo-texto">
           <strong>${informados.length ? 'Pagamento informado — aguardando confirmação' : 'Tudo em dia!'}</strong>
-          <span>${informados.length ? 'O suporte vai conferir o Pix e confirmar em breve.' : (proximo ? `Próxima mensalidade: ${moeda(assinatura.valor)} em ${App.formatarData(`${proximo}-${String(assinatura.diaVencimento).padStart(2, '0')}`)}.` : 'Nenhum pagamento pendente.')}</span>
+          <span>${informados.length ? 'O suporte vai conferir o Pix e confirmar em breve.' : (proximo ? `Próxima mensalidade: ${moeda(Data.valorDaMensalidade(assinatura, proximo))} em ${App.formatarData(`${proximo}-${String(assinatura.diaVencimento).padStart(2, '0')}`)}.` : 'Nenhum pagamento pendente.')}</span>
         </div>
       </section>`;
 
@@ -149,8 +149,13 @@ App.aoIniciar(async () => {
     const plano = `
       <section class="card card-corpo mens-plano">
         <span class="texto-sm texto-3">Seu plano</span>
-        ${listaMeses.length ? `<div class="mensalidade-valor">${moeda(assinatura.valor)}<small>/mês</small></div>
-        <div class="texto-sm texto-2">Vence todo dia <strong>${assinatura.diaVencimento}</strong></div>` : '<div class="texto-sm texto-2 mt-2">Sem mensalidade ativa.</div>'}
+        ${listaMeses.length ? (() => {
+          const fim = Data.fimDaPromocao(assinatura);
+          const emPromo = fim && mesAtual() <= fim;
+          return `<div class="mensalidade-valor">${moeda(Data.valorDaMensalidade(assinatura, mesAtual()))}<small>/mês</small></div>
+          ${emPromo ? `<div class="mens-promo"><i data-lucide="tag"></i>Valor promocional até ${nomeMes(fim).toLowerCase()} · depois <strong>${moeda(assinatura.valor)}/mês</strong></div>` : ''}
+          <div class="texto-sm texto-2">Vence todo dia <strong>${assinatura.diaVencimento}</strong></div>`;
+        })() : '<div class="texto-sm texto-2 mt-2">Sem mensalidade ativa.</div>'}
         ${implantacao.status !== 'sem' ? `<div class="texto-sm texto-2 mt-2">Implantação: <strong>${moeda(implantacao.valor)}</strong> · ${{ paga: '<span class="valor-positivo">paga</span>', informada: 'informada', pendente: 'pendente' }[implantacao.status]}</div>` : ''}
         <ul class="mens-incluso">
           <li><i data-lucide="check"></i>Sistema completo: caixa, estoque, vendas e relatórios</li>
