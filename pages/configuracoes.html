@@ -52,7 +52,7 @@
                   <div class="campo col-span-2">
                     <label for="loja-nome">Nome da loja (nome fantasia) <span class="obrigatorio" aria-hidden="true">*</span></label>
                     <input class="input" id="loja-nome" name="nome" required maxlength="60" autocomplete="organization" aria-describedby="loja-nome-ajuda">
-                    <span class="ajuda" id="loja-nome-ajuda">Ao salvar, o nome muda em todo o sistema: menu, tela de login, título das abas, notas fiscais (NFC-e), comprovantes, relatórios e PDFs.</span>
+                    <span class="ajuda" id="loja-nome-ajuda">Ao salvar, o nome muda em todo o sistema: menu, título das abas, recibos, relatórios e PDFs.</span>
                     <!-- Prévia de como o nome sai no topo do cupom -->
                     <div class="flex items-center gap-3 mt-2" style="flex-wrap:wrap">
                       <span class="texto-xs texto-3">No cupom fiscal:</span>
@@ -67,7 +67,12 @@
                     <label for="loja-email">E-mail</label>
                     <input class="input" id="loja-email" name="email" type="email">
                   </div>
-                  <div class="col-span-2 alerta info">
+                  <div class="campo col-span-2">
+                    <label for="loja-endereco">Endereço</label>
+                    <input class="input" id="loja-endereco" name="endereco" placeholder="Rua, número — bairro, cidade/UF — CEP" autocomplete="street-address">
+                    <span class="ajuda">Aparece no recibo de compra.</span>
+                  </div>
+                  <div class="col-span-2 alerta info so-nota">
                     <i data-lucide="landmark"></i>
                     <span>Razão social, CNPJ, inscrições e endereço ficam na aba <a href="#fiscal" id="link-aba-fiscal">Dados fiscais</a>, junto com o resto do que aparece na nota.</span>
                   </div>

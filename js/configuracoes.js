@@ -40,8 +40,8 @@ App.aoIniciar(async () => {
   let logo = loja.logo || '';
   let envioLogo = null;
 
-  // Razão social, CNPJ, IE e endereço são editados na aba "Dados fiscais"
-  ['nome', 'telefone', 'email'].forEach((c) => {
+  // Razão social, CNPJ e IE ficam na aba "Dados fiscais" (só com nota fiscal ligada)
+  ['nome', 'telefone', 'email', 'endereco'].forEach((c) => {
     form.elements[c].value = loja[c] || '';
   });
 

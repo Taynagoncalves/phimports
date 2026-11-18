@@ -812,7 +812,7 @@
     const urlConsulta = (fiscal && fiscal.nfce && fiscal.nfce.urlConsulta) || 'site da SEFAZ do seu estado';
     const homologacao = nota && nota.ambiente === 'homologacao';
     // Endereço estruturado (dados fiscais) ou o texto livre da loja
-    const end = fiscal && fiscal.endereco && fiscal.endereco.logradouro ? fiscal.endereco : null;
+    const end = (nota || loja.emitirNota) && fiscal && fiscal.endereco && fiscal.endereco.logradouro ? fiscal.endereco : null;
     const enderecoHtml = end
       ? `${e(end.logradouro)}, ${e(end.numero)}${end.complemento ? ' ' + e(end.complemento) : ''} — ${e(end.bairro)}<br>${e(end.municipio)}/${e(end.uf)} — CEP ${e(end.cep)}`
       : e(loja.endereco);
@@ -837,7 +837,7 @@
       ${loja.razaoSocial && (nota || loja.emitirNota) ? `<div class="c-centro">${e(loja.razaoSocial)}</div>` : ''}
       ${loja.cnpj && (nota || loja.emitirNota) ? `<div class="c-centro">CNPJ: ${e(loja.cnpj)} ${loja.inscricaoEstadual ? 'IE: ' + e(loja.inscricaoEstadual) : ''}</div>` : ''}
       ${(nota || loja.emitirNota) && fiscal && fiscal.inscricaoMunicipal ? `<div class="c-centro">IM: ${e(fiscal.inscricaoMunicipal)}</div>` : ''}
-      <div class="c-centro">${enderecoHtml}</div>
+      ${enderecoHtml ? `<div class="c-centro">${enderecoHtml}</div>` : ""}
       ${loja.telefone ? `<div class="c-centro">Tel.: ${e(loja.telefone)}</div>` : ''}
       <div class="c-sep"></div>
       ${nota
