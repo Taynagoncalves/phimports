@@ -15,6 +15,7 @@
       { id: 'pdv', texto: 'Frente de caixa', icone: 'scan-barcode', href: 'pdv.html' },
       { id: 'caixa', texto: 'Caixa', icone: 'wallet', href: 'caixa.html' },
       { id: 'vendas', texto: 'Vendas', icone: 'shopping-bag', href: 'vendas.html' },
+      { id: 'trocas', texto: 'Trocas', icone: 'repeat', href: 'trocas.html' },
       { id: 'notas', texto: 'Notas fiscais', icone: 'file-text', href: 'notas.html' }
     ] },
     { grupo: 'Catálogo', itens: [
@@ -39,7 +40,7 @@
   /* ---------- Permissões por perfil ----------
      Dono: tudo. Vendedor: vender, operar o caixa, trocas, clientes e consultas.
      As mesmas regras são conferidas em data.js (e, no Firebase, nas Security Rules). */
-  const PAGINAS_VENDEDOR = ['dashboard', 'pdv', 'caixa', 'vendas', 'notas', 'produtos', 'estoque', 'etiquetas', 'clientes'];
+  const PAGINAS_VENDEDOR = ['dashboard', 'pdv', 'caixa', 'vendas', 'trocas', 'notas', 'produtos', 'estoque', 'etiquetas', 'clientes'];
   const ACOES_DONO = [
     'gerenciar-produtos',   // cadastrar, editar, excluir produtos
     'movimentar-estoque',   // entrada, ajuste, saída, entrada de nota em lote
@@ -964,6 +965,7 @@
     const e = escapeHtml;
     const m = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     return `<div class="cupom">
+      <div class="c-logo"><img src="${e(logoDoRecibo(loja))}" alt="${e(loja.nome)}"></div>
       <div class="c-centro c-negrito" style="font-size:15px">${e(loja.nome).toUpperCase()}</div>
       <div class="c-centro">${e(loja.telefone || '')}</div>
       <div class="c-sep"></div>
@@ -1101,6 +1103,120 @@
   });
 
   /* ---------- API pública ---------- */
+  /** Mostra o vale-troca gerado na troca, com opção de imprimir */
+  function mostrarVale(venda) {
+    const c = venda.credito;
+    App.abrirModal({
+      titulo: 'Vale-troca gerado',
+      tamanho: 'sm',
+      corpo: `
+        <div class="texto-centro">
+          <div class="sucesso-icone"><i data-lucide="ticket"></i></div>
+          <p class="texto-sm">Entregue este código ao cliente. Ele usa o saldo em qualquer compra, no PDV, em "Vale-troca".</p>
+          <div class="mono negrito mt-4" style="font-size:28px;letter-spacing:.08em;color:var(--cor-texto)">${App.escapeHtml(c.codigo)}</div>
+          <div class="stat-valor mt-2">${App.formatarMoeda(c.saldo)}</div>
+          <p class="texto-xs mt-2">${c.clienteId ? `Vinculado a ${App.escapeHtml(venda.clienteNome)} — aparece no PDV ao escolher o cliente.` : 'Venda sem cliente identificado: guarde o código impresso.'}</p>
+        </div>`,
+      acoes: [
+        { texto: 'Fechar' },
+        { texto: 'Imprimir vale', classe: 'btn-primario', icone: 'printer', aoClicar: async () => App.imprimir(await App.gerarVale({ credito: c, venda })) }
+      ]
+    });
+  }
+
+  /* ==================================================================
+     TROCA / DEVOLUÇÃO
+     ================================================================== */
+  function abrirTroca(venda, opcoes = {}) {
+    let tipo = 'troca';
+    const { el, fechar } = App.abrirModal({
+      titulo: `Troca ou devolução — venda #${venda.numero}`,
+      corpo: `
+        <form id="form-dev" novalidate>
+          <div class="campo">
+            <span class="rotulo" id="rot-tipo-dev">Tipo</span>
+            <div class="chips" role="radiogroup" aria-labelledby="rot-tipo-dev">
+              <button type="button" class="chip" role="radio" data-tipo="troca" aria-checked="true"><i data-lucide="repeat"></i>Troca (gera vale-troca)</button>
+              <button type="button" class="chip" role="radio" data-tipo="devolucao" aria-checked="false"><i data-lucide="undo-2"></i>Devolução (devolve o dinheiro)</button>
+            </div>
+          </div>
+
+          <fieldset class="mt-4" style="border:none">
+            <legend class="rotulo mb-4">Itens que voltam ao estoque</legend>
+            ${venda.itens.map((i, idx) => `
+              <div class="flex items-center gap-3" style="padding:10px 0;border-bottom:1px solid var(--cor-borda)">
+                <input type="checkbox" id="dev-${idx}" data-idx="${idx}" checked>
+                <label for="dev-${idx}" style="flex:1;min-width:0">
+                  <span class="negrito texto-sm">${App.escapeHtml(i.nome)}</span><br>
+                  <span class="texto-xs texto-3">${App.escapeHtml(i.tamanho)} · ${App.escapeHtml(i.cor)} · ${App.formatarMoeda(i.preco)}</span>
+                </label>
+                <label class="sr-only" for="dev-qtd-${idx}">Quantidade de ${App.escapeHtml(i.nome)}</label>
+                <select class="select" id="dev-qtd-${idx}" data-qtd="${idx}" style="width:84px">
+                  ${Array.from({ length: i.qtd }, (_, k) => `<option value="${k + 1}" ${k + 1 === i.qtd ? 'selected' : ''}>${k + 1}</option>`).join('')}
+                </select>
+              </div>`).join('')}
+          </fieldset>
+
+          <div class="campo mt-4">
+            <label for="dev-motivo">Motivo</label>
+            <select class="select" id="dev-motivo">
+              <option>Tamanho não serviu</option>
+              <option>Não gostou da cor/modelo</option>
+              <option>Produto com defeito</option>
+              <option>Arrependimento</option>
+              <option>Outro</option>
+            </select>
+          </div>
+          <div class="alerta info mt-4"><i data-lucide="info"></i><span id="dev-resumo"></span></div>
+        </form>`,
+      acoes: [
+        { texto: 'Cancelar' },
+        { texto: 'Confirmar', classe: 'btn-primario', icone: 'check', aoClicar: confirmar }
+      ]
+    });
+
+    function selecionados() {
+      return [...el.querySelectorAll('[data-idx]')].filter((c) => c.checked).map((c) => {
+        const i = venda.itens[c.dataset.idx];
+        return { sku: i.sku, qtd: Number(el.querySelector(`[data-qtd="${c.dataset.idx}"]`).value), preco: i.preco };
+      });
+    }
+    function atualizarResumo() {
+      const itens = selecionados();
+      // Valor com o desconto da venda rateado (é o que o cliente pagou)
+      const fator = venda.subtotal ? venda.total / venda.subtotal : 1;
+      const valor = itens.reduce((s, i) => s + i.qtd * i.preco, 0) * fator;
+      el.querySelector('#dev-resumo').innerHTML = itens.length
+        ? `${itens.reduce((s, i) => s + i.qtd, 0)} peça(s) voltam ao estoque. ${tipo === 'troca'
+          ? `Gera um <strong>vale-troca de ${App.formatarMoeda(valor)}</strong> para usar em nova compra.`
+          : `Devolver <strong>${App.formatarMoeda(valor)}</strong> ao cliente pela mesma forma de pagamento.`}`
+        : 'Selecione ao menos um item.';
+    }
+    el.querySelectorAll('[data-tipo]').forEach((b) => b.addEventListener('click', () => {
+      tipo = b.dataset.tipo;
+      el.querySelectorAll('[data-tipo]').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+      atualizarResumo();
+    }));
+    el.querySelectorAll('[data-idx], [data-qtd]').forEach((c) => c.addEventListener('change', atualizarResumo));
+    atualizarResumo();
+
+    async function confirmar(_, botao) {
+      const itens = selecionados().map(({ sku, qtd }) => ({ sku, qtd }));
+      if (!itens.length) return App.toast('Selecione ao menos um item.', 'erro');
+      botao.disabled = true;
+      try {
+        const atualizada = await Data.registrarDevolucao(venda.id, { tipo, itens, motivo: el.querySelector('#dev-motivo').value });
+        fechar();
+        App.toast(tipo === 'troca' ? 'Troca registrada. Peças devolvidas ao estoque.' : 'Devolução registrada. Peças devolvidas ao estoque.');
+        if (opcoes.aoConcluir) await opcoes.aoConcluir(atualizada);
+        if (atualizada.credito) setTimeout(() => mostrarVale(atualizada), 250);
+      } catch (erro) {
+        App.toast(erro.message, 'erro');
+        botao.disabled = false;
+      }
+    }
+  }
+
   window.App = {
     aoIniciar,
     // formatadores
@@ -1116,6 +1232,8 @@
     corCss, paletaGrafico,
     // impressão / cupom
     imprimir, htmlCupom, gerarCupom, gerarVale,
+    // troca/devolução (telas Vendas e Trocas)
+    abrirTroca, mostrarVale,
     // marca da loja (nome/logo em toda a tela)
     comprimirImagem, enviarImagem, cloudinaryAtivo, nomeDoUsuario,
     aplicarMarcaLoja, aplicarCorPrimaria, variaveisCor, COR_PADRAO,

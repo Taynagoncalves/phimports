@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="../img/favicon.png">
+  <link rel="apple-touch-icon" href="../img/icone-app.png">
+  <meta name="theme-color" content="#18181B">
+  <title>Trocas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="trocas" data-titulo="Trocas">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Trocas</h1>
+            <p>A peça volta ao estoque e o cliente leva um vale-troca (ou o dinheiro de volta).</p>
+          </div>
+        </div>
+
+        <!-- Nova troca -->
+        <section class="card card-corpo" aria-labelledby="tit-nova">
+          <h2 id="tit-nova">Nova troca</h2>
+          <p class="texto-sm texto-3 mt-1">Passe a etiqueta da peça no leitor, ou digite o nº da venda ou o nome do cliente.</p>
+          <div class="vendas-busca mt-4">
+            <div class="busca" style="max-width:none">
+              <i data-lucide="scan-barcode"></i>
+              <label for="busca-troca" class="sr-only">Buscar venda</label>
+              <input class="input" type="search" id="busca-troca" placeholder="Código da peça, nº da venda ou cliente" autocomplete="off" autofocus>
+            </div>
+          </div>
+          <div class="mt-4" id="resultado-troca"></div>
+        </section>
+
+        <!-- Indicadores do mês -->
+        <section class="grid-stats mt-6" id="indicadores" aria-label="Trocas deste mês"></section>
+
+        <!-- Histórico / vales -->
+        <div class="abas mt-6" role="tablist" aria-label="Listas" id="abas-trocas" style="margin-bottom:var(--esp-4)">
+          <button type="button" role="tab" class="aba" data-aba="historico" aria-selected="true">Histórico de trocas <span class="aba-contagem" id="cont-historico">0</span></button>
+          <button type="button" role="tab" class="aba" data-aba="vales" aria-selected="false">Vales-troca em aberto <span class="aba-contagem" id="cont-vales">0</span></button>
+        </div>
+        <section class="card" id="lista-trocas" style="overflow:hidden"></section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/cloudinary-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/trocas.js"></script>
+</body>
+</html>
