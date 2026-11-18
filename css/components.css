@@ -1094,3 +1094,7 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 .venda-ok-total { font-size: 2.2rem; font-weight: var(--fw-bold); letter-spacing: -0.03em; margin: var(--esp-3) 0; font-variant-numeric: tabular-nums; }
 .venda-ok-resumo .visor-destaque { max-width: 280px; margin: 0 auto; }
 .venda-ok-recibo { background: var(--cor-superficie-2); border-radius: var(--raio); padding: var(--esp-5) var(--esp-3); max-height: 60vh; overflow-y: auto; }
+
+/* Logo no topo do recibo (preto e branco, como na impressora térmica) */
+.cupom .c-logo { display: flex; justify-content: center; margin-bottom: 8px; }
+.cupom .c-logo img { max-width: 70%; max-height: 64px; width: auto; height: auto; object-fit: contain; filter: grayscale(1) contrast(1.2); }

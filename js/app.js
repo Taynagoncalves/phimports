@@ -752,12 +752,15 @@
       document.head.appendChild(estilo);
     }
     document.body.classList.add('imprimindo');
-    setTimeout(() => {
+    // Espera as imagens (logo do recibo) carregarem antes de abrir a impressão
+    const imagens = [...area.querySelectorAll('img')].map((img) => (img.complete ? Promise.resolve() : new Promise((ok) => { img.onload = ok; img.onerror = ok; })));
+    const limite = new Promise((ok) => setTimeout(ok, 2500));
+    Promise.race([Promise.all(imagens), limite]).then(() => setTimeout(() => {
       window.print();
       document.body.classList.remove('imprimindo');
       area.remove();
       if (estilo) estilo.remove();
-    }, 50);
+    }, 50));
   }
 
   /** "QR Code" ilustrativo em SVG (padrão gerado a partir do texto — não é escaneável) */
@@ -791,6 +794,13 @@
    * @param {{loja, fiscal?, venda, nota?}} p — com nota → DANFE NFC-e; sem nota → comprovante não fiscal
    *   fiscal = Data.obterConfigFiscal() (emitente, endereço, NFC-e, tributação)
    */
+  /** Logo do recibo: o enviado em Configurações ou, se não houver, o logo padrão do sistema */
+  function logoDoRecibo(loja) {
+    if (loja.logo) return loja.logo;
+    const raiz = location.pathname.includes('/pages/') ? '../' : '';
+    return raiz + 'img/logo-phimports.png';
+  }
+
   function htmlCupom({ loja, fiscal = null, venda, nota = null }) {
     const m = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const e = escapeHtml;
@@ -821,6 +831,7 @@
 
     return `<div class="cupom">
       ${nota && nota.status === 'cancelada' ? '<div class="c-carimbo">CANCELADA</div>' : ''}
+      <div class="c-logo"><img src="${e(logoDoRecibo(loja))}" alt="${e(loja.nome)}"></div>
       <div class="c-centro c-negrito" style="font-size:15px;letter-spacing:.02em">${e(loja.nome).toUpperCase()}</div>
       ${loja.razaoSocial && (nota || loja.emitirNota) ? `<div class="c-centro">${e(loja.razaoSocial)}</div>` : ''}
       ${loja.cnpj && (nota || loja.emitirNota) ? `<div class="c-centro">CNPJ: ${e(loja.cnpj)} ${loja.inscricaoEstadual ? 'IE: ' + e(loja.inscricaoEstadual) : ''}</div>` : ''}
