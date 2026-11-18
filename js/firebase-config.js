@@ -25,7 +25,7 @@ window.SUPER_ADMIN_UIDS = ['WLmBJby1xoRFC95wPOcKdoad0uo1'];
 /* Pix do suporte: recebe as mensalidades das lojas (aba "Mensalidade").
    chave: CPF, CNPJ, e-mail, celular (+55DDDNÚMERO) ou chave aleatória. */
 window.PIX_SUPORTE = {
-  chave: '',
-  nome: '',    // nome de quem recebe (até 25 letras)
-  cidade: ''   // cidade (até 15 letras)
+  chave: '89135eca-7c8b-4067-80c9-fea1445b0b99', // chave aleatória
+  nome: 'Tayna Silva Goncalves',  // nome de quem recebe (até 25 letras, sem acento)
+  cidade: 'Cascavel'             // cidade (até 15 letras)
 };
