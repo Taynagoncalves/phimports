@@ -773,15 +773,17 @@
 
 /* ---------- Logo no topo do menu lateral ---------- */
 .sidebar-logo-img { flex: 1; min-width: 0; display: flex; align-items: center; height: 100%; padding: 6px 0; text-decoration: none !important; }
-.sidebar-logo-img img { max-width: 150px; max-height: 44px; width: auto; height: auto; object-fit: contain; }
+.sidebar-logo:has(.sidebar-logo-img) { height: 84px; }
+.sidebar-logo-img img { max-width: 190px; max-height: 66px; width: auto; height: auto; object-fit: contain; }
 [data-tema="escuro"] .sidebar-logo-img img { filter: invert(1); }
 /* Menu só com ícones (tablet ou recolhido): logo pequeno e centralizado */
 @media (min-width: 768px) and (max-width: 1199px) {
   .sidebar-logo-img { justify-content: center; padding: 0 8px; }
+  .sidebar-logo:has(.sidebar-logo-img) { height: var(--topbar-altura); }
   .sidebar-logo-img img { max-width: 52px; }
 }
 @media (min-width: 1200px) {
-  .menu-recolhido .sidebar-logo { padding: 0 6px; }
+  .menu-recolhido .sidebar-logo { padding: 0 6px; height: var(--topbar-altura); }
   .menu-recolhido .sidebar-logo .sidebar-logo-img { display: none; }
 }
 
