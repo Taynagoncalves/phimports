@@ -1098,3 +1098,18 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 /* Logo no topo do recibo (preto e branco, como na impressora térmica) */
 .cupom .c-logo { display: flex; justify-content: center; margin-bottom: 8px; }
 .cupom .c-logo img { max-width: 70%; max-height: 64px; width: auto; height: auto; object-fit: contain; filter: grayscale(1) contrast(1.2); }
+
+/* ==========================================================================
+   MENSALIDADE (lado da loja) e PAINEL DO SUPORTE
+   ========================================================================== */
+.mensalidade-grade { display: grid; gap: var(--esp-4); grid-template-columns: 1fr; }
+@media (min-width: 900px) { .mensalidade-grade { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } }
+.mensalidade-valor { font-size: 2.6rem; font-weight: var(--fw-bold); letter-spacing: -0.03em; line-height: 1.1; margin: 6px 0 4px; font-variant-numeric: tabular-nums; }
+.mensalidade-valor small { font-size: var(--fs-md); font-weight: var(--fw-medio); color: var(--cor-texto-3); margin-left: 4px; }
+.mensalidade-mes { margin-top: var(--esp-5); padding-top: var(--esp-4); border-top: 1px dashed var(--cor-borda-forte); }
+.mensalidade-mes > div { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.mensalidade-pix h2 { font-size: var(--fs-lg); }
+.mensalidade-pix h2 svg { width: 20px; height: 20px; }
+.pix-qr { width: 240px; max-width: 100%; margin: var(--esp-4) auto var(--esp-2); padding: 10px; background: #fff; border: 1px solid var(--cor-borda); border-radius: var(--raio-sm); }
+.pix-qr svg { width: 100%; height: auto; display: block; }
+.pix-valor { text-align: center; font-size: var(--fs-xl); font-weight: var(--fw-bold); margin-bottom: var(--esp-4); font-variant-numeric: tabular-nums; }

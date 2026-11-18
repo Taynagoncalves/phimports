@@ -11,7 +11,12 @@ App.aoIniciar(async () => {
   if (nuvem) {
     // Já está logado? Vai direto para o sistema
     const logado = await Data.pronto().catch(() => null);
-    if (logado) { location.replace('pages/dashboard.html'); return; }
+    if (logado) { location.replace(logado.perfil === 'superadmin' ? 'pages/admin.html' : 'pages/dashboard.html'); return; }
+    // Motivo de ter voltado para cá (ex.: loja bloqueada pelo suporte)
+    try {
+      const aviso = sessionStorage.getItem('gestaoloja:aviso-login');
+      if (aviso) { sessionStorage.removeItem('gestaoloja:aviso-login'); App.toast(aviso, 'erro', 9000); }
+    } catch (e) { /* ignora */ }
   } else {
     document.getElementById('aviso-prototipo').classList.remove('oculto');
   }
@@ -30,9 +35,9 @@ App.aoIniciar(async () => {
     botao.textContent = 'Entrando…';
     try {
       const lembrar = form.lembrar.checked;
-      await Data.entrar(form.email.value, form.senha.value, lembrar);
+      const usuario = await Data.entrar(form.email.value, form.senha.value, lembrar);
       try { lembrar ? localStorage.setItem(CHAVE_EMAIL, form.email.value.trim()) : localStorage.removeItem(CHAVE_EMAIL); } catch (er) { /* ignora */ }
-      location.href = 'pages/dashboard.html';
+      location.href = usuario && usuario.perfil === 'superadmin' ? 'pages/admin.html' : 'pages/dashboard.html';
     } catch (erro) {
       const senhaErrada = /incorret/i.test(erro.message);
       App.toast(senhaErrada ? `${erro.message} Esqueceu a senha? Fale com o suporte.` : erro.message, 'erro', 7000);

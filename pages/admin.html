@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="../img/favicon.png">
+  <link rel="apple-touch-icon" href="../img/icone-app.png">
+  <meta name="theme-color" content="#18181B">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Painel do Suporte — PH Imports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <style>
+    .admin { max-width: 1200px; margin: 0 auto; padding: 24px 16px 80px; }
+    .admin-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--cor-borda); }
+    .admin-topo img { width: 130px; height: auto; }
+    [data-tema="escuro"] .admin-topo img { filter: invert(1); }
+    .admin-topo .marca { display: flex; align-items: center; gap: 16px; }
+    .admin-topo .marca span { font-size: var(--fs-sm); color: var(--cor-texto-3); letter-spacing: .14em; text-transform: uppercase; }
+    .admin-lojas td { vertical-align: middle; }
+    .acoes-loja { display: flex; gap: 4px; justify-content: flex-end; flex-wrap: wrap; }
+    .aviso-pagamento { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--cor-borda); }
+    .aviso-pagamento:last-child { border-bottom: none; }
+  </style>
+</head>
+<body data-titulo="Painel do Suporte">
+  <main class="admin" id="conteudo">
+    <header class="admin-topo">
+      <div class="marca"><img src="../img/logo-phimports.png" alt="PH Imports"><span>Painel do suporte</span></div>
+      <div class="flex items-center gap-2">
+        <span class="texto-sm texto-3" id="admin-email"></span>
+        <button type="button" class="btn btn-secundario" id="btn-atualizar"><i data-lucide="refresh-cw"></i>Atualizar</button>
+        <button type="button" class="btn btn-primario" id="btn-nova-loja"><i data-lucide="store"></i>Nova loja</button>
+        <button type="button" class="btn-icone" id="btn-sair-admin" title="Sair" aria-label="Sair"><i data-lucide="log-out"></i></button>
+      </div>
+    </header>
+
+    <section class="grid-stats" id="admin-indicadores" aria-label="Resumo"></section>
+    <section class="card mt-6 oculto" id="admin-avisos"></section>
+    <section class="card mt-6">
+      <div class="card-cabecalho"><h2>Lojas</h2><span class="texto-sm texto-3" id="admin-contagem"></span></div>
+      <div class="tabela-wrap">
+        <table class="tabela tabela-responsiva admin-lojas">
+          <thead><tr><th>Loja</th><th>Mensalidade</th><th>Este mês</th><th>Último pagamento</th><th>Acesso</th><th class="col-acoes"><span class="sr-only">Ações</span></th></tr></thead>
+          <tbody id="admin-lista"><tr><td colspan="6" class="texto-centro texto-3" style="padding:40px">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/cloudinary-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+</html>

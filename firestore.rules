@@ -3,15 +3,26 @@ rules_version = '2';
 // Regras de segurança do Firestore — Gestão de Loja
 //
 // Estrutura:
-//   acessos/{uid}                  → { lojaId, perfil: 'dono' | 'vendedor', nome, email, ativo }
-//   lojas/{lojaId}                 → { nome, donoUid, criadoEm }
-//   lojas/{lojaId}/ajustes/{nome}  → loja, fiscal, config, cores, tamanhos, categorias
-//   lojas/{lojaId}/{colecao}/{id}  → produtos, vendas, clientes, caixas…
+//   acessos/{uid}                     → { lojaId, perfil: 'dono' | 'vendedor', nome, email, ativo }
+//   lojas/{lojaId}                    → { nome, donoUid, criadoEm, bloqueada, motivoBloqueio }
+//   lojas/{lojaId}/ajustes/{nome}     → loja, fiscal, config, cores, tamanhos, categorias
+//   lojas/{lojaId}/{colecao}/{id}     → produtos, vendas, clientes, caixas…
+//   assinaturas/{lojaId}              → mensalidade da loja (só o suporte altera)
+//   assinaturas/{lojaId}/pagamentos/{AAAA-MM}
 //
 // Quem não está logado não lê nem grava nada.
 // Cada usuário só enxerga a loja dele. Alguns dados só o dono altera.
+// O suporte (super admin) administra todas as lojas e as mensalidades.
+// Loja bloqueada pelo suporte não lê nem grava os próprios dados.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ⚠ Mesma lista de window.SUPER_ADMIN_UIDS em js/firebase-config.js
+    function superAdmin() {
+      return request.auth != null && request.auth.uid in [
+        'COLE_AQUI_O_UID_DO_SUPORTE'
+      ];
+    }
 
     function acesso() {
       return get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data;
@@ -22,42 +33,69 @@ service cloud.firestore {
         && acesso().ativo != false;
     }
     function membro(lojaId) { return temAcesso() && acesso().lojaId == lojaId; }
-    function dono(lojaId) { return membro(lojaId) && acesso().perfil == 'dono'; }
+    function bloqueada(lojaId) {
+      let loja = /databases/$(database)/documents/lojas/$(lojaId);
+      return exists(loja) && get(loja).data.get('bloqueada', false) == true;
+    }
+    function ativo(lojaId) { return membro(lojaId) && !bloqueada(lojaId); }
+    function dono(lojaId) { return ativo(lojaId) && acesso().perfil == 'dono'; }
 
     // Vínculo usuário → loja
     match /acessos/{uid} {
-      allow read: if request.auth != null
-        && (request.auth.uid == uid || dono(resource.data.lojaId));
-      // Primeiro acesso: o próprio usuário cria a loja dele (como dono de uma loja nova)
-      // ou o dono cadastra um usuário para a loja dele
-      allow create: if request.auth != null && (
+      allow read: if superAdmin() || (request.auth != null
+        && (request.auth.uid == uid || dono(resource.data.lojaId)));
+      // Primeiro acesso: o próprio usuário cria a loja dele (como dono de uma loja nova),
+      // o dono cadastra um usuário para a loja dele, ou o suporte cria
+      allow create: if superAdmin() || (request.auth != null && (
         (request.auth.uid == uid
           && request.resource.data.perfil == 'dono'
           && !exists(/databases/$(database)/documents/lojas/$(request.resource.data.lojaId)))
-        || dono(request.resource.data.lojaId));
+        || dono(request.resource.data.lojaId)));
       // Só o dono altera ou remove acessos da própria loja (e não muda a loja de ninguém)
-      allow update: if dono(resource.data.lojaId)
-        && request.resource.data.lojaId == resource.data.lojaId;
-      allow delete: if dono(resource.data.lojaId);
+      allow update: if superAdmin() || (dono(resource.data.lojaId)
+        && request.resource.data.lojaId == resource.data.lojaId);
+      allow delete: if superAdmin() || dono(resource.data.lojaId);
     }
 
     match /lojas/{lojaId} {
-      allow read: if membro(lojaId);
-      allow create: if request.auth != null
+      // O membro lê o cabeçalho mesmo bloqueado (para ver o aviso de bloqueio)
+      allow read: if superAdmin() || membro(lojaId);
+      allow create: if superAdmin() || (request.auth != null
         && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.lojaId == lojaId
-        && request.resource.data.donoUid == request.auth.uid;
-      allow update: if dono(lojaId);
+        && request.resource.data.donoUid == request.auth.uid
+        && request.resource.data.get('bloqueada', false) == false);
+      // O dono não pode mexer no bloqueio
+      allow update: if superAdmin() || (dono(lojaId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['bloqueada', 'motivoBloqueio']));
       allow delete: if false;
 
-      // Dados da loja: todos os membros leem.
+      // Dados da loja: todos os membros leem (loja ativa).
       // O vendedor grava o que o dia a dia exige (vendas, caixa, estoque, clientes…);
       // o resto (configurações, usuários, fornecedores, contas a pagar, promoções) é só do dono.
       match /{colecao}/{docId} {
-        allow read: if membro(lojaId);
-        allow write: if dono(lojaId) || (membro(lojaId) && colecao in [
+        allow read: if superAdmin() || ativo(lojaId);
+        allow write: if superAdmin() || dono(lojaId) || (ativo(lojaId) && colecao in [
           'vendas', 'produtos', 'movimentacoes', 'caixas', 'creditos',
           'clientes', 'contasReceber', 'notas', 'inventarios'
         ]);
+      }
+    }
+
+    // Mensalidades: só o suporte altera; o dono pode consultar a da própria loja
+    match /assinaturas/{lojaId} {
+      allow read: if superAdmin() || membro(lojaId);
+      allow write: if superAdmin();
+      match /pagamentos/{competencia} {
+        allow read: if superAdmin() || membro(lojaId);
+        allow write: if superAdmin();
+      }
+      // "Já paguei": o dono avisa (mesmo com a loja bloqueada); só o suporte confirma ou recusa
+      match /avisos/{competencia} {
+        allow read: if superAdmin() || membro(lojaId);
+        allow create, update: if superAdmin() || (membro(lojaId) && acesso().perfil == 'dono'
+          && request.resource.data.status == 'pendente'
+          && (resource == null || resource.data.status != 'confirmado'));
+        allow delete: if superAdmin();
       }
     }
   }

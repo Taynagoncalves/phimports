@@ -16,3 +16,16 @@ window.FIREBASE_CONFIG = {
   messagingSenderId: '9872726574',
   appId: '1:9872726574:web:c12279d9cda7e4a5ed5dbf'
 };
+
+/* Suporte (super admin): UID da conta em Firebase → Authentication → Usuários.
+   Quem estiver aqui entra no Painel do Suporte (admin.html) em vez de uma loja.
+   As regras (firestore.rules) precisam ter a MESMA lista. */
+window.SUPER_ADMIN_UIDS = [];
+
+/* Pix do suporte: recebe as mensalidades das lojas (aba "Mensalidade").
+   chave: CPF, CNPJ, e-mail, celular (+55DDDNÚMERO) ou chave aleatória. */
+window.PIX_SUPORTE = {
+  chave: '',
+  nome: '',    // nome de quem recebe (até 25 letras)
+  cidade: ''   // cidade (até 15 letras)
+};

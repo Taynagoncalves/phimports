@@ -107,6 +107,11 @@
      Regras de segurança: firestore.rules
      ================================================================== */
   let fb = null;            // { auth, fs }
+  // Suporte (super admin): UIDs em js/firebase-config.js. As regras do Firestore conferem a mesma lista.
+  const SUPER_ADMINS = Array.isArray(window.SUPER_ADMIN_UIDS) ? window.SUPER_ADMIN_UIDS : [];
+  const ehSuperAdmin = (uid) => !!uid && SUPER_ADMINS.includes(uid);
+  const MSG_BLOQUEIO = 'O acesso desta loja está suspenso. Entre em contato com o suporte.';
+  const CHAVE_AVISO_LOGIN = 'gestaoloja:aviso-login';
   let lojaId = null;
   let uidAtual = null;
   let perfilAcesso = null;  // documento acessos/{uid}
@@ -241,8 +246,23 @@
     if (dados.ativo === false) throw new Error('Seu acesso foi desativado pelo dono da loja.');
     return dados;
   }
+  /** A loja foi bloqueada pelo suporte? */
+  async function lojaBloqueada(id) {
+    try {
+      const d = await fb.fs.collection('lojas').doc(id).get();
+      return d.exists && d.data().bloqueada === true;
+    } catch (e) { return false; }
+  }
+  const usuarioSuporte = (user) => ({ id: user.uid, nome: 'Suporte', email: user.email, perfil: 'superadmin', ativo: true });
+
   async function prepararSessao(user) {
+    if (ehSuperAdmin(user.uid)) {
+      uidAtual = user.uid;
+      perfilAcesso = { perfil: 'superadmin', nome: 'Suporte', email: user.email };
+      return usuarioSuporte(user);
+    }
     perfilAcesso = await lerAcesso(user);
+    if (await lojaBloqueada(perfilAcesso.lojaId)) throw new Error(MSG_BLOQUEIO);
     uidAtual = user.uid;
     await abrirLoja(perfilAcesso.lojaId);
     return usuarioLogado();
@@ -263,6 +283,8 @@
         if (!user) return resolve(null);
         try { resolve(clonar(await prepararSessao(user))); } catch (e) {
           console.error(e);
+          // Mostra o motivo na tela de entrada (ex.: loja bloqueada)
+          try { sessionStorage.setItem(CHAVE_AVISO_LOGIN, e.message); } catch (_) { /* ignora */ }
           try { await fb.auth.signOut(); } catch (_) { /* ignora */ }
           resolve(null);
         }
@@ -394,7 +416,9 @@
       cred = await fb.auth.signInWithEmailAndPassword(String(email).trim(), senha);
     } catch (e) { throw new Error(traduzirErro(e)); }
     try {
+      if (ehSuperAdmin(cred.user.uid)) return usuarioSuporte(cred.user);
       const acesso = await lerAcesso(cred.user);
+      if (await lojaBloqueada(acesso.lojaId)) throw new Error(MSG_BLOQUEIO);
       return { id: cred.user.uid, nome: acesso.nome, email: acesso.email, perfil: acesso.perfil };
     } catch (e) {
       await fb.auth.signOut();
@@ -432,6 +456,159 @@
       throw new Error(e.code === 'auth/too-many-requests' ? traduzirErro(e) : 'A senha atual está incorreta.');
     }
     try { await user.updatePassword(novaSenha); } catch (e) { throw new Error(traduzirErro(e)); }
+    return true;
+  }
+
+  /* ==================================================================
+     PAINEL DO SUPORTE (super admin)
+       assinaturas/{lojaId}                      → { nomeLoja, valor, diaVencimento, inicio, ativa, observacao }
+       assinaturas/{lojaId}/pagamentos/{AAAA-MM} → { competencia, valor, pagoEm, forma, observacao }
+       lojas/{lojaId}.bloqueada                  → bloqueio de acesso (regras impedem a loja de usar)
+     ================================================================== */
+  function exigirSuperAdmin() {
+    if (MODO !== 'nuvem') throw new Error('O painel do suporte funciona só com o Firebase configurado.');
+    iniciarFirebase();
+    if (!ehSuperAdmin(fb.auth.currentUser && fb.auth.currentUser.uid)) throw new Error('Apenas o suporte pode fazer isso.');
+  }
+
+  /** Todas as lojas com donos/usuários, mensalidade e pagamentos */
+  async function adminListarLojas() {
+    exigirSuperAdmin();
+    const [acessos, lojas, assinaturas] = await Promise.all([
+      fb.fs.collection('acessos').get(), fb.fs.collection('lojas').get(), fb.fs.collection('assinaturas').get()
+    ]);
+    const mapa = {};
+    const garantir = (id) => (mapa[id] = mapa[id] || { id, nome: '', bloqueada: false, motivoBloqueio: '', usuarios: [], assinatura: null, pagamentos: [] });
+    lojas.forEach((d) => Object.assign(garantir(d.id), { nome: d.data().nome || '', bloqueada: d.data().bloqueada === true, motivoBloqueio: d.data().motivoBloqueio || '', criadoEm: d.data().criadoEm || '' }));
+    acessos.forEach((d) => { const a = d.data(); if (a.lojaId) garantir(a.lojaId).usuarios.push({ uid: d.id, nome: a.nome, email: a.email, perfil: a.perfil, ativo: a.ativo !== false }); });
+    assinaturas.forEach((d) => { garantir(d.id).assinatura = d.data(); });
+    await Promise.all(Object.values(mapa).map(async (l) => {
+      const [pags, ajuste, avs] = await Promise.all([
+        fb.fs.collection('assinaturas').doc(l.id).collection('pagamentos').get(),
+        fb.fs.collection('lojas').doc(l.id).collection('ajustes').doc('loja').get().catch(() => null),
+        fb.fs.collection('assinaturas').doc(l.id).collection('avisos').get()
+      ]);
+      l.avisos = avs.docs.map((x) => ({ id: x.id, ...x.data() })).sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm)));
+      l.pagamentos = pags.docs.map((x) => ({ id: x.id, ...x.data() })).sort((a, b) => String(b.competencia).localeCompare(String(a.competencia)));
+      const dadosLoja = ajuste && ajuste.exists ? ajuste.data() : {};
+      l.nome = dadosLoja.nome || l.nome || (l.assinatura && l.assinatura.nomeLoja) || 'Loja sem nome';
+      l.telefone = dadosLoja.telefone || '';
+      l.situacao = situacaoMensalidade(l.assinatura, l.pagamentos, l.avisos);
+    }));
+    return Object.values(mapa).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }
+
+  async function adminSalvarAssinatura(id, dados) {
+    exigirSuperAdmin();
+    const valor = Math.round(Number(dados.valor || 0) * 100) / 100;
+    const dia = Math.min(28, Math.max(1, parseInt(dados.diaVencimento, 10) || 10));
+    await fb.fs.collection('assinaturas').doc(id).set({
+      nomeLoja: dados.nomeLoja || '', valor, diaVencimento: dia, inicio: dados.inicio || new Date().toISOString().slice(0, 7),
+      ativa: dados.ativa !== false, observacao: dados.observacao || '', atualizadoEm: new Date().toISOString()
+    }, { merge: true });
+    return true;
+  }
+
+  async function adminRegistrarPagamento(id, { competencia, valor, pagoEm, forma = 'pix', observacao = '' }) {
+    exigirSuperAdmin();
+    if (!/^\d{4}-\d{2}$/.test(competencia || '')) throw new Error('Informe o mês de referência.');
+    await fb.fs.collection('assinaturas').doc(id).collection('pagamentos').doc(competencia).set({
+      competencia, valor: Math.round(Number(valor || 0) * 100) / 100, pagoEm: pagoEm || new Date().toISOString().slice(0, 10),
+      forma, observacao, registradoEm: new Date().toISOString()
+    });
+    return true;
+  }
+
+  /** Confirma (vira pagamento) ou recusa um aviso de pagamento da loja */
+  async function adminResponderAviso(id, competencia, confirmar, dados = {}) {
+    exigirSuperAdmin();
+    const ref = fb.fs.collection('assinaturas').doc(id).collection('avisos').doc(competencia);
+    const aviso = await ref.get();
+    if (confirmar) {
+      await adminRegistrarPagamento(id, { competencia, valor: dados.valor ?? (aviso.exists ? aviso.data().valor : 0), pagoEm: dados.pagoEm, forma: 'pix', observacao: 'Confirmado pelo suporte' });
+      await ref.set({ status: 'confirmado', respondidoEm: new Date().toISOString() }, { merge: true });
+    } else {
+      await ref.set({ status: 'recusado', motivo: dados.motivo || '', respondidoEm: new Date().toISOString() }, { merge: true });
+    }
+    return true;
+  }
+
+  async function adminExcluirPagamento(id, competencia) {
+    exigirSuperAdmin();
+    await fb.fs.collection('assinaturas').doc(id).collection('pagamentos').doc(competencia).delete();
+    return true;
+  }
+
+  async function adminBloquearLoja(id, bloquear, motivo = '') {
+    exigirSuperAdmin();
+    await fb.fs.collection('lojas').doc(id).set({ bloqueada: !!bloquear, motivoBloqueio: bloquear ? motivo : '', bloqueioAtualizadoEm: new Date().toISOString() }, { merge: true });
+    return true;
+  }
+
+  /** Cria a loja de uma cliente nova (conta do dono + loja vazia + mensalidade), sem sair do painel */
+  async function adminCriarLoja({ nomeLoja, nome, email, senha, valor = 0, diaVencimento = 10 }) {
+    exigirSuperAdmin();
+    if (!nomeLoja || !email || !senha) throw new Error('Preencha nome da loja, e-mail e senha.');
+    if (String(senha).length < 6) throw new Error('A senha precisa ter pelo menos 6 caracteres.');
+    const authSec = appSecundario();
+    let cred;
+    try { cred = await authSec.createUserWithEmailAndPassword(String(email).trim(), senha); } catch (e) { throw new Error(traduzirErro(e)); }
+    await authSec.signOut();
+    const uid = cred.user.uid;
+    const novaLoja = gerarId('loja');
+    const agora = new Date().toISOString();
+    const nomeDono = nome || 'Admin';
+    await fb.fs.collection('acessos').doc(uid).set({ lojaId: novaLoja, perfil: 'dono', nome: nomeDono, email: String(email).trim(), ativo: true, criadoEm: agora });
+    await fb.fs.collection('lojas').doc(novaLoja).set({ nome: nomeLoja, donoUid: uid, criadoEm: agora, bloqueada: false });
+    // Dados iniciais da loja (tamanhos, categorias, cores, configurações e o dono)
+    const base = bancoBase(nomeLoja);
+    base.usuarios = [{ id: uid, nome: nomeDono, email: String(email).trim(), perfil: 'dono', ativo: true, comissao: 0 }];
+    const lote = fb.fs.batch();
+    const ref = fb.fs.collection('lojas').doc(novaLoja);
+    AJUSTES.forEach((n) => lote.set(ref.collection('ajustes').doc(n), ajusteParaDoc(n, clonar(base[n]))));
+    base.usuarios.forEach((u) => lote.set(ref.collection('usuarios').doc(u.id), clonar(u)));
+    await lote.commit();
+    await adminSalvarAssinatura(novaLoja, { nomeLoja, valor, diaVencimento, ativa: true });
+    return { lojaId: novaLoja, uid };
+  }
+
+  /* ---------- Mensalidade (lado da loja) ---------- */
+  const mesAtual = () => new Date().toISOString().slice(0, 7);
+  /** Situação de um mês: pago, informado (aguardando confirmação), atrasado ou em aberto */
+  function situacaoMensalidade(assinatura, pagamentos, avisos, competencia = mesAtual()) {
+    if (!assinatura || assinatura.ativa === false || !(assinatura.valor > 0)) return { status: 'sem', competencia };
+    const pago = pagamentos.find((p) => p.competencia === competencia);
+    if (pago) return { status: 'pago', competencia, pagamento: pago };
+    const vencimento = `${competencia}-${String(assinatura.diaVencimento || 10).padStart(2, '0')}`;
+    const aviso = avisos.find((a) => a.competencia === competencia && a.status !== 'recusado');
+    if (aviso) return { status: 'informado', competencia, vencimento, aviso };
+    const hoje = new Date().toISOString().slice(0, 10);
+    const dias = Math.floor((new Date(hoje + 'T12:00:00') - new Date(vencimento + 'T12:00:00')) / 86400000);
+    return { status: dias > 0 ? 'atrasado' : 'aberto', competencia, vencimento, diasAtraso: Math.max(0, dias) };
+  }
+
+  /** Mensalidade da loja de quem está logado (dono) */
+  async function obterMensalidade() {
+    if (MODO !== 'nuvem') return { assinatura: null, pagamentos: [], avisos: [], situacao: { status: 'sem' } };
+    iniciarFirebase();
+    const ref = fb.fs.collection('assinaturas').doc(lojaId);
+    const [doc, pags, avs] = await Promise.all([ref.get(), ref.collection('pagamentos').get(), ref.collection('avisos').get()]);
+    const assinatura = doc.exists ? doc.data() : null;
+    const pagamentos = pags.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.competencia).localeCompare(String(a.competencia)));
+    const avisos = avs.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm)));
+    return { lojaId, assinatura, pagamentos, avisos, situacao: situacaoMensalidade(assinatura, pagamentos, avisos) };
+  }
+
+  /** Dono avisa que pagou (o suporte confirma no painel) */
+  async function informarPagamentoMensalidade(competencia = mesAtual(), observacao = '') {
+    if (MODO !== 'nuvem') throw new Error('Disponível só com o sistema na nuvem.');
+    if (usuarioLogado().perfil !== 'dono') throw new Error('Apenas o dono da loja pode informar o pagamento.');
+    const doc = await fb.fs.collection('assinaturas').doc(lojaId).get();
+    const valor = doc.exists ? doc.data().valor || 0 : 0;
+    await fb.fs.collection('assinaturas').doc(lojaId).collection('avisos').doc(competencia).set({
+      competencia, valor, observacao, status: 'pendente', criadoEm: new Date().toISOString(),
+      informadoPor: usuarioLogado().nome || '', uid: uidAtual
+    });
     return true;
   }
 
@@ -2230,6 +2407,14 @@
     modo: MODO, pronto,
     // Autenticação
     entrar, sair, usuarioAtual, recuperarSenha, criarLoja, trocarSenha,
+    // Painel do suporte (super admin)
+    admin: {
+      listarLojas: adminListarLojas, salvarAssinatura: adminSalvarAssinatura,
+      registrarPagamento: adminRegistrarPagamento, excluirPagamento: adminExcluirPagamento,
+      bloquearLoja: adminBloquearLoja, criarLoja: adminCriarLoja, responderAviso: adminResponderAviso
+    },
+    // Mensalidade (dono da loja)
+    obterMensalidade, informarPagamentoMensalidade,
     // Loja e usuários
     obterLoja, salvarLoja, listarUsuarios, salvarUsuario, excluirUsuario,
     // Catálogo auxiliar

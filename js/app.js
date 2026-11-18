@@ -31,6 +31,7 @@
     { grupo: 'Gestão', itens: [
       { id: 'financeiro', texto: 'Financeiro', icone: 'landmark', href: 'financeiro.html' },
       { id: 'relatorios', texto: 'Relatórios', icone: 'trending-up', href: 'relatorios.html' },
+      { id: 'mensalidade', texto: 'Mensalidade', icone: 'badge-dollar-sign', href: 'mensalidade.html' },
       { id: 'configuracoes', texto: 'Configurações', icone: 'settings', href: 'configuracoes.html' }
     ] }
   ];
@@ -644,7 +645,7 @@
         <button type="button" class="btn-icone btn-recolher" id="btn-recolher" aria-label="Recolher menu" title="Recolher menu">${icone('panel-left-close')}</button>
       </div>
       <nav class="sidebar-nav" aria-label="Menu principal">
-        ${MENU.map((g) => ({ ...g, itens: g.itens.filter((it) => podeAcessar(it.id) && (it.id !== 'notas' || loja.emitirNota) && (it.id !== 'caixa' || loja.controlarCaixa)) })).filter((g) => g.itens.length).map((g) => `
+        ${MENU.map((g) => ({ ...g, itens: g.itens.filter((it) => podeAcessar(it.id) && (it.id !== 'notas' || loja.emitirNota) && (it.id !== 'caixa' || loja.controlarCaixa) && (it.id !== 'mensalidade' || Data.modo === 'nuvem')) })).filter((g) => g.itens.length).map((g) => `
           <div class="nav-grupo">
             <div class="nav-grupo-titulo">${g.grupo}</div>
             ${g.itens.map((it) => `
@@ -1060,6 +1061,11 @@
       if (Data.modo === 'nuvem' && !logado && !naTelaDeLogin) {
         try { localStorage.removeItem(CHAVE_CASCA); } catch (e) { /* ignora */ }
         location.replace('../index.html');
+        return;
+      }
+      // Suporte (super admin) não usa as telas da loja: vai para o painel
+      if (logado && logado.perfil === 'superadmin' && !naTelaDeLogin) {
+        location.replace('admin.html');
         return;
       }
       coresCache = await Data.listarCores();
