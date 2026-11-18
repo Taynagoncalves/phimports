@@ -781,3 +781,6 @@
   .menu-recolhido .sidebar-logo { padding: 0 6px; }
   .menu-recolhido .sidebar-logo .sidebar-logo-img { display: none; }
 }
+
+.login-marca { display: grid; justify-items: center; gap: 10px; }
+.login-subtitulo { font-size: var(--fs-sm); font-weight: var(--fw-medio); letter-spacing: 0.24em; text-transform: uppercase; color: var(--cor-texto-3); }

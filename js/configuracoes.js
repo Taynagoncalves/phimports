@@ -510,7 +510,7 @@ App.aoIniciar(async () => {
      APARÊNCIA — cor principal (vale para a loja toda) e tema (por aparelho)
      ================================================================== */
   const CORES_PRONTAS = [
-    ['Índigo', '#4F46E5'], ['Violeta', '#7C3AED'], ['Rosa', '#DB2777'], ['Vermelho', '#DC2626'],
+    ['Preto', '#18181B'], ['Índigo', '#4F46E5'], ['Violeta', '#7C3AED'], ['Rosa', '#DB2777'], ['Vermelho', '#DC2626'],
     ['Vinho', '#9F1239'], ['Terracota', '#C2410C'], ['Âmbar', '#D97706'], ['Oliva', '#65A30D'],
     ['Verde', '#059669'], ['Petróleo', '#0F766E'], ['Azul', '#2563EB'], ['Grafite', '#27272A']
   ];

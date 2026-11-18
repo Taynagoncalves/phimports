@@ -1,6 +1,6 @@
 /* ==========================================================================
    style.css — Identidade visual (tokens), reset e base
-   Visual limpo: fundo branco, cinzas frios, uma cor de destaque (índigo).
+   Visual limpo: fundo branco, cinzas frios, uma cor de destaque (preto).
    Para trocar a identidade da loja, altere apenas as variáveis abaixo.
    Modo escuro: [data-tema="escuro"] no <html> (botão na barra do topo).
    ========================================================================== */
@@ -10,13 +10,13 @@
   color-scheme: light;
 
   /* ---------- Marca (cor de destaque) ---------- */
-  --cor-destaque: #4F46E5;          /* botões principais, item ativo, gráficos */
-  --cor-destaque-hover: #4338CA;
-  --cor-destaque-suave: #EEF0FF;    /* fundo de itens selecionados */
-  --cor-destaque-borda: #C7CBFB;    /* contorno de itens selecionados */
+  --cor-destaque: #18181B;          /* botões principais, item ativo, gráficos */
+  --cor-destaque-hover: #3F3F46;
+  --cor-destaque-suave: #F4F4F5;    /* fundo de itens selecionados */
+  --cor-destaque-borda: #D4D4D8;    /* contorno de itens selecionados */
   --cor-destaque-texto: #FFFFFF;    /* texto sobre a cor de destaque */
-  --cor-destaque-forte: #3730A3;    /* texto na cor de destaque sobre fundo suave */
-  --cor-marca: #4F46E5;             /* cor pura da marca (logo, painel do login) — igual nos dois temas */
+  --cor-destaque-forte: #18181B;    /* texto na cor de destaque sobre fundo suave */
+  --cor-marca: #18181B;             /* cor pura da marca (logo, painel do login) — igual nos dois temas */
   --cor-marca-texto: #FFFFFF;
 
   /* ---------- Neutros ---------- */
@@ -86,18 +86,18 @@
   --transicao: 180ms cubic-bezier(.2, .7, .2, 1);
 
   /* ---------- Foco acessível ---------- */
-  --anel-foco: 0 0 0 4px rgba(79, 70, 229, 0.16);
+  --anel-foco: 0 0 0 4px rgba(24, 24, 27, 0.14);
 }
 
 /* ---------- Modo escuro ---------- */
 [data-tema="escuro"] {
   color-scheme: dark;
-  --cor-destaque: #8B8CFA;
-  --cor-destaque-hover: #A5A6FB;
-  --cor-destaque-suave: #1E1F3A;
-  --cor-destaque-borda: #3B3D7A;
-  --cor-destaque-texto: #0B0C14;
-  --cor-destaque-forte: #C3C4FD;
+  --cor-destaque: #FAFAFA;
+  --cor-destaque-hover: #FFFFFF;
+  --cor-destaque-suave: #27272A;
+  --cor-destaque-borda: #3F3F46;
+  --cor-destaque-texto: #18181B;
+  --cor-destaque-forte: #FAFAFA;
 
   --cor-fundo: #0C0D10;
   --cor-fundo-2: #111317;
@@ -122,7 +122,7 @@
   --sombra: 0 1px 3px rgba(0, 0, 0, 0.4), 0 6px 16px -4px rgba(0, 0, 0, 0.5);
   --sombra-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
   --vidro: rgba(12, 13, 16, 0.82);
-  --anel-foco: 0 0 0 4px rgba(139, 140, 250, 0.22);
+  --anel-foco: 0 0 0 4px rgba(250, 250, 250, 0.2);
 }
 
 /* ---------- Reset leve ---------- */

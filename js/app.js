@@ -450,7 +450,7 @@
    * outra aba altera os dados.
    */
   /* ---------- Cor primária (escolhida em Configurações → Aparência) ---------- */
-  const COR_PADRAO = '#4F46E5';
+  const COR_PADRAO = '#18181B';
   const CHAVE_COR_CSS = 'gestaoloja:corcss';
 
   function hexParaRgb(hex) {
