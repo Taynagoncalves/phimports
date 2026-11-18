@@ -537,7 +537,8 @@
     document.querySelectorAll('.sidebar .logo-marca, [data-logo-loja]').forEach((el) => { el.innerHTML = logoHtml; });
     // Título da aba: "Página — Nome da loja"
     const pagina = document.body.dataset.tituloAba || document.body.dataset.titulo || 'Entrar';
-    document.title = `${pagina} — ${loja.nome}`;
+    // Tela de entrada: só o nome da loja; demais telas: "Página — Loja"
+    document.title = document.getElementById('sidebar') ? `${pagina} — ${loja.nome}` : loja.nome;
   }
 
   // Outra aba mudou os dados (data.js avisa): atualiza a marca na tela

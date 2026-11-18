@@ -57,7 +57,7 @@
   }
 
   /** Loja nova: sem produtos nem vendas, com tamanhos, categorias, cores e padrões prontos */
-  function bancoBase(nomeLoja = 'Sua loja') {
+  function bancoBase(nomeLoja = 'PH Imports') {
     const m = window.MOCK_DATA;
     const b = {};
     COLECOES.forEach((c) => { b[c] = []; });
