@@ -418,6 +418,23 @@
     return responder(usuarioLogado());
   }
 
+  /** Troca a senha de quem está logado (confere a senha atual antes). */
+  async function trocarSenha(senhaAtual, novaSenha) {
+    if (!senhaAtual || !novaSenha) throw new Error('Preencha a senha atual e a nova.');
+    if (String(novaSenha).length < 6) throw new Error('A nova senha precisa ter pelo menos 6 caracteres.');
+    if (MODO === 'local') return true;
+    iniciarFirebase();
+    const user = fb.auth.currentUser;
+    if (!user) throw new Error('Sua sessão expirou. Entre de novo.');
+    try {
+      await user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email, senhaAtual));
+    } catch (e) {
+      throw new Error(e.code === 'auth/too-many-requests' ? traduzirErro(e) : 'A senha atual está incorreta.');
+    }
+    try { await user.updatePassword(novaSenha); } catch (e) { throw new Error(traduzirErro(e)); }
+    return true;
+  }
+
   /** Envia o e-mail para criar uma senha nova. */
   async function recuperarSenha(email) {
     if (!email) return falhar('Informe seu e-mail.');
@@ -486,6 +503,7 @@
     const negado = exigirDono('gerenciar usuários'); if (negado) return negado;
     if (!usuario.nome || !usuario.email) return falhar('Nome e e-mail são obrigatórios.');
     if (MODO === 'nuvem') return salvarUsuarioNuvem(usuario);
+    delete usuario.senha; // protótipo: senha não é usada nem guardada
     if (usuario.id) {
       const i = db.usuarios.findIndex((u) => u.id === usuario.id);
       db.usuarios[i] = { ...db.usuarios[i], ...usuario };
@@ -519,6 +537,9 @@
    * Alterações de perfil/ativo também vão para o "acesso" (usado pelas regras).
    */
   async function salvarUsuarioNuvem(usuario) {
+    const senha = usuario.senha;
+    usuario = { ...usuario };
+    delete usuario.senha; // a senha vai só para o Firebase Authentication, nunca para o banco
     try {
       if (usuario.id) {
         const i = db.usuarios.findIndex((u) => u.id === usuario.id);
@@ -531,10 +552,17 @@
       }
       const email = String(usuario.email).trim();
       const authSec = appSecundario();
-      const senhaTemporaria = gerarId('S') + 'x9!' + Math.random().toString(36).slice(2, 8);
-      const cred = await authSec.createUserWithEmailAndPassword(email, senhaTemporaria);
-      authSec.languageCode = 'pt-BR';
-      await authSec.sendPasswordResetEmail(email); // convite: o vendedor cria a própria senha
+      let cred;
+      if (senha) {
+        // Senha definida por quem cadastrou: a pessoa já entra com ela
+        if (String(senha).length < 6) throw new Error('A senha precisa ter pelo menos 6 caracteres.');
+        cred = await authSec.createUserWithEmailAndPassword(email, senha);
+      } else {
+        // Sem senha: convite por e-mail para a pessoa criar a própria
+        cred = await authSec.createUserWithEmailAndPassword(email, gerarId('S') + 'x9!' + Math.random().toString(36).slice(2, 8));
+        authSec.languageCode = 'pt-BR';
+        await authSec.sendPasswordResetEmail(email);
+      }
       await authSec.signOut();
       const novo = { ...usuario, id: cred.user.uid, email, ativo: usuario.ativo !== false };
       await fb.fs.collection('acessos').doc(novo.id).set({ lojaId, perfil: novo.perfil || 'vendedor', nome: novo.nome, email, ativo: novo.ativo, criadoEm: new Date().toISOString() });
@@ -2201,7 +2229,7 @@
     // Modo ('nuvem' | 'local') e carregamento
     modo: MODO, pronto,
     // Autenticação
-    entrar, sair, usuarioAtual, recuperarSenha, criarLoja,
+    entrar, sair, usuarioAtual, recuperarSenha, criarLoja, trocarSenha,
     // Loja e usuários
     obterLoja, salvarLoja, listarUsuarios, salvarUsuario, excluirUsuario,
     // Catálogo auxiliar

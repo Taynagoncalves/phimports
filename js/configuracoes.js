@@ -454,16 +454,24 @@ App.aoIniciar(async () => {
           </div>
           <div class="campo">
             <label for="u-email">E-mail de acesso <span class="obrigatorio" aria-hidden="true">*</span></label>
-            <input class="input" id="u-email" name="email" type="email" required value="${App.escapeHtml(u.email || '')}">
+            <input class="input" id="u-email" name="email" type="email" required autocomplete="off" value="${App.escapeHtml(u.email || '')}" ${usuario && Data.modo === 'nuvem' ? 'readonly' : ''}>
+            ${usuario && Data.modo === 'nuvem' ? '<span class="ajuda">O e-mail de acesso não muda depois de criado. Para trocar, crie outro usuário.</span>' : ''}
           </div>
+          ${!usuario ? `<div class="campo">
+            <label for="u-senha">Senha <span class="obrigatorio" aria-hidden="true">*</span></label>
+            <div class="flex gap-2">
+              <input class="input" id="u-senha" name="senha" type="password" required minlength="6" autocomplete="new-password" style="flex:1">
+              <button type="button" class="btn btn-secundario" id="u-ver-senha" title="Mostrar senha" aria-label="Mostrar senha"><i data-lucide="eye"></i></button>
+            </div>
+            <span class="ajuda">Mínimo de 6 caracteres. A pessoa entra no sistema com este e-mail e esta senha.</span>
+          </div>` : ''}
           <div class="campo">
             <label for="u-perfil">Perfil</label>
             <select class="select" id="u-perfil" name="perfil">
-              <option value="vendedor" ${u.perfil === 'vendedor' ? 'selected' : ''}>Vendedor(a) — PDV, caixa, vendas, trocas e clientes</option>
+              <option value="vendedor" ${u.perfil === 'vendedor' ? 'selected' : ''}>Vendedor(a) — frente de caixa, vendas, trocas e clientes</option>
               <option value="dono" ${u.perfil === 'dono' ? 'selected' : ''}>Dono(a) — acesso total</option>
             </select>
           </div>
-          ${!usuario ? `<div class="alerta info"><i data-lucide="mail"></i><span>Um convite para criar a senha será enviado para o e-mail informado.</span></div>` : ''}
           <div class="campo">
             <label for="u-comissao">Comissão sobre as vendas (%)</label>
             <input class="input" id="u-comissao" name="comissao" type="number" min="0" max="100" step="0.5" value="${u.comissao || 0}">
@@ -476,11 +484,12 @@ App.aoIniciar(async () => {
         { texto: 'Salvar', classe: 'btn-primario', icone: 'check', aoClicar: async (_, botao) => {
           const f = el.querySelector('#form-usuario');
           if (!App.validarFormulario(f)) return;
+          if (!usuario && f.senha.value.length < 6) { f.senha.focus(); return App.toast('A senha precisa ter pelo menos 6 caracteres.', 'erro'); }
           botao.disabled = true;
           try {
-            await Data.salvarUsuario({ id: usuario?.id, nome: f.nome.value.trim(), email: f.email.value.trim(), perfil: f.perfil.value, ativo: f.ativo.checked, comissao: Math.max(0, Math.min(100, Number(f.comissao.value) || 0)) });
+            await Data.salvarUsuario({ id: usuario?.id, nome: f.nome.value.trim(), email: f.email.value.trim(), perfil: f.perfil.value, ativo: f.ativo.checked, comissao: Math.max(0, Math.min(100, Number(f.comissao.value) || 0)), ...(usuario ? {} : { senha: f.senha.value }) });
             fechar();
-            App.toast(usuario ? 'Usuário atualizado!' : 'Usuário criado! Convite enviado (simulação).');
+            App.toast(usuario ? 'Usuário atualizado!' : `Usuário criado! ${f.email.value.trim()} já pode entrar com a senha cadastrada.`, 'sucesso', 6000);
             carregarUsuarios();
           } catch (erro) {
             App.toast(erro.message, 'erro');
@@ -491,6 +500,15 @@ App.aoIniciar(async () => {
     });
   }
 
+  // Olhinho para mostrar/ocultar a senha no cadastro de usuário
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('#u-ver-senha');
+    if (!b) return;
+    const campo = document.getElementById('u-senha');
+    campo.type = campo.type === 'password' ? 'text' : 'password';
+    b.innerHTML = `<i data-lucide="${campo.type === 'password' ? 'eye' : 'eye-off'}"></i>`;
+    App.icones();
+  });
   document.getElementById('btn-novo-usuario').addEventListener('click', () => abrirUsuario());
   await carregarUsuarios();
 

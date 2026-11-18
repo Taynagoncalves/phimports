@@ -546,6 +546,47 @@
     aplicarMarcaLoja(await Data.obterLoja());
   });
 
+  /** Janela "Trocar minha senha" (quem está logado; esqueceu → suporte) */
+  function abrirTrocaDeSenha() {
+    const campo = (id, rotulo, auto) => `<div class="campo"><label for="${id}">${rotulo}</label>
+      <input class="input" id="${id}" type="password" required minlength="6" autocomplete="${auto}"></div>`;
+    const { el, fechar } = abrirModal({
+      titulo: 'Trocar minha senha',
+      tamanho: 'sm',
+      corpo: `<form id="form-senha" class="flex-col gap-4" novalidate>
+          ${campo('ts-atual', 'Senha atual', 'current-password')}
+          ${campo('ts-nova', 'Nova senha (mín. 6)', 'new-password')}
+          ${campo('ts-confirma', 'Repita a nova senha', 'new-password')}
+          <label class="checkbox"><input type="checkbox" id="ts-mostrar"> Mostrar senhas</label>
+        </form>`,
+      acoes: [
+        { texto: 'Cancelar' },
+        { texto: 'Trocar senha', classe: 'btn-primario', icone: 'key-round', aoClicar: salvar }
+      ]
+    });
+    const f = el.querySelector('#form-senha');
+    setTimeout(() => el.querySelector('#ts-atual').focus(), 50);
+    el.querySelector('#ts-mostrar').addEventListener('change', (e) => {
+      f.querySelectorAll('input[type=password], input[data-senha]').forEach((i) => { i.dataset.senha = '1'; i.type = e.target.checked ? 'text' : 'password'; });
+    });
+    f.addEventListener('submit', (e) => { e.preventDefault(); salvar(null, el.querySelector('.modal-rodape .btn-primario')); });
+    async function salvar(_, botao) {
+      const atual = el.querySelector('#ts-atual').value;
+      const nova = el.querySelector('#ts-nova').value;
+      if (nova !== el.querySelector('#ts-confirma').value) return toast('A nova senha e a repetição estão diferentes.', 'erro');
+      if (nova === atual) return toast('A nova senha precisa ser diferente da atual.', 'erro');
+      botao.disabled = true;
+      try {
+        await Data.trocarSenha(atual, nova);
+        fechar();
+        toast('Senha trocada! Use a nova senha na próxima vez que entrar.', 'sucesso', 6000);
+      } catch (erro) {
+        toast(erro.message, 'erro', 6000);
+        botao.disabled = false;
+      }
+    }
+  }
+
   /* ---------- Casca instantânea (menu e topo guardados da última página) ---------- */
   const CHAVE_CASCA = 'gestaoloja:casca';
   function lerCascaGuardada() {
@@ -618,6 +659,7 @@
           <div class="nome">${escapeHtml(usuario.nome)}</div>
           <div class="perfil">${usuario.perfil === 'dono' ? 'Dono(a)' : 'Vendedor(a)'}</div>
         </div>
+        <button type="button" class="btn-icone btn-senha" id="btn-trocar-senha" aria-label="Trocar minha senha" title="Trocar minha senha">${icone('key-round')}</button>
         <button type="button" class="btn-icone btn-sair" id="btn-sair" aria-label="Sair do sistema" title="Sair">${icone('log-out')}</button>
       </div>`;
 
@@ -688,6 +730,8 @@
     btnMenu.addEventListener('click', () => alternarMenu(!sidebar.classList.contains('aberta')));
     overlay.addEventListener('click', () => alternarMenu(false));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sidebar.classList.contains('aberta')) { alternarMenu(false); btnMenu.focus(); } });
+
+    document.getElementById('btn-trocar-senha').addEventListener('click', abrirTrocaDeSenha);
 
     document.getElementById('btn-sair').addEventListener('click', async () => {
       await Data.sair();
