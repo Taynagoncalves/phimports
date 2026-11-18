@@ -296,12 +296,12 @@ App.aoIniciar(async () => {
         <div class="campo"><label for="n-dia">Dia do vencimento</label><input class="input" id="n-dia" type="number" min="1" max="28" value="10"></div>
         <div class="campo col-span-2"><label for="n-impl">Implantação — pagamento único (R$)</label><div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="n-impl" inputmode="decimal" data-mascara="moeda" value="300,00"></div></div>
       </form>
-      <p class="texto-xs texto-3 mt-4">O usuário do dono é criado como "Admin". A loja começa vazia, com tamanhos, categorias e cores prontos.</p>`,
+      <p class="texto-xs texto-3 mt-4">O usuário do dono é criado com o nome da loja. A loja começa vazia, com tamanhos, categorias e cores prontos.</p>`,
       acoes: [{ texto: 'Cancelar' }, { texto: 'Criar loja', classe: 'btn-primario', icone: 'store', aoClicar: async (_, b) => {
         const f = el.querySelector('form');
         if (!App.validarFormulario(f)) return;
         b.disabled = true;
-        const dados = { nomeLoja: el.querySelector('#n-loja').value.trim(), nome: 'Admin', email: el.querySelector('#n-email').value.trim(), senha: el.querySelector('#n-senha').value, valor: App.lerNumero(el.querySelector('#n-valor').value), diaVencimento: el.querySelector('#n-dia').value, implantacaoValor: App.lerNumero(el.querySelector('#n-impl').value) };
+        const dados = { nomeLoja: el.querySelector('#n-loja').value.trim(), nome: el.querySelector('#n-loja').value.trim(), email: el.querySelector('#n-email').value.trim(), senha: el.querySelector('#n-senha').value, valor: App.lerNumero(el.querySelector('#n-valor').value), diaVencimento: el.querySelector('#n-dia').value, implantacaoValor: App.lerNumero(el.querySelector('#n-impl').value) };
         try {
           await Data.admin.criarLoja(dados);
           fechar();

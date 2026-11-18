@@ -1120,3 +1120,62 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 
 .cupom .c-economia { text-align: center; font-weight: 700; margin-top: 8px; padding: 4px 0; border: 1px dashed #555; }
 .cupom .c-mensagem { white-space: pre-line; }
+
+/* ---------- Mensalidade (tela da loja, versão 2) ---------- */
+.mens-resumo {
+  display: flex; align-items: center; gap: var(--esp-4); flex-wrap: wrap;
+  padding: var(--esp-5); margin-bottom: var(--esp-4);
+  border-radius: var(--raio); border: 1px solid;
+}
+.mens-resumo.alerta { background: var(--cor-alerta-suave); border-color: color-mix(in srgb, var(--cor-alerta) 25%, transparent); color: var(--cor-alerta); }
+.mens-resumo.perigo { background: var(--cor-perigo-suave); border-color: color-mix(in srgb, var(--cor-perigo) 25%, transparent); color: var(--cor-perigo); }
+.mens-resumo.sucesso { background: var(--cor-sucesso-suave); border-color: color-mix(in srgb, var(--cor-sucesso) 25%, transparent); color: var(--cor-sucesso); }
+.mens-resumo-icone { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--cor-superficie); flex-shrink: 0; }
+.mens-resumo-icone svg { width: 22px; height: 22px; }
+.mens-resumo-texto { flex: 1; min-width: 220px; display: flex; flex-direction: column; }
+.mens-resumo-texto strong { font-size: var(--fs-md); color: var(--cor-texto); }
+.mens-resumo-texto span { font-size: var(--fs-sm); color: var(--cor-texto-2); }
+.mens-resumo-total { display: flex; flex-direction: column; align-items: flex-end; }
+.mens-resumo-total span { font-size: var(--fs-xs); color: var(--cor-texto-3); }
+.mens-resumo-total strong { font-size: 1.6rem; color: var(--cor-texto); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+.mens-grade { display: grid; gap: var(--esp-4); grid-template-columns: 1fr; margin-bottom: var(--esp-4); align-items: start; }
+@media (min-width: 900px) {
+  .mens-grade { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mens-grade-2 { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+}
+
+.mens-pendencias { list-style: none; }
+.mens-pendencias li + li { border-top: 1px solid var(--cor-borda); }
+.mens-pendencia { display: flex; align-items: center; gap: var(--esp-3); padding: 14px var(--esp-6); cursor: pointer; transition: background var(--transicao); }
+.mens-pendencia:hover { background: var(--cor-fundo-2); }
+.mens-pendencia.marcada { background: color-mix(in srgb, var(--cor-destaque-suave) 60%, transparent); }
+.mens-pendencia input { width: 18px; height: 18px; flex-shrink: 0; }
+.mens-pendencia-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mens-pendencia-info strong { font-size: var(--fs-sm); }
+.mens-pendencia-info span { font-size: var(--fs-xs); }
+.mens-pendencia-valor { font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+.mens-total-marcado { display: flex; justify-content: space-between; align-items: baseline; padding: 14px var(--esp-6); border-top: 1px dashed var(--cor-borda-forte); }
+.mens-total-marcado strong { font-size: var(--fs-xl); font-variant-numeric: tabular-nums; }
+
+.mens-pix h2 { font-size: var(--fs-lg); }
+.mens-pix h2 svg { width: 20px; height: 20px; }
+.mens-pix-valor { font-size: var(--fs-xl); font-weight: var(--fw-bold); font-variant-numeric: tabular-nums; }
+.mens-passos { margin: var(--esp-2) 0 var(--esp-4) 18px; display: grid; gap: 6px; font-size: var(--fs-sm); color: var(--cor-texto-2); }
+#btn-copiar.copiado { border-color: var(--cor-sucesso); color: var(--cor-sucesso); background: var(--cor-sucesso-suave); }
+
+.mens-linha { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: var(--esp-2); }
+.mens-mes { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: var(--raio-sm); background: var(--cor-fundo-2); border: 1px solid var(--cor-borda); text-align: center; }
+.mens-mes strong { font-size: var(--fs-sm); }
+.mens-mes span:last-child { font-size: 11px; color: var(--cor-texto-3); }
+.mens-mes-ponto { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.mens-mes-ponto svg { width: 15px; height: 15px; stroke-width: 2.5; }
+.mens-mes.pago .mens-mes-ponto { background: var(--cor-sucesso); }
+.mens-mes.atrasado .mens-mes-ponto { background: var(--cor-perigo); }
+.mens-mes.aberto .mens-mes-ponto { background: var(--cor-alerta); }
+.mens-mes.informado .mens-mes-ponto { background: var(--cor-info); }
+
+.mens-plano .mensalidade-valor { font-size: 2rem; }
+.mens-incluso { list-style: none; margin-top: var(--esp-4); padding-top: var(--esp-4); border-top: 1px dashed var(--cor-borda-forte); display: grid; gap: 8px; font-size: var(--fs-sm); color: var(--cor-texto-2); }
+.mens-incluso li { display: flex; gap: 8px; align-items: flex-start; }
+.mens-incluso svg { width: 16px; height: 16px; color: var(--cor-sucesso); flex-shrink: 0; margin-top: 2px; }

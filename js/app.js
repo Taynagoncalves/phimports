@@ -618,6 +618,12 @@
   }
 
   let lojaCache = null;
+  /** Nome para mostrar: o dono com o nome padrão ("Admin") aparece com o nome da loja */
+  function nomeDoUsuario(usuario, loja = lojaCache) {
+    if (!usuario) return '';
+    const generico = !usuario.nome || /^admin$/i.test(String(usuario.nome).trim());
+    return generico && usuario.perfil === 'dono' && loja && loja.nome ? loja.nome : (usuario.nome || '');
+  }
   async function montarCasca() {
     // data-menu: item do menu a destacar (ex.: Entrada de mercadoria destaca "Estoque")
     const paginaAtual = document.body.dataset.menu || document.body.dataset.pagina;
@@ -655,9 +661,9 @@
           </div>`).join('')}
       </nav>
       <div class="sidebar-usuario">
-        <div class="avatar" title="${escapeHtml(usuario.nome)}">${escapeHtml(iniciais(usuario.nome))}</div>
+        <div class="avatar" title="${escapeHtml(nomeDoUsuario(usuario, loja))}">${escapeHtml(iniciais(nomeDoUsuario(usuario, loja)))}</div>
         <div class="info">
-          <div class="nome">${escapeHtml(usuario.nome)}</div>
+          <div class="nome">${escapeHtml(nomeDoUsuario(usuario, loja))}</div>
           <div class="perfil">${usuario.perfil === 'dono' ? 'Dono(a)' : 'Vendedor(a)'}</div>
         </div>
         <button type="button" class="btn-icone btn-senha" id="btn-trocar-senha" aria-label="Trocar minha senha" title="Trocar minha senha">${icone('key-round')}</button>
@@ -930,7 +936,7 @@
         <div class="c-centro">Cliente: ${e(venda.clienteNome || 'Consumidor final')}</div>
         ${venda.clienteDocumento ? `<div class="c-centro">CPF/CNPJ: ${e(venda.clienteDocumento)}</div>` : ''}
         ${venda.clienteTelefone ? `<div class="c-centro">Telefone: ${e(venda.clienteTelefone)}</div>` : ''}
-        <div class="c-centro">Vendedor(a): ${e(venda.vendedorNome || '—')}</div>
+        <div class="c-centro">Vendedor(a): ${e(/^admin$/i.test(String(venda.vendedorNome || '').trim()) ? loja.nome : (venda.vendedorNome || '—'))}</div>
         ${venda.parcelasCrediario && venda.parcelasCrediario.length ? `
           <div class="c-sep"></div>
           <div class="c-centro c-negrito">CREDIÁRIO — PARCELAS</div>
@@ -1111,7 +1117,7 @@
     // impressão / cupom
     imprimir, htmlCupom, gerarCupom, gerarVale,
     // marca da loja (nome/logo em toda a tela)
-    comprimirImagem, enviarImagem, cloudinaryAtivo,
+    comprimirImagem, enviarImagem, cloudinaryAtivo, nomeDoUsuario,
     aplicarMarcaLoja, aplicarCorPrimaria, variaveisCor, COR_PADRAO,
     // permissões
     pode, podeAcessar, get usuario() { return usuarioAtualCache; },

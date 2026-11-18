@@ -17,7 +17,7 @@ App.aoIniciar(async () => {
   /* ---------- Saudação ---------- */
   const hora = new Date().getHours();
   const periodo = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
-  document.getElementById('saudacao').innerHTML = `${periodo}, <em>${App.escapeHtml(usuario.nome.split(' ')[0])}</em>.`;
+  document.getElementById('saudacao').innerHTML = `${periodo}, <em>${App.escapeHtml(/^admin$/i.test(String(usuario.nome || '').trim()) ? App.nomeDoUsuario(usuario) : usuario.nome.split(' ')[0])}</em>.`;
   const hoje = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
   document.getElementById('data-hoje').textContent = hoje.charAt(0).toUpperCase() + hoje.slice(1);
 
