@@ -96,6 +96,7 @@ App.aoIniciar(async () => {
           <button type="button" class="btn-icone" data-acao="pagamento" data-id="${l.id}" title="Registrar pagamento" aria-label="Registrar pagamento"><i data-lucide="hand-coins"></i></button>
           <button type="button" class="btn-icone" data-acao="mensalidade" data-id="${l.id}" title="Editar mensalidade" aria-label="Editar mensalidade"><i data-lucide="badge-dollar-sign"></i></button>
           <button type="button" class="btn-icone" data-acao="historico" data-id="${l.id}" title="Histórico de pagamentos" aria-label="Histórico de pagamentos"><i data-lucide="history"></i></button>
+          <button type="button" class="btn-icone" data-acao="zerar" data-id="${l.id}" title="Zerar dados da loja" aria-label="Zerar dados da loja"><i data-lucide="eraser"></i></button>
           <button type="button" class="btn-icone" data-acao="backup" data-id="${l.id}" title="Backup da loja" aria-label="Backup da loja"><i data-lucide="database-backup"></i></button>
           <button type="button" class="btn-icone" data-acao="senha" data-id="${l.id}" title="Enviar link de nova senha ao dono" aria-label="Enviar link de nova senha"><i data-lucide="key-round"></i></button>
           <button type="button" class="btn-icone ${l.bloqueada ? '' : 'perigo'}" data-acao="bloqueio" data-id="${l.id}" title="${l.bloqueada ? 'Desbloquear loja' : 'Bloquear loja'}" aria-label="${l.bloqueada ? 'Desbloquear loja' : 'Bloquear loja'}"><i data-lucide="${l.bloqueada ? 'lock-open' : 'lock'}"></i></button>
@@ -128,6 +129,55 @@ App.aoIniciar(async () => {
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
   const contarRegistros = (b) => Object.values(b.colecoes || {}).reduce((s, docs) => s + Object.keys(docs || {}).length, 0);
+
+  /* ---------- Zerar dados (antes de entregar a loja) ---------- */
+  const GRUPOS_ZERAR = [
+    ['vendas', 'Vendas e trocas', 'Vendas, trocas, vales-troca, crediário, caixas e notas. Dashboard e relatórios voltam a zero e as vendas recomeçam no nº 1001.', ['vendas', 'notas', 'creditos', 'caixas', 'contasReceber']],
+    ['produtos', 'Produtos e estoque', 'Produtos, estoque, entradas, movimentações, inventários e promoções.', ['produtos', 'movimentacoes', 'entradas', 'inventarios', 'promocoes']],
+    ['clientes', 'Clientes e fornecedores', 'Todos os clientes e fornecedores cadastrados.', ['clientes', 'fornecedores']],
+    ['financeiro', 'Contas a pagar', 'Contas a pagar lançadas no Financeiro.', ['contasPagar']]
+  ];
+
+  function abrirZerar(l) {
+    const { el, fechar } = App.abrirModal({
+      titulo: `Zerar dados — ${l.nome}`,
+      corpo: `
+        <p class="texto-sm">Marque o que apagar. <strong>Continuam:</strong> configurações da loja, logo, usuários e senhas, cores/tamanhos/categorias e a mensalidade.</p>
+        <div class="mt-4" style="display:grid;gap:10px">
+          ${GRUPOS_ZERAR.map(([id, titulo, texto]) => `
+            <label class="flex gap-3" style="align-items:flex-start;padding:12px;border:1px solid var(--cor-borda);border-radius:10px;cursor:pointer">
+              <input type="checkbox" data-grupo="${id}" ${id === 'vendas' ? 'checked' : ''} style="margin-top:3px">
+              <span><strong class="texto-sm">${titulo}</strong><br><span class="texto-xs texto-3">${texto}</span></span>
+            </label>`).join('')}
+        </div>
+        <div class="alerta mt-4" style="align-items:flex-start"><i data-lucide="triangle-alert"></i>
+          <span>Antes de apagar, o sistema <strong>baixa um backup</strong> no seu computador (dá para desfazer em "Backup → Restaurar").</span></div>
+        <div class="campo mt-4">
+          <label for="zr-confirma">Para confirmar, digite o nome da loja: <strong>${App.escapeHtml(l.nome)}</strong></label>
+          <input class="input" id="zr-confirma" autocomplete="off">
+        </div>`,
+      acoes: [
+        { texto: 'Cancelar' },
+        { texto: 'Baixar backup e zerar', classe: 'btn-perigo', icone: 'eraser', aoClicar: zerar }
+      ]
+    });
+    App.icones();
+
+    async function zerar(_, botao) {
+      const grupos = [...el.querySelectorAll('[data-grupo]')].filter((c) => c.checked).map((c) => c.dataset.grupo);
+      if (!grupos.length) return App.toast('Marque o que apagar.', 'erro');
+      const digitado = el.querySelector('#zr-confirma').value.trim().toLowerCase();
+      if (digitado !== String(l.nome).trim().toLowerCase()) return App.toast('Digite o nome da loja exatamente como aparece.', 'erro');
+      const colecoes = GRUPOS_ZERAR.filter((g) => grupos.includes(g[0])).flatMap((g) => g[3]);
+      botao.disabled = true;
+      try {
+        await baixarBackup(l);
+        const n = await Data.admin.zerarLoja(l.id, colecoes);
+        App.toast(`Pronto! ${n} registro(s) apagado(s). O backup foi baixado antes.`, 'sucesso', 8000);
+        fechar(); carregar();
+      } catch (er) { App.toast(er.message, 'erro', 7000); botao.disabled = false; }
+    }
+  }
 
   async function baixarBackup(l) {
     const backup = await Data.admin.exportarLoja(l.id);
@@ -334,7 +384,7 @@ App.aoIniciar(async () => {
     const b = e.target.closest('[data-acao]');
     if (!b) return;
     const l = achar(b.dataset.id);
-    ({ pagamento: () => registrarPagamento(l), mensalidade: () => editarMensalidade(l), historico: () => historico(l), bloqueio: () => alternarBloqueio(l), senha: () => enviarSenha(l), backup: () => abrirBackup(l) })[b.dataset.acao]();
+    ({ pagamento: () => registrarPagamento(l), mensalidade: () => editarMensalidade(l), historico: () => historico(l), bloqueio: () => alternarBloqueio(l), senha: () => enviarSenha(l), backup: () => abrirBackup(l), zerar: () => abrirZerar(l) })[b.dataset.acao]();
   });
   document.getElementById('admin-avisos')?.addEventListener('click', async (e) => {
     const conf = e.target.closest('[data-confirmar]');

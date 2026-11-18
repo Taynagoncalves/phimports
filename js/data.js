@@ -586,6 +586,26 @@
    * Grava de volta tudo o que está no arquivo (não apaga o que foi criado depois).
    * @returns {Promise<number>} quantidade de registros gravados
    */
+  /**
+   * Zera dados de uma loja (antes de entregar, por exemplo).
+   * Apaga só as coleções pedidas; configurações, usuários e mensalidade ficam.
+   * @returns {Promise<number>} quantidade de registros apagados
+   */
+  async function adminZerarLoja(id, colecoes) {
+    exigirSuperAdmin();
+    const alvo = (colecoes || []).filter((c) => COLECOES.includes(c) && c !== 'usuarios');
+    if (!alvo.length) throw new Error('Escolha o que apagar.');
+    const ref = fb.fs.collection('lojas').doc(id);
+    const snaps = await Promise.all(alvo.map((c) => ref.collection(c).get()));
+    const docs = snaps.flatMap((s) => s.docs.map((d) => d.ref));
+    for (let i = 0; i < docs.length; i += 400) {
+      const lote = fb.fs.batch();
+      docs.slice(i, i + 400).forEach((r) => lote.delete(r));
+      await lote.commit();
+    }
+    return docs.length;
+  }
+
   async function adminRestaurarLoja(id, backup) {
     exigirSuperAdmin();
     if (!backup || backup.tipo !== 'backup-loja' || !backup.colecoes) throw new Error('Este arquivo não é um backup de loja do sistema.');
@@ -2510,7 +2530,7 @@
       listarLojas: adminListarLojas, salvarAssinatura: adminSalvarAssinatura,
       registrarPagamento: adminRegistrarPagamento, excluirPagamento: adminExcluirPagamento,
       bloquearLoja: adminBloquearLoja, criarLoja: adminCriarLoja, responderAviso: adminResponderAviso,
-      exportarLoja: adminExportarLoja, restaurarLoja: adminRestaurarLoja
+      exportarLoja: adminExportarLoja, restaurarLoja: adminRestaurarLoja, zerarLoja: adminZerarLoja
     },
     // Mensalidade (dono da loja)
     obterMensalidade, informarPagamentoMensalidade, valorDaMensalidade, fimDaPromocao,
