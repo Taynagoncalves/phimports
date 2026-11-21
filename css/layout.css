@@ -78,10 +78,20 @@
 
 .nav-grupo { margin-bottom: var(--esp-4); }
 .nav-grupo-titulo {
-  font-size: 11px; font-weight: var(--fw-semi);
-  color: var(--cor-texto-3);
-  padding: var(--esp-2) var(--esp-3) 4px;
+  position: relative; width: 100%; text-align: left;
+  font: inherit; font-size: 11px; font-weight: var(--fw-semi);
+  color: var(--cor-texto-3); background: none; border: 0; cursor: pointer;
+  padding: var(--esp-2) var(--esp-3) 4px; border-radius: var(--raio-sm);
 }
+.nav-grupo-titulo:hover { color: var(--cor-texto); }
+.nav-grupo-titulo:focus-visible { outline: none; box-shadow: var(--anel-foco); }
+.nav-grupo-titulo svg { position: absolute; right: var(--esp-3); top: 50%; width: 14px; height: 14px; margin-top: -5px; transition: transform var(--transicao); }
+.nav-grupo.fechado .nav-grupo-titulo svg { transform: rotate(-90deg); }
+.nav-grupo.fechado .nav-grupo-itens { display: none; }
+.nav-grupo.fechado { margin-bottom: var(--esp-1, 4px); }
+/* Menu só com ícones (tablet ou recolhido): sem títulos, todos os itens aparecem */
+@media (min-width: 768px) and (max-width: 1199px) { .nav-grupo.fechado .nav-grupo-itens { display: block; } }
+@media (min-width: 1200px) { .menu-recolhido .nav-grupo.fechado .nav-grupo-itens { display: block; } }
 
 .nav-link {
   position: relative;

@@ -31,23 +31,43 @@
       <main class="conteudo" id="conteudo" tabindex="-1">
         <div class="pagina-cabecalho">
           <div>
-            <h1>Programa de pontos <span id="pt-status"></span></h1>
-            <p>A cliente ganha pontos em cada compra e usa como desconto na Frente de caixa. Fideliza e faz voltar.</p>
+            <h1>Programa de pontos</h1>
+            <p>A cliente ganha pontos comprando e troca por desconto. Faz ela voltar.</p>
+          </div>
+          <label class="pt-chave" title="Ligar ou desligar o programa">
+            <span id="pt-chave-texto">Desligado</span>
+            <input type="checkbox" id="pt-ativo" aria-label="Programa de pontos ligado">
+          </label>
+        </div>
+
+        <!-- Como funciona (aparece com o programa desligado) -->
+        <section class="pt-intro card" id="pt-intro" hidden>
+          <div class="pt-passos">
+            <div class="pt-passo"><span class="pt-bola"><i data-lucide="shopping-bag"></i></span><strong>1. Compra</strong><span id="pi-1">A cada R$ 1,00 ganha 1 ponto</span></div>
+            <i data-lucide="chevron-right" class="pt-seta"></i>
+            <div class="pt-passo"><span class="pt-bola"><i data-lucide="star"></i></span><strong>2. Junta pontos</strong><span id="pi-2">Fica no cadastro dela</span></div>
+            <i data-lucide="chevron-right" class="pt-seta"></i>
+            <div class="pt-passo"><span class="pt-bola"><i data-lucide="badge-percent"></i></span><strong>3. Usa como desconto</strong><span id="pi-3">100 pontos = R$ 5,00</span></div>
+          </div>
+          <div class="pt-intro-acao">
+            <span class="texto-sm texto-3">Confira as regras abaixo e ligue quando quiser começar.</span>
+            <button type="button" class="btn btn-primario" id="btn-ligar"><i data-lucide="power"></i>Ligar o programa</button>
+          </div>
+        </section>
+
+        <!-- Painel (com o programa ligado ou com clientes que já têm pontos) -->
+        <div id="pt-painel" hidden>
+          <div id="pt-aviso"></div>
+          <section class="grid-stats" id="indicadores" aria-label="Resumo do programa"></section>
+          <div class="abas mt-6" role="tablist" aria-label="Programa de pontos" id="abas" style="margin-bottom:var(--esp-4)">
+            <button type="button" role="tab" class="aba" data-aba="clientes" aria-selected="true">Clientes <span class="aba-contagem" id="cont-clientes">0</span></button>
+            <button type="button" role="tab" class="aba" data-aba="extrato" aria-selected="false">Extrato</button>
+            <button type="button" role="tab" class="aba" data-aba="regras" aria-selected="false">Regras</button>
           </div>
         </div>
 
-        <div id="pt-aviso"></div>
-
-        <section class="grid-stats" id="indicadores" aria-label="Resumo do programa"></section>
-
-        <div class="abas mt-6" role="tablist" aria-label="Programa de pontos" id="abas" style="margin-bottom:var(--esp-4)">
-          <button type="button" role="tab" class="aba" data-aba="clientes" aria-selected="true">Clientes <span class="aba-contagem" id="cont-clientes">0</span></button>
-          <button type="button" role="tab" class="aba" data-aba="extrato" aria-selected="false">Extrato</button>
-          <button type="button" role="tab" class="aba" data-aba="regras" aria-selected="false">Regras</button>
-        </div>
-
         <!-- Clientes -->
-        <section id="painel-clientes">
+        <section id="painel-clientes" hidden>
           <div class="vendas-busca">
             <div class="busca">
               <i data-lucide="search"></i>
@@ -59,7 +79,7 @@
               <button type="button" class="chip" role="radio" data-filtro="usar" aria-checked="false">Já podem usar</button>
               <button type="button" class="chip" role="radio" data-filtro="vencendo" aria-checked="false">Vencendo em 30 dias</button>
             </div>
-            <button type="button" class="btn btn-secundario" id="btn-ajuste" style="margin-left:auto"><i data-lucide="plus"></i>Dar ou tirar pontos</button>
+            <button type="button" class="btn btn-secundario" id="btn-ajuste" style="margin-left:auto"><i data-lucide="circle-plus"></i>Dar ou tirar pontos</button>
           </div>
           <div class="card mt-4" id="lista-clientes" style="overflow:hidden"></div>
         </section>
@@ -71,69 +91,77 @@
 
         <!-- Regras -->
         <section id="painel-regras" hidden>
-          <form id="form-regras" class="grid-2" novalidate>
-            <div class="card card-corpo">
-              <h2>Como ganha e como usa</h2>
-              <label class="interruptor mt-4"><input type="checkbox" id="r-ativo"><span>Programa de pontos ligado</span></label>
-              <div class="pontos-regra mt-4" id="r-campos">
-                <div class="campo">
-                  <label for="r-reais">A cada (R$) em compras</label>
-                  <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="r-reais" inputmode="decimal" placeholder="1,00"></div>
-                  <span class="ajuda">ganha 1 ponto</span>
+          <form id="form-regras" class="pt-regras" novalidate>
+            <div class="card">
+              <div class="card-cabecalho"><h2>Como funciona</h2></div>
+              <div class="pt-frases">
+                <div class="pt-frase">
+                  <span class="pt-icone"><i data-lucide="shopping-bag"></i></span>
+                  <span>A cada</span>
+                  <div class="input-grupo pt-campo"><span class="prefixo">R$</span><input class="input" id="r-reais" inputmode="decimal" aria-label="Valor em compras para 1 ponto"></div>
+                  <span>em compras, a cliente ganha <strong>1 ponto</strong>.</span>
                 </div>
-                <div class="campo">
-                  <label for="r-valor">Cada ponto vale</label>
-                  <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="r-valor" inputmode="decimal" placeholder="0,05"></div>
-                  <span class="ajuda">de desconto</span>
+                <div class="pt-frase">
+                  <span class="pt-icone"><i data-lucide="badge-percent"></i></span>
+                  <span>A cada</span>
+                  <input class="input pt-campo pt-curto" id="r-bloco" type="number" min="1" step="1" aria-label="Quantidade de pontos">
+                  <span>pontos, ela ganha</span>
+                  <div class="input-grupo pt-campo"><span class="prefixo">R$</span><input class="input" id="r-desconto" inputmode="decimal" aria-label="Desconto em reais"></div>
+                  <span>de desconto.</span>
                 </div>
-                <div class="campo">
-                  <label for="r-minimo">Mínimo para usar</label>
-                  <input class="input" id="r-minimo" type="number" min="0" step="1" placeholder="100">
-                  <span class="ajuda">pontos</span>
+                <div class="pt-frase">
+                  <span class="pt-icone"><i data-lucide="lock-open"></i></span>
+                  <span>Pode usar a partir de</span>
+                  <input class="input pt-campo pt-curto" id="r-minimo" type="number" min="0" step="1" aria-label="Mínimo de pontos">
+                  <span>pontos.</span>
                 </div>
-                <div class="campo">
-                  <label for="r-validade">Os pontos vencem em</label>
-                  <select class="select" id="r-validade">
-                    <option value="0">Não vencem</option>
-                    <option value="3">3 meses</option>
-                    <option value="6">6 meses</option>
-                    <option value="12">12 meses</option>
-                    <option value="24">24 meses</option>
+                <div class="pt-frase">
+                  <span class="pt-icone"><i data-lucide="hourglass"></i></span>
+                  <span>Os pontos</span>
+                  <select class="select pt-campo" id="r-validade" aria-label="Validade dos pontos">
+                    <option value="0">nunca vencem</option>
+                    <option value="3">vencem em 3 meses</option>
+                    <option value="6">vencem em 6 meses</option>
+                    <option value="12">vencem em 12 meses</option>
+                    <option value="24">vencem em 24 meses</option>
                   </select>
-                  <span class="ajuda">contados da compra que deu os pontos</span>
                 </div>
               </div>
-              <div class="alerta info mt-4"><i data-lucide="star"></i><span id="r-exemplo"></span></div>
+              <!-- Na prática -->
+              <div class="pt-pratica" aria-live="polite">
+                <span class="pt-pratica-rotulo">Na prática</span>
+                <div class="pt-fluxo">
+                  <div><strong id="ex-compra">R$ 200,00</strong><span>em compras</span></div>
+                  <i data-lucide="arrow-right"></i>
+                  <div><strong id="ex-pontos">200 pontos</strong><span>no cadastro</span></div>
+                  <i data-lucide="arrow-right"></i>
+                  <div><strong id="ex-desconto">R$ 10,00</strong><span>de desconto</span></div>
+                </div>
+                <span class="pt-volta" id="ex-volta">5% de volta</span>
+              </div>
             </div>
 
-            <div class="card card-corpo">
-              <h2>Extras para vender mais</h2>
-              <div class="campo mt-4">
-                <label for="r-bonus">Bônus na 1ª compra</label>
-                <input class="input" id="r-bonus" type="number" min="0" step="10" placeholder="0">
-                <span class="ajuda">Pontos que ganha a mais quando a cliente cadastrada compra pela primeira vez. 0 = sem bônus.</span>
-              </div>
-              <h3 class="mt-6" style="font-size:var(--fs-sm)">Campanha de pontos em dobro</h3>
-              <p class="texto-xs texto-3 mt-1">Ex.: Black Friday, Dia das Mães, aniversário da loja. Aparece na Frente de caixa e no recibo.</p>
-              <div class="pontos-regra mt-2">
-                <div class="campo">
-                  <label for="r-mult">Multiplicar por</label>
-                  <select class="select" id="r-mult">
-                    <option value="1">Sem campanha</option>
-                    <option value="2">2× (em dobro)</option>
-                    <option value="3">3× (em triplo)</option>
-                  </select>
-                </div>
-                <div class="campo">
-                  <label for="r-inicio">De</label>
-                  <input class="input" type="date" id="r-inicio">
-                </div>
-                <div class="campo">
-                  <label for="r-fim">Até</label>
-                  <input class="input" type="date" id="r-fim">
+            <div class="card mt-4">
+              <div class="card-cabecalho"><div><h2>Extras</h2><p class="texto-sm">Opcional — para dar um empurrão nas vendas.</p></div></div>
+              <div class="pt-extra">
+                <label class="interruptor"><span><strong>Bônus de boas-vindas</strong><small>Pontos a mais na 1ª compra da cliente cadastrada.</small></span><input type="checkbox" id="x-bonus"></label>
+                <div class="pt-extra-campos" id="x-bonus-campos" hidden>
+                  <span>Ganha</span><input class="input pt-campo pt-curto" id="r-bonus" type="number" min="1" step="10" aria-label="Pontos de bônus"><span>pontos de presente na primeira compra.</span>
                 </div>
               </div>
-              <button type="submit" class="btn btn-primario mt-6"><i data-lucide="check"></i>Salvar regras</button>
+              <div class="pt-extra">
+                <label class="interruptor"><span><strong>Pontos em dobro</strong><small>Campanha por período (Black Friday, Dia das Mães…). Aparece no caixa e no recibo.</small></span><input type="checkbox" id="x-campanha"></label>
+                <div class="pt-extra-campos" id="x-campanha-campos" hidden>
+                  <select class="select pt-campo" id="r-mult" aria-label="Multiplicador"><option value="2">Pontos em dobro (2×)</option><option value="3">Pontos em triplo (3×)</option></select>
+                  <span>de</span><input class="input pt-campo" type="date" id="r-inicio" aria-label="Início">
+                  <span>até</span><input class="input pt-campo" type="date" id="r-fim" aria-label="Fim">
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-salvar">
+              <span class="texto-xs texto-3" id="r-status"></span>
+              <button type="submit" class="btn btn-primario"><i data-lucide="check"></i>Salvar regras</button>
             </div>
           </form>
         </section>

@@ -626,6 +626,31 @@
   function lerCascaGuardada() {
     try { return JSON.parse(localStorage.getItem(CHAVE_CASCA)); } catch (e) { return null; }
   }
+  /* ---------- Grupos do menu que abrem e fecham ---------- */
+  const CHAVE_GRUPOS = 'gestaoloja:menu-fechados';
+  const gruposFechados = () => { try { return JSON.parse(localStorage.getItem(CHAVE_GRUPOS)) || []; } catch (e) { return []; } };
+  function aplicarGrupos() {
+    const fechados = gruposFechados();
+    document.querySelectorAll('.sidebar .nav-grupo').forEach((g) => {
+      const temAtivo = !!g.querySelector('.nav-link.ativo');
+      const fechado = fechados.includes(g.dataset.grupo) && !temAtivo;
+      g.classList.toggle('fechado', fechado);
+      const bt = g.querySelector('.nav-grupo-titulo');
+      if (bt) bt.setAttribute('aria-expanded', String(!fechado));
+    });
+  }
+  document.addEventListener('click', (e) => {
+    const bt = e.target.closest('.sidebar .nav-grupo-titulo');
+    if (!bt) return;
+    const g = bt.closest('.nav-grupo');
+    const fechar = !g.classList.contains('fechado');
+    g.classList.toggle('fechado', fechar);
+    bt.setAttribute('aria-expanded', String(!fechar));
+    const lista = gruposFechados().filter((x) => x !== g.dataset.grupo);
+    if (fechar) lista.push(g.dataset.grupo);
+    try { localStorage.setItem(CHAVE_GRUPOS, JSON.stringify(lista)); } catch (er) { /* ignora */ }
+  });
+
   /** Marca o item ativo do menu, o título da página e esconde "Nova venda" no próprio PDV */
   function ajustarCascaPagina() {
     const paginaAtual = document.body.dataset.menu || document.body.dataset.pagina;
@@ -638,6 +663,7 @@
     if (tit) tit.textContent = document.body.dataset.titulo || '';
     const novaVenda = document.getElementById('btn-nova-venda-topo');
     if (novaVenda) novaVenda.hidden = paginaAtual === 'pdv';
+    aplicarGrupos();
   }
   /** Roda assim que o app.js carrega: mostra o menu guardado antes de buscar os dados */
   function mostrarCascaGuardada() {
@@ -685,12 +711,14 @@
       </div>
       <nav class="sidebar-nav" aria-label="Menu principal">
         ${MENU.map((g) => ({ ...g, itens: g.itens.filter((it) => podeAcessar(it.id) && (it.id !== 'notas' || loja.emitirNota) && (it.id !== 'caixa' || loja.controlarCaixa) && (it.id !== 'mensalidade' || Data.modo === 'nuvem')) })).filter((g) => g.itens.length).map((g) => `
-          <div class="nav-grupo">
-            <div class="nav-grupo-titulo">${g.grupo}</div>
+          <div class="nav-grupo" data-grupo="${g.grupo}">
+            <button type="button" class="nav-grupo-titulo" aria-expanded="true">${g.grupo}${icone('chevron-down')}</button>
+            <div class="nav-grupo-itens">
             ${g.itens.map((it) => `
               <a href="${it.href}" class="nav-link" data-menu-id="${it.id}" title="${it.texto}">
                 ${icone(it.icone)}<span class="nav-texto">${it.texto}</span>
               </a>`).join('')}
+            </div>
           </div>`).join('')}
       </nav>
       <div class="sidebar-usuario">

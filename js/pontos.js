@@ -1,6 +1,6 @@
 /* ==========================================================================
-   pontos.js — Programa de pontos: números, clientes (saldo, vencimento,
-   WhatsApp, ajuste manual), extrato e regras (validade, bônus, campanha)
+   pontos.js — Programa de pontos: liga/desliga, regras em frases simples,
+   números, clientes (saldo, vencimento, WhatsApp, ajuste) e extrato
    ========================================================================== */
 App.aoIniciar(async () => {
   const $ = (id) => document.getElementById(id);
@@ -13,21 +13,37 @@ App.aoIniciar(async () => {
   let filtro = 'todos';
   let mostrarExtrato = 50;
 
+  const fid = () => ({ ativo: false, reaisPorPonto: 1, valorPonto: 0.05, minimoResgate: 100, validadeMeses: 0, bonusPrimeiraCompra: 0, campanha: {}, ...(loja.fidelidade || {}) });
+
   async function carregar() {
     [painel, loja] = await Promise.all([Data.painelPontos(), Data.obterLoja()]);
-    desenharTopo();
-    desenhar();
+    mostrar();
   }
 
-  /* ---------- Topo: situação, aviso e números ---------- */
+  /* ---------- O que aparece na tela ---------- */
+  function mostrar() {
+    const ativo = !!fid().ativo;
+    const temDados = painel.clientes.length > 0;
+    $('pt-ativo').checked = ativo;
+    $('pt-chave-texto').textContent = ativo ? 'Ligado' : 'Desligado';
+    $('pt-ativo').closest('.pt-chave').classList.toggle('ligado', ativo);
+    $('pt-intro').hidden = ativo;
+    const comPainel = ativo || temDados;
+    $('pt-painel').hidden = !comPainel;
+    if (!comPainel) aba = 'regras';
+    ['clientes', 'extrato', 'regras'].forEach((a) => { $(`painel-${a}`).hidden = a !== aba; });
+    document.querySelectorAll('#abas [data-aba]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.aba === aba)));
+    if (comPainel) desenharTopo();
+    if (aba === 'clientes') desenharClientes();
+    if (aba === 'extrato') desenharExtrato();
+    textosIntro();
+    App.icones();
+  }
+
   function desenharTopo() {
     const t = painel.totais;
-    $('pt-status').innerHTML = painel.ativo ? '<span class="badge badge-sucesso">Ligado</span>' : '<span class="badge">Desligado</span>';
     const c = painel.campanha;
-    $('pt-aviso').innerHTML = !painel.ativo
-      ? `<div class="alerta mb-4"><i data-lucide="power"></i><span>O programa está <strong>desligado</strong>: ninguém ganha pontos nas compras. Ligue na aba <a href="#" data-ir="regras">Regras</a>.</span></div>`
-      : c ? `<div class="alerta info mb-4"><i data-lucide="sparkles"></i><span><strong>Pontos ${c.multiplicador === 2 ? 'em dobro' : 'em triplo'}</strong> até ${App.formatarData(c.fim + 'T12:00:00')} — avisa as clientes!</span></div>` : '';
-    $('pt-aviso').querySelector('[data-ir]')?.addEventListener('click', (ev) => { ev.preventDefault(); trocarAba('regras'); });
+    $('pt-aviso').innerHTML = c ? `<div class="alerta info mb-4"><i data-lucide="sparkles"></i><span><strong>Pontos ${c.multiplicador === 2 ? 'em dobro' : 'em triplo'}</strong> até ${App.formatarData(c.fim + 'T12:00:00')} — avise as clientes!</span></div>` : '';
     const card = (rotulo, icone, valor, detalhe) => `
       <article class="card stat">
         <div class="stat-topo"><span class="stat-rotulo">${rotulo}</span><span class="stat-icone"><i data-lucide="${icone}"></i></span></div>
@@ -36,24 +52,26 @@ App.aoIniciar(async () => {
       </article>`;
     $('indicadores').innerHTML =
       card('Clientes com pontos', 'users', n(t.clientes), `${painel.clientes.filter((x) => x.podeUsar).length} já podem usar`)
-      + card('Pontos em aberto', 'star', n(t.saldo), `= ${r$(t.saldoValor)} em descontos a conceder`)
-      + card('Movimento do mês', 'arrow-left-right', `+${n(t.dadosMes)}`, `${n(t.usadosMes)} usados (${r$(t.usadosMesValor)} de desconto)`)
-      + card('Vencem em 30 dias', 'hourglass', n(t.vencendo), t.vencendo ? `${t.clientesVencendo} cliente(s) — bom motivo para chamar` : (painel.regra && painel.regra.validadeMeses ? 'nada vencendo' : 'os pontos não vencem'));
+      + card('Pontos em aberto', 'star', n(t.saldo), `valem ${r$(t.saldoValor)} em desconto`)
+      + card('Dados este mês', 'trending-up', n(t.dadosMes), `${n(t.usadosMes)} usados (${r$(t.usadosMesValor)})`)
+      + card('Vencem em 30 dias', 'hourglass', n(t.vencendo), t.vencendo ? `${t.clientesVencendo} cliente(s) — bom motivo para chamar` : (fid().validadeMeses ? 'nada vencendo' : 'os pontos não vencem'));
     $('cont-clientes').textContent = painel.clientes.length;
   }
 
-  function trocarAba(nova) {
-    aba = nova;
-    document.querySelectorAll('#abas [data-aba]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.aba === aba)));
-    ['clientes', 'extrato', 'regras'].forEach((a) => { $(`painel-${a}`).hidden = a !== aba; });
-    desenhar();
-  }
+  function trocarAba(nova) { aba = nova; mostrar(); }
 
-  function desenhar() {
-    if (aba === 'clientes') desenharClientes();
-    if (aba === 'extrato') desenharExtrato();
-    App.icones();
+  /* ---------- Liga / desliga ---------- */
+  async function definirAtivo(ativo) {
+    try {
+      const atual = lerRegras();
+      if (ativo && (!atual.reaisPorPonto || !atual.valorPonto)) { $('pt-ativo').checked = false; trocarAba('regras'); return App.toast('Preencha as regras antes de ligar.', 'erro'); }
+      loja = await Data.salvarLoja({ fidelidade: { ...atual, ativo } });
+      App.toast(ativo ? 'Programa de pontos ligado! As clientes cadastradas já ganham pontos nas compras.' : 'Programa desligado. Os pontos das clientes ficam guardados.', 'sucesso', 5000);
+      await carregar();
+    } catch (er) { App.toast(er.message, 'erro'); $('pt-ativo').checked = !ativo; }
   }
+  $('pt-ativo').addEventListener('change', () => definirAtivo($('pt-ativo').checked));
+  $('btn-ligar').addEventListener('click', () => definirAtivo(true));
 
   /* ---------- Clientes ---------- */
   function telefoneWhats(t) {
@@ -69,7 +87,6 @@ App.aoIniciar(async () => {
     if (painel.campanha) txt += `\n✨ E até ${App.formatarData(painel.campanha.fim + 'T12:00:00')} as compras valem pontos ${painel.campanha.multiplicador === 2 ? 'em dobro' : 'em triplo'}!`;
     return txt;
   }
-
   function desenharClientes() {
     const q = $('busca').value.trim().toLowerCase();
     const lista = painel.clientes.filter((c) => (filtro === 'todos' || (filtro === 'usar' ? c.podeUsar : c.vencendo > 0))
@@ -106,7 +123,7 @@ App.aoIniciar(async () => {
   /* ---------- Extrato ---------- */
   function linhaExtrato(m, mostrarCliente = true) {
     const desc = {
-      compra: () => `Compra #${m.numero}${m.mult > 1 ? ` <span class="badge badge-info">${m.mult}×</span>` : ''}${m.bonus ? ` <span class="badge badge-sucesso">+${m.bonus} bônus 1ª compra</span>` : ''}`,
+      compra: () => `Compra #${m.numero}${m.mult > 1 ? ` <span class="badge badge-info">${m.mult}×</span>` : ''}${m.bonus ? ` <span class="badge badge-sucesso">+${m.bonus} boas-vindas</span>` : ''}`,
       uso: () => `Usou na compra #${m.numero}`,
       ajuste: () => `Ajuste: ${e(m.motivo)}`,
       vencidos: () => 'Pontos venceram'
@@ -196,53 +213,76 @@ App.aoIniciar(async () => {
     }
   }
 
-  /* ---------- Regras ---------- */
+  /* ---------- Regras (em frases) ---------- */
   const lerNum = (v) => Number(String(v).replace(/\./g, '').replace(',', '.')) || 0;
-  const fmt = (v, casas = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: 3 });
+  const fmt = (v) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   function preencherRegras() {
-    const f = { ativo: false, reaisPorPonto: 1, valorPonto: 0.05, minimoResgate: 100, validadeMeses: 0, bonusPrimeiraCompra: 0, campanha: {}, ...(loja.fidelidade || {}) };
-    $('r-ativo').checked = !!f.ativo;
+    const f = fid();
+    const bloco = Number(f.blocoPontos) || 100;
     $('r-reais').value = fmt(f.reaisPorPonto);
-    $('r-valor').value = fmt(f.valorPonto);
+    $('r-bloco').value = bloco;
+    $('r-desconto').value = fmt(f.descontoBloco ?? Math.round(f.valorPonto * bloco * 100) / 100);
     $('r-minimo').value = f.minimoResgate;
     $('r-validade').value = String(f.validadeMeses || 0);
-    $('r-bonus').value = f.bonusPrimeiraCompra || 0;
+    $('x-bonus').checked = Number(f.bonusPrimeiraCompra) > 0;
+    $('r-bonus').value = Number(f.bonusPrimeiraCompra) > 0 ? f.bonusPrimeiraCompra : 50;
     const c = f.campanha || {};
-    $('r-mult').value = String(c.multiplicador || 1);
+    $('x-campanha').checked = Number(c.multiplicador) > 1;
+    $('r-mult').value = String(Number(c.multiplicador) > 1 ? c.multiplicador : 2);
     $('r-inicio').value = c.inicio || '';
     $('r-fim').value = c.fim || '';
-    exemplo();
+    atualizarRegras();
   }
   function lerRegras() {
-    const mult = Number($('r-mult').value) || 1;
+    const bloco = Math.max(1, Math.floor(Number($('r-bloco').value) || 0));
+    const desconto = lerNum($('r-desconto').value);
     return {
-      ativo: $('r-ativo').checked,
-      reaisPorPonto: lerNum($('r-reais').value), valorPonto: lerNum($('r-valor').value),
+      ativo: !!fid().ativo,
+      reaisPorPonto: lerNum($('r-reais').value),
+      blocoPontos: bloco, descontoBloco: desconto,
+      valorPonto: bloco ? desconto / bloco : 0,
       minimoResgate: Math.max(0, Math.floor(Number($('r-minimo').value) || 0)),
       validadeMeses: Number($('r-validade').value) || 0,
-      bonusPrimeiraCompra: Math.max(0, Math.floor(Number($('r-bonus').value) || 0)),
-      campanha: mult > 1 ? { multiplicador: mult, inicio: $('r-inicio').value, fim: $('r-fim').value } : {}
+      bonusPrimeiraCompra: $('x-bonus').checked ? Math.max(0, Math.floor(Number($('r-bonus').value) || 0)) : 0,
+      campanha: $('x-campanha').checked ? { multiplicador: Number($('r-mult').value) || 2, inicio: $('r-inicio').value, fim: $('r-fim').value } : {}
     };
   }
-  function exemplo() {
+  function atualizarRegras() {
+    $('x-bonus-campos').hidden = !$('x-bonus').checked;
+    $('x-campanha-campos').hidden = !$('x-campanha').checked;
     const r = lerRegras();
-    $('r-campos').classList.toggle('desativado', !r.ativo);
-    if (!r.reaisPorPonto || !r.valorPonto) { $('r-exemplo').textContent = 'Preencha os valores.'; return; }
-    const pontos = Math.floor(200 / r.reaisPorPonto);
-    const volta = (r.valorPonto / r.reaisPorPonto) * 100;
-    $('r-exemplo').innerHTML = `Compra de <strong>R$ 200,00</strong> → <strong>${pontos} pontos</strong> = ${r$(pontos * r.valorPonto)} de desconto depois (<strong>${fmt(volta, 1)}% de volta</strong>). Usa a partir de ${r.minimoResgate} pontos (${r$(r.minimoResgate * r.valorPonto)}).${r.validadeMeses ? ` Vencem em ${r.validadeMeses} meses.` : ''}`;
+    if (!r.reaisPorPonto || !r.valorPonto) {
+      ['ex-pontos', 'ex-desconto'].forEach((id) => { $(id).textContent = '—'; });
+      $('ex-volta').textContent = 'Preencha os valores';
+    } else {
+      const pontos = Math.floor(200 / r.reaisPorPonto + 1e-9);
+      $('ex-pontos').textContent = `${n(pontos)} pontos`;
+      $('ex-desconto').textContent = r$(pontos * r.valorPonto);
+      $('ex-volta').textContent = `${(r.valorPonto / r.reaisPorPonto * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% de volta`;
+    }
+    textosIntro(r);
   }
-  document.querySelectorAll('#form-regras input, #form-regras select').forEach((i) => { i.addEventListener('input', exemplo); i.addEventListener('change', exemplo); });
+  function textosIntro(r = lerRegras()) {
+    $('pi-1').textContent = r.reaisPorPonto ? `A cada ${r$(r.reaisPorPonto)} ganha 1 ponto` : '—';
+    $('pi-3').textContent = r.blocoPontos && r.descontoBloco ? `${n(r.blocoPontos)} pontos = ${r$(r.descontoBloco)}` : '—';
+  }
+  document.querySelectorAll('#form-regras input, #form-regras select').forEach((i) => {
+    i.addEventListener('input', () => { atualizarRegras(); $('r-status').textContent = 'Alterações não salvas'; });
+    i.addEventListener('change', () => { atualizarRegras(); $('r-status').textContent = 'Alterações não salvas'; });
+  });
   $('form-regras').addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const r = lerRegras();
-    if (r.ativo && (r.reaisPorPonto <= 0 || r.valorPonto <= 0)) return App.toast('Preencha quanto vale cada ponto e a cada quantos reais a cliente ganha 1 ponto.', 'erro');
-    if (r.ativo && r.valorPonto / r.reaisPorPonto > 0.3) return App.toast('Mais de 30% de volta? Confira os valores.', 'erro');
-    if (r.campanha.multiplicador && (!r.campanha.inicio || !r.campanha.fim || r.campanha.fim < r.campanha.inicio)) return App.toast('Informe as datas da campanha (o fim depois do início).', 'erro');
+    if (r.reaisPorPonto <= 0 || r.valorPonto <= 0) return App.toast('Preencha os valores das regras.', 'erro');
+    if (r.valorPonto / r.reaisPorPonto > 0.3) return App.toast('Mais de 30% de volta? Confira os valores.', 'erro');
+    if (r.campanha.multiplicador && (!r.campanha.inicio || !r.campanha.fim || r.campanha.fim < r.campanha.inicio)) return App.toast('Informe as datas dos pontos em dobro (o fim depois do início).', 'erro');
+    if ($('x-bonus').checked && !r.bonusPrimeiraCompra) return App.toast('Informe quantos pontos de boas-vindas.', 'erro');
     try {
-      await Data.salvarLoja({ fidelidade: r });
-      App.toast(r.ativo ? 'Regras salvas.' : 'Programa desligado. Os pontos das clientes ficam guardados.', 'sucesso');
-      await carregar();
+      loja = await Data.salvarLoja({ fidelidade: r });
+      $('r-status').textContent = '✓ Regras salvas';
+      App.toast('Regras salvas.', 'sucesso');
+      painel = await Data.painelPontos();
+      mostrar();
     } catch (er) { App.toast(er.message, 'erro'); }
   });
 
@@ -257,7 +297,8 @@ App.aoIniciar(async () => {
   $('btn-ajuste').addEventListener('click', () => abrirAjuste());
   window.addEventListener('dados-alterados', carregar);
 
-  await carregar();
+  [painel, loja] = await Promise.all([Data.painelPontos(), Data.obterLoja()]);
   preencherRegras();
-  if (location.hash === '#regras' || !painel.ativo && !painel.clientes.length) trocarAba('regras');
+  if (location.hash === '#regras') aba = 'regras';
+  mostrar();
 });
