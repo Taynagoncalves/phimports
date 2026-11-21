@@ -171,19 +171,12 @@
     lojaId = id;
     ultimoCatalogo = null;
     db = bancoBase();
-    COLECOES.forEach((c) => { espelho[c] = new Map(); });
+    COLECOES.forEach((c) => { espelho[c] = new Map(); membrosPacote[c] = new Map(); });
     espelho.ajustes = {};
     const carregamentos = COLECOES.map((c) => new Promise((resolve, reject) => {
       let primeira = true;
       ouvintes.push(refLoja().collection(c).onSnapshot((snap) => {
-        snap.docChanges().forEach((ch) => {
-          const docId = ch.doc.id;
-          const i = db[c].findIndex((x) => String(x.id) === docId);
-          if (ch.type === 'removed') { if (i >= 0) db[c].splice(i, 1); espelho[c].delete(docId); return; }
-          const dados = { ...ch.doc.data(), id: (i >= 0 ? db[c][i].id : null) ?? ch.doc.data().id ?? docId };
-          espelho[c].set(docId, canon(dados));
-          if (i >= 0) db[c][i] = dados; else db[c].push(dados);
-        });
+        aplicarMudancas(c, snap.docChanges());
         if (primeira) { primeira = false; resolve(); } else if (!snap.metadata.hasPendingWrites) avisarMudancaRemota();
       }, (erro) => { if (primeira) reject(erro); else console.error('Firestore:', erro); }));
     }));
@@ -201,6 +194,101 @@
     return Promise.all(carregamentos);
   }
 
+  /* ---------- Pacotes mensais ----------
+     Vendas e movimentações crescem sem parar (1 documento por venda e por peça).
+     Para o Firebase não cobrar milhares de leituras a cada abertura, os registros
+     com mais de ~2 meses são guardados juntos em "pacotes" (1 documento por mês,
+     dividido se passar do tamanho). Na memória nada muda: db.vendas continua
+     com TODAS as vendas — relatórios, pontos, clientes e trocas veem tudo. */
+  const PACOTES = { vendas: 'data', movimentacoes: 'data' };   // coleção → campo de data
+  const PREFIXO_PACOTE = '_pacote_';
+  const LIMITE_PACOTE = 600 * 1024;                            // o Firestore aceita até 1 MB por documento
+  const membrosPacote = {};                                    // coleção → (id do pacote → ids dentro)
+  const ehPacote = (docId) => String(docId).startsWith(PREFIXO_PACOTE);
+  /** Meses antes deste vão para pacotes (ex.: em novembro, empacota até agosto) */
+  function mesLimitePacote() {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - 2);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  /** Como a coleção deve ficar no Firestore: docId → conteúdo */
+  function documentosDesejados(c) {
+    const docs = new Map();
+    const campo = PACOTES[c];
+    const limite = campo ? mesLimitePacote() : null;
+    const porMes = {};
+    (db[c] || []).forEach((item) => {
+      if (item.id === undefined || item.id === null || item.id === '') item.id = gerarId(c.slice(0, 2));
+      const mes = campo ? String(item[campo] || '').slice(0, 7) : '';
+      if (campo && /^\d{4}-\d{2}$/.test(mes) && mes < limite) (porMes[mes] = porMes[mes] || []).push(item);
+      else docs.set(String(item.id), item);
+    });
+    Object.keys(porMes).sort().forEach((mes) => {
+      const itens = porMes[mes].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+      let parte = 1;
+      let atual = [];
+      let tamanho = 0;
+      const fechar = () => { docs.set(`${PREFIXO_PACOTE}${mes}_${parte}`, { _pacote: true, mes, itens: atual }); parte++; atual = []; tamanho = 0; };
+      itens.forEach((it) => {
+        const t = canon(it).length;
+        if (atual.length && tamanho + t > LIMITE_PACOTE) fechar();
+        atual.push(it);
+        tamanho += t;
+      });
+      if (atual.length) fechar();
+    });
+    return docs;
+  }
+
+  /** Aplica no db o que mudou no Firestore (documentos soltos e pacotes) */
+  function aplicarMudancas(c, mudancas) {
+    const lista = db[c];
+    const membros = (membrosPacote[c] = membrosPacote[c] || new Map());
+    const pos = new Map(lista.map((x, i) => [String(x.id), i]));
+    const talvezRemover = new Set();
+    const gravar = (dados) => {
+      const k = String(dados.id);
+      if (pos.has(k)) lista[pos.get(k)] = dados;
+      else { pos.set(k, lista.length); lista.push(dados); }
+    };
+    mudancas.forEach((ch) => {
+      const docId = ch.doc.id;
+      if (ehPacote(docId)) {
+        const antigos = membros.get(docId) || new Set();
+        if (ch.type === 'removed') {
+          espelho[c].delete(docId);
+          membros.delete(docId);
+          antigos.forEach((k) => talvezRemover.add(k));
+          return;
+        }
+        const dados = ch.doc.data();
+        espelho[c].set(docId, canon(dados));
+        const itens = Array.isArray(dados.itens) ? dados.itens : [];
+        const novos = new Set(itens.map((it) => String(it.id)));
+        antigos.forEach((k) => { if (!novos.has(k)) talvezRemover.add(k); });
+        membros.set(docId, novos);
+        itens.forEach(gravar);
+        return;
+      }
+      if (ch.type === 'removed') { espelho[c].delete(docId); talvezRemover.add(docId); return; }
+      const bruto = ch.doc.data();
+      const dados = { ...bruto, id: (pos.has(docId) ? lista[pos.get(docId)].id : null) ?? bruto.id ?? docId };
+      espelho[c].set(docId, canon(dados));
+      gravar(dados);
+    });
+    // Só tira do db o que não está mais em lugar nenhum: um registro pode ter
+    // saído de um documento solto para um pacote (ou de um pacote para outro).
+    const emAlgumPacote = (k) => [...membros.values()].some((s) => s.has(k));
+    const sumiram = new Set([...talvezRemover].filter((k) => !espelho[c].has(k) && !emAlgumPacote(k)));
+    if (sumiram.size) {
+      const ficam = lista.filter((x) => !sumiram.has(String(x.id)));
+      lista.length = 0;
+      ficam.forEach((x) => lista.push(x));
+    }
+  }
+
   /* ---------- Envio das alterações (só o que mudou) ---------- */
   let sincronizacaoAgendada = null;
   function agendarSincronizacao() {
@@ -216,23 +304,24 @@
 
   async function sincronizar() {
     const ops = [];
+    const apagar = [];
     COLECOES.forEach((c) => {
-      const vistos = new Set();
-      (db[c] || []).forEach((item) => {
-        if (item.id === undefined || item.id === null || item.id === '') item.id = gerarId(c.slice(0, 2));
-        const docId = String(item.id);
-        const j = canon(item);
-        vistos.add(docId);
+      const desejados = documentosDesejados(c);
+      desejados.forEach((conteudo, docId) => {
+        const j = canon(conteudo);
         if (espelho[c].get(docId) !== j) { ops.push(['set', refLoja().collection(c).doc(docId), JSON.parse(j)]); espelho[c].set(docId, j); }
       });
       [...espelho[c].keys()].forEach((docId) => {
-        if (!vistos.has(docId)) { ops.push(['del', refLoja().collection(c).doc(docId)]); espelho[c].delete(docId); }
+        if (!desejados.has(docId)) { apagar.push(['del', refLoja().collection(c).doc(docId)]); espelho[c].delete(docId); }
       });
     });
     AJUSTES.forEach((n) => {
       const j = canon(db[n]);
       if (espelho.ajustes[n] !== j) { ops.push(['set', refLoja().collection('ajustes').doc(n), ajusteParaDoc(n, JSON.parse(j))]); espelho.ajustes[n] = j; }
     });
+    // Apagar SEMPRE depois de gravar: ao empacotar, o pacote passa a existir antes
+    // de os documentos soltos sumirem (nenhum registro some, nem por um instante).
+    ops.push(...apagar);
     // Lotes de até 400 gravações (limite do Firestore: 500)
     for (let i = 0; i < ops.length; i += 400) {
       const lote = fb.fs.batch();
