@@ -2740,7 +2740,9 @@
         preco: precos ? Number(p.preco || 0) : null,
         promo: precos && p.precoPromocional ? Number(p.precoPromocional) : null,
         novo: !!p.criadoEm && new Date(p.criadoEm).getTime() > recente,
-        variacoes: p.variacoes.filter((v) => Number(v.estoque || 0) > 0).map((v) => ({ t: v.tamanho || '', c: v.cor || '' }))
+        descricao: String(p.descricao || '').slice(0, 400),
+        // quantas peças tem (até 10: o suficiente para a sacola, sem expor o estoque todo)
+        variacoes: p.variacoes.filter((v) => Number(v.estoque || 0) > 0).map((v) => ({ t: v.tamanho || '', c: v.cor || '', h: corHexCatalogo(v.cor), q: Math.min(10, Number(v.estoque || 0)) }))
       }));
     const loja = db.loja || {};
     let whatsapp = soDigitos(c.whatsapp || loja.telefone);
@@ -2748,6 +2750,7 @@
     return {
       publicado: true, nome: loja.nome || '', logo: fotoPublica(loja.logo), whatsapp,
       instagram: String(loja.instagram || '').replace(/^@/, '').trim(), mensagem: c.mensagem || '',
+      endereco: String(loja.endereco || '').slice(0, 160), entrega: c.entrega !== false,
       mostrarPrecos: precos, produtos, atualizadoEm: new Date().toISOString()
     };
   }
@@ -2784,8 +2787,16 @@
   /** Endereço público do catálogo desta loja */
   function linkCatalogo() {
     const base = location.origin + location.pathname.replace(/\/pages\/[^/]*$|\/[^/]*$/, '');
+    // A loja principal do site tem o endereço curto (regra "Rewrite" no Render: /catalogo → /pages/catalogo.html)
+    if (MODO === 'nuvem' && lojaId && window.CATALOGO_PRINCIPAL === lojaId) return `${base}/catalogo`;
     return `${base}/pages/catalogo.html${lojaId ? '?l=' + encodeURIComponent(lojaId) : ''}`;
   }
+  /** Tom da cor (nome → hex) para as bolinhas do catálogo, pelas cores cadastradas */
+  function corHexCatalogo(nome) {
+    const c = (db.cores || []).find((x) => normalizar(typeof x === 'string' ? x : x.nome) === normalizar(nome));
+    return c && typeof c === 'object' && c.hex ? c.hex : '';
+  }
+
 
   /* ==================================================================
      INDICADORES E RELATÓRIOS

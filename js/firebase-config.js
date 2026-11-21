@@ -29,3 +29,7 @@ window.PIX_SUPORTE = {
   nome: 'Tayna Silva Goncalves',  // nome de quem recebe (até 25 letras, sem acento)
   cidade: 'Cascavel'             // cidade (até 15 letras)
 };
+
+/* Catálogo do site: a loja que aparece em phimports.onrender.com/catalogo
+   (sem o "?l=..." no link). Outras lojas continuam com o link completo. */
+window.CATALOGO_PRINCIPAL = 'lojamwlcatyoygf4';
