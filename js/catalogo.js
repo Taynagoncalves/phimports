@@ -13,8 +13,8 @@
   const foto = (url, largura) => (url && url.includes('/image/upload/') ? url.replace(/\/image\/upload\/(f_auto,q_auto\/)?/, `/image/upload/f_auto,q_auto,c_limit,w_${largura}/`) : url);
   const ICONE_CABIDE = '<svg viewBox="0 0 24 24" class="sem-foto"><path d="M12 7a2 2 0 1 1 2-2c0 1.1-2 1.5-2 3v1M12 9 3 15.5a1.4 1.4 0 0 0 .8 2.5h16.4a1.4 1.4 0 0 0 .8-2.5L12 9Z"/></svg>';
   const ICONE_MAIS = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
-  const ICONE_WHATS = '<svg viewBox="0 0 24 24" class="cheio"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.3.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.3Z"/></svg>';
-  const ICONE_INSTA = '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" class="cheio"/></svg>';
+  const ICONE_WHATS = '<svg viewBox="0 0 24 24" class="cheio" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>';
+  const ICONE_INSTA = '<svg viewBox="0 0 24 24" class="cheio" aria-hidden="true"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/></svg>';
 
   const params = new URLSearchParams(location.search);
   const lojaId = params.get('l') || window.CATALOGO_PRINCIPAL || '';
@@ -58,33 +58,36 @@
     if (cat.logo) $('logo-topo').src = cat.logo;
     $('logo-topo').alt = cat.nome;
     $('hero-sobre').textContent = cat.nome;
-    $('anuncio').textContent = cat.mensagem || (cat.entrega === false ? 'Pedidos pelo WhatsApp' : 'Enviamos para todo o Brasil');
-    $('anuncio').hidden = false;
-    if (cat.entrega === false) $('beneficio-entrega').innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 10 12 4l8 6v10H4z"/><path d="M10 20v-6h4v6"/></svg><strong>Retire na loja</strong><span>Separamos para você</span>';
-    if (cat.whatsapp) { $('whats-flutuante').href = linkWhats(`Olá! Vim pelo catálogo da ${cat.nome} e tenho uma dúvida.`); }
+    // Faixa do topo: o recado da loja (separe por "·") + avisos fixos
+    const avisos = [
+      ...String(cat.mensagem || '').split(/\s*[·|]\s*/).filter(Boolean),
+      cat.entrega === false ? 'Retire na loja' : 'Enviamos para todo o Brasil',
+      'Pedido rápido pelo WhatsApp',
+      'Atendimento personalizado'
+    ].filter((a, i, l) => l.findIndex((b) => normalizar(b) === normalizar(a)) === i);
+    const volta = avisos.map((a) => `<span>${esc(a)}</span><i aria-hidden="true">✦</i>`).join('');
+    $('anuncio-trilho').innerHTML = `<div>${volta}</div><div aria-hidden="true">${volta}</div>`;
+    if (cat.whatsapp) { $('topo-whats').href = linkWhats(`Olá! Vim pelo catálogo da ${cat.nome} e tenho uma dúvida.`); $('topo-whats').hidden = false; }
+    if (cat.instagram) { $('topo-insta').href = `https://instagram.com/${encodeURIComponent(cat.instagram)}`; $('topo-insta').hidden = false; }
     const links = [];
     if (cat.whatsapp) links.push(`<a href="${linkWhats(`Olá! Vim pelo catálogo da ${cat.nome}.`)}" target="_blank" rel="noopener">${ICONE_WHATS}WhatsApp</a>`);
     if (cat.instagram) links.push(`<a href="https://instagram.com/${encodeURIComponent(cat.instagram)}" target="_blank" rel="noopener">${ICONE_INSTA}@${esc(cat.instagram)}</a>`);
     $('rodape').innerHTML = `
       <div class="rodape-dentro">
-        <div class="rodape-marca">
-          <img src="${esc(cat.logo || '../img/logo-phimports.png')}" alt="${esc(cat.nome)}">
-          <p class="rodape-frase">Sua presença fala, <em>seu estilo confirma</em>.</p>
+        <img class="rodape-logo" src="${esc(cat.logo || '../img/logo-phimports.png')}" alt="${esc(cat.nome)}">
+        <p class="rodape-frase">Sua presença fala, <em>seu estilo confirma</em>.</p>
+        <div class="rodape-icones">
+          ${cat.instagram ? `<a href="https://instagram.com/${encodeURIComponent(cat.instagram)}" target="_blank" rel="noopener" aria-label="Instagram">${ICONE_INSTA}</a>` : ''}
+          ${cat.whatsapp ? `<a href="${linkWhats(`Olá! Vim pelo catálogo da ${cat.nome}.`)}" target="_blank" rel="noopener" aria-label="WhatsApp">${ICONE_WHATS}</a>` : ''}
         </div>
-        <div class="rodape-col">
-          <h3>Como comprar</h3>
-          <p>1. Escolha as peças e o tamanho</p>
-          <p>2. Finalize a sacola pelo WhatsApp</p>
-          <p>3. A loja confirma e combina pagamento e ${cat.entrega === false ? 'retirada' : 'envio'}</p>
-          ${cat.entrega === false ? '' : '<p class="rodape-destaque">Enviamos para todo o Brasil</p>'}
-        </div>
-        <div class="rodape-col">
-          <h3>Fale com a gente</h3>
-          ${cat.endereco ? `<p>${esc(cat.endereco)}</p>` : ''}
-          <div class="rodape-links">${links.join('')}</div>
-        </div>
+        <ol class="rodape-passos">
+          <li><strong>01</strong>Escolha as peças</li>
+          <li><strong>02</strong>Finalize pelo WhatsApp</li>
+          <li><strong>03</strong>${cat.entrega === false ? 'Retire na loja' : 'Receba em todo o Brasil'}</li>
+        </ol>
+        ${cat.endereco ? `<p class="rodape-endereco">${esc(cat.endereco)}</p>` : ''}
       </div>
-      <small>© ${new Date().getFullYear()} ${esc(cat.nome)} · peças atualizadas em ${new Date(cat.atualizadoEm).toLocaleDateString('pt-BR')}</small>`;
+      <small>© ${new Date().getFullYear()} ${esc(cat.nome)}${cat.instagram ? ` · @${esc(cat.instagram)}` : ''}</small>`;
   }
 
   /* ---------- Cards ---------- */
@@ -99,14 +102,21 @@
         <div class="card-foto">
           ${p.foto ? `<img src="${esc(foto(p.foto, 600))}" alt="" loading="lazy">` : ICONE_CABIDE}
           ${temPromo(p) ? `<span class="selo promo">−${Math.round((1 - p.promo / p.preco) * 100)}%</span>` : p.novo ? '<span class="selo">Novo</span>' : p.variacoes.reduce((s, v) => s + (v.q || 0), 0) <= 2 ? '<span class="selo">Últimas peças</span>' : ''}
-          <span class="card-mais" aria-hidden="true">${ICONE_MAIS}</span>
+          <span class="card-ver" aria-hidden="true">Ver peça</span>
         </div>
         <div class="card-nome">${esc(p.nome)}</div>
         ${cores.length > 1 ? `<div class="card-cores">${cores.map(([, h]) => `<span style="background:${esc(h)}"></span>`).join('')}</div>` : ''}
         <div class="preco">${precoHtml(p)}</div>
       </button>`;
   }
-  const ligarCards = (raiz) => raiz.querySelectorAll('[data-peca]').forEach((b) => b.addEventListener('click', () => abrirPeca(b.dataset.peca)));
+  // Peças aparecem suavemente ao rolar a página
+  const revelar = 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? new IntersectionObserver((itens) => itens.forEach((it) => { if (it.isIntersecting) { it.target.classList.add('visivel'); revelar.unobserve(it.target); } }), { rootMargin: '0px 0px -40px 0px' })
+    : null;
+  const ligarCards = (raiz) => raiz.querySelectorAll('[data-peca]').forEach((b, i) => {
+    b.addEventListener('click', () => abrirPeca(b.dataset.peca));
+    if (revelar) { b.classList.add('revelar'); b.style.transitionDelay = `${(i % 4) * 60}ms`; revelar.observe(b); }
+  });
 
   function desenharVitrines() {
     const novos = cat.produtos.filter((p) => p.novo).slice(0, 12);
@@ -227,7 +237,6 @@
     const n = pecasSacola();
     $('contador').hidden = !n; $('contador').textContent = n;
     $('barra-sacola').hidden = !n || !$('camada-sacola').hidden || !$('camada-peca').hidden;
-    $('whats-flutuante').hidden = !cat || !cat.whatsapp || !!n || !$('camada-sacola').hidden || !$('camada-peca').hidden;
     $('barra-qtd').textContent = `${n} peça${n === 1 ? '' : 's'}`;
     $('barra-total').textContent = moeda(totalSacola());
   }

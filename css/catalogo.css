@@ -289,3 +289,93 @@ svg.cheio { fill: currentColor; stroke: none; }
 }
 
 .rodape-destaque { color: #fff !important; font-weight: 600; margin-top: 10px !important; letter-spacing: .04em; }
+
+/* ==========================================================================
+   Redesenho boutique — limpo, elegante e sofisticado
+   ========================================================================== */
+svg.fino { stroke-width: 1.15; }
+svg.cheio { fill: currentColor; stroke: none; }
+
+/* Faixa do topo que rola devagar */
+.anuncio { padding: 0; overflow: hidden; white-space: nowrap; background: var(--tinta); }
+.anuncio-trilho { display: flex; width: max-content; animation: rolarFaixa 38s linear infinite; }
+.anuncio-trilho > div { display: flex; align-items: center; }
+.anuncio-trilho span { padding: 10px 0; font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: #EDE8E1; }
+.anuncio-trilho i { font-style: normal; font-size: 8px; color: #8C857C; margin: 0 26px; }
+.anuncio:hover .anuncio-trilho { animation-play-state: paused; }
+@keyframes rolarFaixa { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .anuncio-trilho { animation: none; } }
+
+/* Topo: busca à esquerda, logo no centro, Instagram + WhatsApp + sacola à direita */
+.topo { background: rgba(250, 248, 245, .94); }
+.topo-dentro { grid-template-columns: 1fr auto 1fr; height: 76px; }
+.topo-lado { display: flex; align-items: center; gap: 2px; }
+.topo-lado.direita { justify-content: flex-end; }
+.topo-icone { width: 42px; height: 42px; color: var(--tinta); text-decoration: none; transition: opacity .2s, background .2s; }
+.topo-icone svg { width: 23px; height: 23px; }
+.topo-icone svg.cheio { width: 19px; height: 19px; }
+.topo-icone:hover { background: transparent; opacity: .6; }
+.topo-marca img { height: 44px; transform: none; }
+.topo.rolou .topo-dentro { height: 62px; }
+.topo.rolou .topo-marca img { height: 36px; }
+.topo-dentro, .topo-marca img { transition: height .25s ease; }
+.contador { top: 5px; right: 3px; min-width: 16px; height: 16px; font-size: 10px; }
+@media (max-width: 420px) { .topo-icone { width: 38px; } .topo-marca img { height: 38px; } }
+@media (min-width: 900px) { .topo-dentro { height: 92px; } .topo-marca img { height: 54px; } .topo-nav { padding-bottom: 16px; } }
+.topo-busca input { border-radius: 0; border: 0; border-bottom: 1px solid var(--tinta); background: transparent; padding: 0 4px; font-family: var(--serifa); font-size: 20px; }
+
+/* Abertura: só a frase, muito respiro, linhas finas */
+.hero:not(.com-foto) .hero-texto { background: transparent; border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); border-radius: 0; padding: 84px 16px 80px; gap: 18px; }
+@media (min-width: 900px) { .hero:not(.com-foto) .hero-texto { padding: 130px 24px 120px; } }
+.hero h1 { font-size: clamp(40px, 7.4vw, 88px); line-height: .98; letter-spacing: -.02em; }
+.hero p { font-size: 14px; letter-spacing: .01em; color: var(--tinta-3); max-width: 380px; }
+.btn-escuro { display: inline-flex; align-items: center; height: 48px; padding: 0 30px; margin-top: 8px; background: var(--tinta); color: #fff; text-decoration: none; font-size: 11px; letter-spacing: .24em; text-transform: uppercase; transition: opacity .2s; }
+.btn-escuro:hover { opacity: .85; }
+
+/* Seções e filtros mais leves */
+.vitrine, .colecao { padding-top: 72px; }
+.secao-cabeca { margin-bottom: 30px; }
+.secao-cabeca h2 { font-size: clamp(32px, 4.6vw, 46px); }
+.filtros { border-top: 0; border-bottom: 1px solid var(--linha); padding: 0 0 6px; margin-bottom: 26px; }
+.categorias button { border-radius: 0; height: 32px; padding: 0 2px; margin-right: 16px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; border: 0; border-bottom: 1px solid transparent; }
+.categorias button[aria-pressed="true"] { border-color: var(--tinta); }
+
+/* Cards minimalistas */
+.card { gap: 6px; }
+.card-foto { aspect-ratio: 4 / 5; background: #EFEBE5; }
+.card-ver { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px; text-align: center; background: rgba(255, 255, 255, .92); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; transform: translateY(100%); transition: transform .35s cubic-bezier(.2, .8, .2, 1); }
+.card:hover .card-ver, .card:focus-visible .card-ver { transform: none; }
+@media (hover: none) { .card-ver { display: none; } }
+.card-nome { margin-top: 6px; font-size: 13px; color: var(--tinta); }
+.preco { font-size: 13px; color: var(--tinta-2); }
+.preco strong { font-weight: 500; color: var(--tinta); }
+.selo { top: 0; left: 0; padding: 6px 10px; font-size: 9.5px; letter-spacing: .2em; background: var(--fundo); }
+.selo.promo { background: var(--tinta); color: #fff; }
+.card-cores span { width: 9px; height: 9px; }
+
+/* Revelar ao rolar */
+.revelar { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s cubic-bezier(.2, .8, .2, 1); }
+.revelar.visivel { opacity: 1; transform: none; }
+
+/* Peça e sacola: acabamento */
+.folha { border-radius: 0; }
+@media (max-width: 859px) { .folha { border-radius: 16px 16px 0 0; } }
+.btn-cheio { letter-spacing: .24em; font-size: 12px; }
+.btn-whats { border-radius: 0; letter-spacing: .02em; }
+.btn-whats svg { width: 20px; height: 20px; }
+.barra-sacola { border-radius: 0; height: 56px; }
+@media (min-width: 900px) { .barra-sacola { border-radius: 0; } }
+
+/* Rodapé limpo e centralizado */
+.rodape { text-align: center; padding: 72px 16px calc(96px + env(safe-area-inset-bottom)); }
+.rodape-dentro { display: flex; flex-direction: column; align-items: center; gap: 20px; grid-template-columns: none !important; }
+.rodape-logo { height: 52px !important; width: auto; filter: invert(1); margin: 0 !important; }
+.rodape-frase { font-size: 26px !important; max-width: 420px !important; text-align: center; }
+.rodape-icones { display: flex; gap: 12px; }
+.rodape-icones a { width: 46px; height: 46px; border: 1px solid #3A3734; border-radius: 50%; display: grid; place-items: center; color: #E9E4DD; transition: background .2s, color .2s; }
+.rodape-icones a:hover { background: #E9E4DD; color: var(--tinta); }
+.rodape-icones svg { width: 18px; height: 18px; }
+.rodape-passos { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 36px; margin-top: 12px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #B8B1A7; }
+.rodape-passos strong { font-family: var(--serifa); font-weight: 500; font-size: 16px; color: #fff; margin-right: 10px; letter-spacing: 0; }
+.rodape-endereco { font-size: 12px !important; color: #8C857C !important; }
+.rodape small { border-top: 1px solid #2C2A27; margin-top: 44px; }
