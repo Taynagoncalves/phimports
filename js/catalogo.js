@@ -172,6 +172,164 @@
     $('estado').textContent = cat.produtos.length ? 'Nenhuma peça encontrada.' : 'Novidades chegando em breve.';
   }
 
+  /* ---------- Trocar a cor da roupa na foto (sem foto de cada cor) ----------
+     Acha a peça a partir do centro da foto (cor parecida e encostada), troca o tom
+     mantendo dobras e sombras, e suaviza a borda. Tudo no navegador da cliente. */
+  const Recolor = (() => {
+    const preparadas = new Map();   // url → Promise<{ w, h, dados, lab, alfa, origem }>
+    const prontas = new Map();      // url|hex → dataURL
+    const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+    const gam = (c) => { const v = c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055; return Math.max(0, Math.min(255, Math.round(v * 255))); };
+    const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+    const fi = (t) => (t ** 3 > 0.008856 ? t ** 3 : (t - 16 / 116) / 7.787);
+    function rgbParaLab(r, g, b) {
+      const R = lin(r), G = lin(g), B = lin(b);
+      const x = f((R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047);
+      const y = f(R * 0.2126 + G * 0.7152 + B * 0.0722);
+      const z = f((R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883);
+      return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+    }
+    function labParaRgb(L, a, b) {
+      const y = (L + 16) / 116, x = a / 500 + y, z = y - b / 200;
+      const X = fi(x) * 0.95047, Y = fi(y), Z = fi(z) * 1.08883;
+      return [gam(X * 3.2406 - Y * 1.5372 - Z * 0.4986), gam(-X * 0.9689 + Y * 1.8758 + Z * 0.0415), gam(X * 0.0557 - Y * 0.2040 + Z * 1.0570)];
+    }
+    const hexParaLab = (hex) => { const h = String(hex).replace('#', ''); const n = parseInt(h.length === 3 ? h.replace(/./g, '$&$&') : h, 16); return rgbParaLab((n >> 16) & 255, (n >> 8) & 255, n & 255); };
+    const distancia = (p, q) => Math.sqrt(((p[0] - q[0]) * 0.55) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2);
+
+    function carregar(url) {
+      return new Promise((ok, erro) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => ok(img);
+        img.onerror = erro;
+        img.src = url;
+      });
+    }
+
+    async function preparar(url) {
+      if (preparadas.has(url)) return preparadas.get(url);
+      const tarefa = (async () => {
+        const img = await carregar(url);
+        const escala = Math.min(1, 900 / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.round(img.naturalWidth * escala), h = Math.round(img.naturalHeight * escala);
+        const tela = document.createElement('canvas'); tela.width = w; tela.height = h;
+        const ctx = tela.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, w, h);
+        const dados = ctx.getImageData(0, 0, w, h);   // falha se a foto não permitir (CORS): aí não troca a cor
+        const px = dados.data;
+        const lab = new Float32Array(w * h * 3);
+        for (let i = 0, j = 0; i < px.length; i += 4, j += 3) { const c = rgbParaLab(px[i], px[i + 1], px[i + 2]); lab[j] = c[0]; lab[j + 1] = c[1]; lab[j + 2] = c[2]; }
+        // Cor da peça = mediana do miolo da foto
+        const amostra = [];
+        for (let y = Math.floor(h * 0.32); y < h * 0.62; y += 3) for (let x = Math.floor(w * 0.38); x < w * 0.62; x += 3) { const j = (y * w + x) * 3; amostra.push([lab[j], lab[j + 1], lab[j + 2]]); }
+        const mediana = (k) => amostra.map((c) => c[k]).sort((a, b) => a - b)[Math.floor(amostra.length / 2)];
+        const origem = [mediana(0), mediana(1), mediana(2)];
+        // Peça = área encostada no miolo com cor parecida (não pinta pele nem fundo)
+        const limite = 22;
+        const marca = new Uint8Array(w * h);
+        const fila = new Int32Array(w * h);
+        let ini = 0, fim = 0;
+        for (let y = Math.floor(h * 0.38); y < h * 0.58; y += 4) for (let x = Math.floor(w * 0.42); x < w * 0.58; x += 4) {
+          const k = y * w + x;
+          if (distancia([lab[k * 3], lab[k * 3 + 1], lab[k * 3 + 2]], origem) < limite && !marca[k]) { marca[k] = 1; fila[fim++] = k; }
+        }
+        while (ini < fim) {
+          const k = fila[ini++]; const x = k % w, y = (k / w) | 0;
+          const viz = [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, y > 0 ? k - w : -1, y < h - 1 ? k + w : -1];
+          for (const n of viz) {
+            if (n < 0 || marca[n]) continue;
+            if (distancia([lab[n * 3], lab[n * 3 + 1], lab[n * 3 + 2]], origem) < limite) { marca[n] = 1; fila[fim++] = n; }
+          }
+        }
+        if (fim < w * h * 0.03) throw new Error('peça não encontrada');
+        // Borda suave (duas passadas de desfoque)
+        let alfa = Float32Array.from(marca);
+        for (let passo = 0; passo < 2; passo++) {
+          const novo = new Float32Array(w * h);
+          for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+            let s = 0, n = 0;
+            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < w && yy < h) { s += alfa[yy * w + xx]; n++; } }
+            novo[y * w + x] = s / n;
+          }
+          alfa = novo;
+        }
+        return { w, h, dados, lab, alfa, origem };
+      })();
+      preparadas.set(url, tarefa);
+      tarefa.catch(() => preparadas.delete(url));
+      return tarefa;
+    }
+
+    /** Foto com a peça na cor pedida (dataURL) */
+    async function pintar(url, hex) {
+      const chave = url + '|' + hex;
+      if (prontas.has(chave)) return prontas.get(chave);
+      const { w, h, dados, lab, alfa, origem } = await preparar(url);
+      const alvo = hexParaLab(hex);
+      const saida = new ImageData(new Uint8ClampedArray(dados.data), w, h);
+      const px = saida.data;
+      // Peça escura → cor clara: realça um pouco as dobras para não "chapar"
+      const contraste = alvo[0] > 60 && origem[0] < 45 ? 1.25 : 1;
+      for (let k = 0; k < w * h; k++) {
+        const m = alfa[k];
+        if (m <= 0.01) continue;
+        const L = Math.max(0, Math.min(100, alvo[0] + (lab[k * 3] - origem[0]) * contraste));
+        const a = alvo[1] + (lab[k * 3 + 1] - origem[1]) * 0.35;
+        const b = alvo[2] + (lab[k * 3 + 2] - origem[2]) * 0.35;
+        const [r, g, bl] = labParaRgb(L, a, b);
+        const i = k * 4;
+        px[i] = px[i] * (1 - m) + r * m;
+        px[i + 1] = px[i + 1] * (1 - m) + g * m;
+        px[i + 2] = px[i + 2] * (1 - m) + bl * m;
+      }
+      const tela = document.createElement('canvas'); tela.width = w; tela.height = h;
+      tela.getContext('2d').putImageData(saida, 0, 0);
+      const resultado = tela.toDataURL('image/jpeg', 0.9);
+      prontas.set(chave, resultado);
+      return resultado;
+    }
+
+    /** Qual das cores da peça é a da foto original */
+    async function corDaFoto(url, cores) {
+      const { origem } = await preparar(url);
+      let melhor = null, menor = Infinity;
+      cores.forEach(([nome, hex]) => { if (!hex) return; const d = distancia(hexParaLab(hex), origem); if (d < menor) { menor = d; melhor = nome; } });
+      return melhor;
+    }
+    return { pintar, corDaFoto, preparar };
+  })();
+
+  /** Mostra a foto da peça na cor escolhida (ou a original) */
+  let pedidoFoto = 0;
+  async function mostrarCorNaFoto() {
+    const p = aberta;
+    if (!p || !p.foto) return;
+    const img = $('p-foto').querySelector('img');
+    const selo = $('p-cor-ilustrativa');
+    if (!img) return;
+    const url = foto(p.foto, 900);
+    const cores = coresDe(p).filter(([, h]) => h);
+    const meu = ++pedidoFoto;
+    try {
+      const original = await Recolor.corDaFoto(url, cores);
+      if (meu !== pedidoFoto) return;
+      const hex = (cores.find(([c]) => c === escolha.c) || [])[1];
+      if (!escolha.c || !hex || escolha.c === original) {
+        img.src = foto(p.foto, 1100); selo.hidden = true; return;
+      }
+      $('p-foto').classList.add('pintando');
+      const nova = await Recolor.pintar(url, hex);
+      if (meu !== pedidoFoto) return;
+      img.src = nova;
+      selo.hidden = false;
+    } catch (e) {
+      selo.hidden = true;   // foto sem permissão ou sem peça clara no centro: fica a original
+    } finally {
+      if (meu === pedidoFoto) $('p-foto').classList.remove('pintando');
+    }
+  }
+
   /* ---------- Peça (escolher cor, tamanho e quantidade) ---------- */
   function abrirPeca(id) {
     aberta = acharPeca(id);
@@ -186,7 +344,9 @@
     $('p-avise').hidden = !fora || !cat.whatsapp;
     if (fora && cat.whatsapp) $('p-avise').href = linkWhats(`Olá! Vi no catálogo a peça *${p.nome}*, que está esgotada. Vai chegar de novo? Pode me avisar? 😊`);
     $('p-foto').classList.toggle('vazia', !p.foto);
-    $('p-foto').innerHTML = p.foto ? `<img src="${esc(foto(p.foto, 1100))}" alt="${esc(p.nome)}">` : ICONE_CABIDE;
+    $('p-foto').innerHTML = p.foto ? `<img src="${esc(foto(p.foto, 1100))}" alt="${esc(p.nome)}"><span class="cor-ilustrativa" id="p-cor-ilustrativa" hidden>Cor ilustrativa</span>` : ICONE_CABIDE;
+    pedidoFoto++;
+    if (p.foto && coresDe(p).filter(([, h]) => h).length > 1) Recolor.preparar(foto(p.foto, 900)).catch(() => {});
     $('p-cat').textContent = [p.categoria, p.marca].filter(Boolean).join(' · ');
     $('p-nome').textContent = p.nome;
     $('p-preco').innerHTML = precoHtml(p);
@@ -195,6 +355,7 @@
     $('p-cores-bloco').hidden = !cores.length;
     $('p-aviso').textContent = '';
     desenharEscolha();
+    mostrarCorNaFoto();
     abrirCamada('camada-peca');
     history.pushState({ camada: 'peca' }, '');
   }
@@ -215,7 +376,7 @@
       : `<button type="button" class="texto" data-cor="${esc(c)}" aria-pressed="${escolha.c === c}" ${existe(c, escolha.t) ? '' : 'disabled'}>${esc(c)}</button>`).join('');
     $('p-tamanhos').innerHTML = tamanhosDe(p).map((t) => `<button type="button" data-tam="${esc(t)}" aria-pressed="${escolha.t === t}" ${existe(escolha.c, t) ? '' : 'disabled'}>${esc(t)}</button>`).join('');
     $('p-cores').querySelectorAll('[data-cor]').forEach((b) => b.addEventListener('click', () => {
-      escolha.c = b.dataset.cor; if (!existe(escolha.c, escolha.t)) escolha.t = ''; escolha.qtd = 1; $('p-aviso').textContent = ''; desenharEscolha();
+      escolha.c = b.dataset.cor; if (!existe(escolha.c, escolha.t)) escolha.t = ''; escolha.qtd = 1; $('p-aviso').textContent = ''; desenharEscolha(); mostrarCorNaFoto();
     }));
     $('p-tamanhos').querySelectorAll('[data-tam]').forEach((b) => b.addEventListener('click', () => {
       escolha.t = b.dataset.tam; if (!existe(escolha.c, escolha.t)) escolha.c = ''; escolha.qtd = 1; $('p-aviso').textContent = ''; desenharEscolha();
