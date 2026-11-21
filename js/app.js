@@ -41,7 +41,6 @@
       { id: 'dashboard', texto: 'Dashboard', icone: 'layout-dashboard', href: 'dashboard.html' },
       { id: 'pdv', texto: 'Frente de caixa', icone: 'scan-barcode', href: 'pdv.html' },
       { id: 'caixa', texto: 'Caixa', icone: 'wallet', href: 'caixa.html' },
-      { id: 'vendas', texto: 'Vendas', icone: 'shopping-bag', href: 'vendas.html' },
       { id: 'trocas', texto: 'Trocas', icone: 'repeat', href: 'trocas.html' },
       { id: 'notas', texto: 'Notas fiscais', icone: 'file-text', href: 'notas.html' }
     ] },
@@ -61,11 +60,14 @@
       { id: 'fornecedores', texto: 'Fornecedores', icone: 'truck', href: 'fornecedores.html' }
     ] },
     { grupo: 'Gestão', itens: [
+      { id: 'vendas', texto: 'Vendas', icone: 'shopping-bag', href: 'vendas.html' },
       { id: 'financeiro', texto: 'Financeiro', icone: 'landmark', href: 'financeiro.html' },
       { id: 'relatorios', texto: 'Relatórios', icone: 'trending-up', href: 'relatorios.html' },
-      { id: 'mensalidade', texto: 'Mensalidade', icone: 'badge-dollar-sign', href: 'mensalidade.html' },
       { id: 'impressao', texto: 'Impressão', icone: 'printer', href: 'impressao.html' },
       { id: 'configuracoes', texto: 'Configurações', icone: 'settings', href: 'configuracoes.html' }
+    ] },
+    { grupo: 'Plataforma', itens: [
+      { id: 'mensalidade', texto: 'Mensalidade', icone: 'badge-dollar-sign', href: 'mensalidade.html' }
     ] }
   ];
 
