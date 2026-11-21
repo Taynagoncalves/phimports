@@ -236,7 +236,8 @@
     clientes: ['clientes', 'vendas', 'creditos', 'contasReceber', 'usuarios'], fornecedores: ['fornecedores', 'produtos', 'contasPagar', 'entradas'],
     financeiro: ['contasPagar', 'contasReceber', 'clientes', 'vendas', 'fornecedores', 'caixas', 'usuarios'],
     relatorios: ['produtos', 'usuarios', 'clientes', 'creditos', 'contasReceber'],
-    configuracoes: ['usuarios', 'produtos', 'notas'], entrada: ['produtos', 'fornecedores', 'contasPagar', 'entradas', 'movimentacoes']
+    configuracoes: ['usuarios', 'produtos', 'notas'], entrada: ['produtos', 'fornecedores', 'contasPagar', 'entradas', 'movimentacoes'],
+    'produto-form': ['produtos', 'fornecedores']
   };
   function prepararTela(pagina) {
     if (MODO !== 'nuvem') return Promise.resolve();
@@ -276,17 +277,19 @@
       const j = canon(db[n]);
       if (espelho.ajustes[n] !== j) { ops.push(['set', refLoja().collection('ajustes').doc(n), ajusteParaDoc(n, JSON.parse(j))]); espelho.ajustes[n] = j; }
     });
-    const catalogoRef = fb.fs.collection('catalogos').doc(lojaId);
-    if (!catalogoCacheCarregado) {
-      const raiz = await catalogoRef.get();
-      catalogoInfoLocal = raiz.exists ? raiz.data() : null;
-      catalogoPublicadoLocal = catalogoInfoLocal?.publicado === true;
-      const docs = await catalogoRef.collection('produtos').get();
-      docs.docs.forEach((d) => espelhoCatalogo.set(d.id, canon(d.data())));
-      catalogoCacheCarregado = true;
-    }
+    const inicioOpsCatalogo = ops.length;
+    try {
     if (db.loja.catalogoPublico) {
-      const colecaoPublica = fb.fs.collection('catalogos').doc(lojaId).collection('produtos');
+      const catalogoRef = fb.fs.collection('catalogos').doc(lojaId);
+      if (!catalogoCacheCarregado) {
+        const raiz = await catalogoRef.get();
+        catalogoInfoLocal = raiz.exists ? raiz.data() : null;
+        catalogoPublicadoLocal = catalogoInfoLocal?.publicado === true;
+        const docs = await catalogoRef.collection('produtos').get();
+        docs.docs.forEach((d) => espelhoCatalogo.set(d.id, canon(d.data())));
+        catalogoCacheCarregado = true;
+      }
+      const colecaoPublica = catalogoRef.collection('produtos');
       const infoPublica = { publicado: true, nome: db.loja.nome || '', logo: db.loja.logo || '', telefone: db.loja.telefone || '', instagram: db.loja.instagram || '', atualizadoEm: new Date().toISOString() };
       const infoComparavel = { ...infoPublica, atualizadoEm: '' };
       const infoAnterior = catalogoInfoLocal ? { ...catalogoInfoLocal, atualizadoEm: '' } : null;
@@ -314,15 +317,29 @@
         ops.push(['set', colecaoPublica.doc(id), inativo]); espelhoCatalogo.set(id, canon(inativo));
       });
     } else if (catalogoPublicadoLocal) {
+      const catalogoRef = fb.fs.collection('catalogos').doc(lojaId);
       const infoDesativada = { ...(catalogoInfoLocal || {}), publicado: false, atualizadoEm: new Date().toISOString() };
       ops.push(['set', catalogoRef, infoDesativada]);
       catalogoInfoLocal = infoDesativada; catalogoPublicadoLocal = false;
     }
+    } catch (erroCatalogo) {
+      ops.splice(inicioOpsCatalogo);
+      catalogoCacheCarregado = false;
+      console.warn('Falha ao sincronizar catálogo público:', erroCatalogo);
+    }
     // Lotes de até 400 gravações (limite do Firestore: 500)
-    for (let i = 0; i < ops.length; i += 400) {
-      const lote = fb.fs.batch();
-      ops.slice(i, i + 400).forEach(([tipo, ref, dados]) => (tipo === 'set' ? lote.set(ref, dados) : lote.delete(ref)));
-      await lote.commit();
+    for (const [inicio, fim, opcional] of [[0, inicioOpsCatalogo, false], [inicioOpsCatalogo, ops.length, true]]) {
+      try {
+        for (let i = inicio; i < fim; i += 400) {
+          const lote = fb.fs.batch();
+          ops.slice(i, Math.min(i + 400, fim)).forEach(([tipo, ref, dados]) => (tipo === 'set' ? lote.set(ref, dados) : lote.delete(ref)));
+          await lote.commit();
+        }
+      } catch (erro) {
+        if (!opcional) throw erro;
+        catalogoCacheCarregado = false;
+        console.warn('Falha ao publicar catálogo; dados da loja foram sincronizados:', erro);
+      }
     }
   }
 
