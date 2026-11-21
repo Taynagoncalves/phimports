@@ -3,10 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="../manifest.webmanifest">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" type="image/png" href="../img/favicon.png">
   <link rel="apple-touch-icon" href="../img/icone-app.png">
   <meta name="theme-color" content="#18181B">
@@ -394,10 +390,7 @@
                 <label for="limite-desconto">Desconto máximo do vendedor (%)</label>
                 <input class="input" type="number" id="limite-desconto" min="0" max="100" step="0.5" required>
               </div>
-              <label class="checkbox" style="align-self:center"><input type="checkbox" id="pontos-ativos"> Ativar fidelidade</label>
-              <div class="campo" style="width:180px"><label for="pontos-por-real">Pontos por real gasto</label><input class="input" type="number" id="pontos-por-real" min="0" max="1000" step="0.1"></div>
-              <div class="campo" style="width:180px"><label for="valor-por-ponto">Desconto por ponto (R$)</label><input class="input" type="number" id="valor-por-ponto" min="0.01" max="100" step="0.01"></div>
-              <p class="texto-sm" style="flex:1;min-width:220px">O limite define quando o PDV pede aprovacao do dono. Pontos valem para clientes cadastrados.</p>
+              <p class="texto-sm" style="flex:1;min-width:220px">Acima disso, o PDV pede o e-mail e a senha do dono para liberar. A venda registra quem autorizou.</p>
               <button type="submit" class="btn btn-primario"><i data-lucide="check"></i>Salvar regra</button>
             </form>
           </div>
@@ -492,8 +485,6 @@
                 <label class="interruptor"><input type="checkbox" id="cfg-recibo-auto"><span>Abrir a impressão do recibo automaticamente</span></label>
                 <label class="interruptor"><input type="checkbox" id="cfg-controlar-caixa"><span>Controlar caixa (abrir com troco e fechar com conferência)</span></label>
                 <label class="interruptor"><input type="checkbox" id="cfg-emitir-nota"><span>Emitir nota fiscal (NFC-e)</span></label>
-                <label class="interruptor"><input type="checkbox" id="cfg-catalogo-publico"><span>Publicar catálogo online (nome, preço, foto e disponibilidade)</span></label>
-                <div id="link-catalogo" class="texto-sm"></div>
               </div>
               <p class="texto-xs texto-3 mt-2" id="cfg-nota-ajuda"></p>
             </div>

@@ -118,12 +118,6 @@
   let perfilAcesso = null;  // documento acessos/{uid}
   const espelho = {};       // último estado sincronizado (para enviar só o que mudou)
   const ouvintes = [];
-  const colecoesCarregadas = new Set();
-  let telaAtual = '';
-  let catalogoCacheCarregado = false;
-  let catalogoPublicadoLocal = null;
-  let catalogoInfoLocal = null;
-  const espelhoCatalogo = new Map();
 
   function iniciarFirebase() {
     if (fb) return fb;
@@ -170,19 +164,28 @@
     avisoPendente = setTimeout(() => window.dispatchEvent(new CustomEvent('dados-alterados')), 250);
   }
 
-  /** Abre a loja e carrega apenas seus ajustes globais. */
+  /** Abre a loja: escuta todas as coleções em tempo real (o primeiro retorno carrega tudo) */
   function abrirLoja(id) {
     pararOuvintes();
-    colecoesCarregadas.clear();
-    catalogoCacheCarregado = false;
-    catalogoPublicadoLocal = null;
-    catalogoInfoLocal = null;
-    espelhoCatalogo.clear();
     lojaId = id;
     db = bancoBase();
     COLECOES.forEach((c) => { espelho[c] = new Map(); });
     espelho.ajustes = {};
-    return new Promise((resolve, reject) => {
+    const carregamentos = COLECOES.map((c) => new Promise((resolve, reject) => {
+      let primeira = true;
+      ouvintes.push(refLoja().collection(c).onSnapshot((snap) => {
+        snap.docChanges().forEach((ch) => {
+          const docId = ch.doc.id;
+          const i = db[c].findIndex((x) => String(x.id) === docId);
+          if (ch.type === 'removed') { if (i >= 0) db[c].splice(i, 1); espelho[c].delete(docId); return; }
+          const dados = { ...ch.doc.data(), id: (i >= 0 ? db[c][i].id : null) ?? ch.doc.data().id ?? docId };
+          espelho[c].set(docId, canon(dados));
+          if (i >= 0) db[c][i] = dados; else db[c].push(dados);
+        });
+        if (primeira) { primeira = false; resolve(); } else if (!snap.metadata.hasPendingWrites) avisarMudancaRemota();
+      }, (erro) => { if (primeira) reject(erro); else console.error('Firestore:', erro); }));
+    }));
+    carregamentos.push(new Promise((resolve, reject) => {
       let primeira = true;
       ouvintes.push(refLoja().collection('ajustes').onSnapshot((snap) => {
         snap.docChanges().forEach((ch) => {
@@ -192,56 +195,8 @@
         });
         if (primeira) { primeira = false; resolve(); } else if (!snap.metadata.hasPendingWrites) avisarMudancaRemota();
       }, (erro) => { if (primeira) reject(erro); else console.error('Firestore:', erro); }));
-    });
-  }
-
-  function carregarColecaoTela(c) {
-    if (colecoesCarregadas.has(c)) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      let primeira = true;
-      let consulta = refLoja().collection(c);
-      if (c === 'vendas' && telaAtual === 'dashboard') {
-        consulta = consulta.where('data', '>=', somarDias(hojeStr(), -45)).orderBy('data', 'desc');
-      } else if (c === 'vendas' && telaAtual === 'pdv') {
-        consulta = consulta.orderBy('data', 'desc').limit(500);
-      } else if (c === 'vendas' && telaAtual === 'caixa') {
-        consulta = consulta.where('data', '>=', hojeStr()).orderBy('data', 'desc').limit(500);
-      } else if (c === 'vendas' && telaAtual === 'estoque') {
-        consulta = consulta.where('data', '>=', somarDias(hojeStr(), -60)).orderBy('data', 'desc');
-      }
-      const parar = consulta.onSnapshot((snap) => {
-        snap.docChanges().forEach((ch) => {
-          const docId = ch.doc.id;
-          const i = db[c].findIndex((x) => String(x.id) === docId);
-          if (ch.type === 'removed') { if (i >= 0) db[c].splice(i, 1); espelho[c].delete(docId); return; }
-          const dados = { ...ch.doc.data(), id: (i >= 0 ? db[c][i].id : null) ?? ch.doc.data().id ?? docId };
-          espelho[c].set(docId, canon(dados));
-          if (i >= 0) db[c][i] = dados; else db[c].push(dados);
-        });
-        if (primeira) { primeira = false; colecoesCarregadas.add(c); resolve(); }
-        else if (!snap.metadata.hasPendingWrites) avisarMudancaRemota();
-      }, (erro) => { if (primeira) reject(erro); else console.error('Firestore:', erro); });
-      ouvintes.push(parar);
-    });
-  }
-
-  const COLECOES_POR_TELA = {
-    dashboard: ['produtos', 'vendas', 'usuarios', 'clientes', 'creditos', 'contasReceber'],
-    pdv: ['produtos', 'vendas', 'usuarios', 'clientes', 'promocoes', 'creditos', 'caixas', 'contasReceber', 'movimentacoes', 'notas'],
-    caixa: ['caixas', 'vendas', 'usuarios', 'clientes', 'contasReceber', 'creditos'],
-    vendas: ['usuarios', 'clientes', 'creditos', 'contasReceber', 'notas', 'produtos'],
-    trocas: ['vendas', 'usuarios', 'clientes', 'creditos', 'contasReceber', 'produtos', 'movimentacoes', 'caixas', 'notas'],
-    notas: ['notas', 'vendas', 'clientes'], produtos: ['produtos'], estoque: ['produtos', 'movimentacoes', 'usuarios', 'vendas'],
-    etiquetas: ['produtos'], inventario: ['produtos', 'inventarios', 'movimentacoes', 'usuarios'], promocoes: ['produtos', 'promocoes'],
-    clientes: ['clientes', 'vendas', 'creditos', 'contasReceber', 'usuarios'], fornecedores: ['fornecedores', 'produtos', 'contasPagar', 'entradas'],
-    financeiro: ['contasPagar', 'contasReceber', 'clientes', 'vendas', 'fornecedores', 'caixas', 'usuarios'],
-    relatorios: ['produtos', 'usuarios', 'clientes', 'creditos', 'contasReceber'],
-    configuracoes: ['usuarios', 'produtos', 'notas'], entrada: ['produtos', 'fornecedores', 'contasPagar', 'entradas', 'movimentacoes']
-  };
-  function prepararTela(pagina) {
-    if (MODO !== 'nuvem') return Promise.resolve();
-    telaAtual = pagina || '';
-    return Promise.all((COLECOES_POR_TELA[pagina] || []).map(carregarColecaoTela));
+    }));
+    return Promise.all(carregamentos);
   }
 
   /* ---------- Envio das alterações (só o que mudou) ---------- */
@@ -276,48 +231,6 @@
       const j = canon(db[n]);
       if (espelho.ajustes[n] !== j) { ops.push(['set', refLoja().collection('ajustes').doc(n), ajusteParaDoc(n, JSON.parse(j))]); espelho.ajustes[n] = j; }
     });
-    const catalogoRef = fb.fs.collection('catalogos').doc(lojaId);
-    if (!catalogoCacheCarregado) {
-      const raiz = await catalogoRef.get();
-      catalogoInfoLocal = raiz.exists ? raiz.data() : null;
-      catalogoPublicadoLocal = catalogoInfoLocal?.publicado === true;
-      const docs = await catalogoRef.collection('produtos').get();
-      docs.docs.forEach((d) => espelhoCatalogo.set(d.id, canon(d.data())));
-      catalogoCacheCarregado = true;
-    }
-    if (db.loja.catalogoPublico) {
-      const colecaoPublica = fb.fs.collection('catalogos').doc(lojaId).collection('produtos');
-      const infoPublica = { publicado: true, nome: db.loja.nome || '', logo: db.loja.logo || '', telefone: db.loja.telefone || '', instagram: db.loja.instagram || '', atualizadoEm: new Date().toISOString() };
-      const infoComparavel = { ...infoPublica, atualizadoEm: '' };
-      const infoAnterior = catalogoInfoLocal ? { ...catalogoInfoLocal, atualizadoEm: '' } : null;
-      if (!catalogoPublicadoLocal || canon(infoComparavel) !== canon(infoAnterior)) {
-        ops.push(['set', catalogoRef, infoPublica]);
-        catalogoInfoLocal = infoPublica;
-      }
-      catalogoPublicadoLocal = true;
-      const ativos = new Map();
-      db.produtos.filter((p) => p.ativo !== false).forEach((p) => {
-        const publico = {
-          ativo: true, nome: p.nome || '', categoria: p.categoria || '', marca: p.marca || '',
-          preco: Number(p.preco || 0), foto: p.foto || '',
-          disponivel: p.variacoes.some((v) => Number(v.estoque || 0) > 0),
-          variacoes: p.variacoes.map((v) => ({ tamanho: v.tamanho || '', cor: v.cor || '', disponivel: Number(v.estoque || 0) > 0 }))
-        };
-        const id = String(p.id); ativos.set(id, publico);
-        if (espelhoCatalogo.get(id) !== canon(publico)) {
-          ops.push(['set', colecaoPublica.doc(id), publico]);
-          espelhoCatalogo.set(id, canon(publico));
-        }
-      });
-      [...espelhoCatalogo.keys()].filter((id) => !ativos.has(id)).forEach((id) => {
-        const inativo = { ativo: false };
-        ops.push(['set', colecaoPublica.doc(id), inativo]); espelhoCatalogo.set(id, canon(inativo));
-      });
-    } else if (catalogoPublicadoLocal) {
-      const infoDesativada = { ...(catalogoInfoLocal || {}), publicado: false, atualizadoEm: new Date().toISOString() };
-      ops.push(['set', catalogoRef, infoDesativada]);
-      catalogoInfoLocal = infoDesativada; catalogoPublicadoLocal = false;
-    }
     // Lotes de até 400 gravações (limite do Firestore: 500)
     for (let i = 0; i < ops.length; i += 400) {
       const lote = fb.fs.batch();
@@ -459,7 +372,7 @@
   }
 
   /* ---------- Pagamentos e valores da venda ---------- */
-  const FORMAS_VALIDAS = ['pix', 'dinheiro', 'debito', 'credito', 'vale', 'crediario', 'pontos'];
+  const FORMAS_VALIDAS = ['pix', 'dinheiro', 'debito', 'credito', 'vale', 'crediario'];
   const arred = (n) => Math.round(Number(n || 0) * 100) / 100;
 
   /** Lista de pagamentos da venda (vendas antigas tinham um só "pagamento") */
@@ -893,7 +806,7 @@
      LOJA E USUÁRIOS
      ================================================================== */
 
-  function obterLoja() { return responder({ ...db.loja, id: lojaId || db.loja.id || '' }); }
+  function obterLoja() { return responder(db.loja); }
 
   function salvarLoja(dados) {
     const negado = exigirDono('alterar os dados da loja'); if (negado) return negado;
@@ -1101,29 +1014,6 @@
     return responder(lista);
   }
 
-  /** Reposição sugerida pela venda média dos últimos 60 dias e cobertura desejada de 30 dias. */
-  function sugerirCompras({ diasHistorico = 60, diasCobertura = 30 } = {}) {
-    diasHistorico = Math.max(1, Number(diasHistorico) || 60);
-    diasCobertura = Math.max(1, Number(diasCobertura) || 30);
-    const inicio = somarDias(hojeStr(), -diasHistorico);
-    const vendidos = new Map();
-    db.vendas.filter((v) => vendaValida(v) && diaLocal(v.data) >= inicio).forEach((v) => {
-      v.itens.forEach((it) => {
-        const devolvida = qtdDevolvida(v, it.sku);
-        vendidos.set(it.sku, (vendidos.get(it.sku) || 0) + Math.max(0, Number(it.qtd || 0) - devolvida));
-      });
-    });
-    const itens = db.produtos.filter((p) => p.ativo !== false).flatMap((p) => p.variacoes.map((v) => {
-      const mediaDia = (vendidos.get(v.sku) || 0) / diasHistorico;
-      const alvo = Math.ceil(mediaDia * diasCobertura);
-      const quantidade = Math.max(0, alvo - Number(v.estoque || 0));
-      return { produtoId: p.id, nome: p.nome, categoria: p.categoria, fornecedorId: p.fornecedorId || '', sku: v.sku,
-        tamanho: v.tamanho, cor: v.cor, estoque: Number(v.estoque || 0), vendidos: vendidos.get(v.sku) || 0,
-        alvo, quantidade, custo: Number(p.custo || 0), valor: quantidade * Number(p.custo || 0) };
-    })).filter((x) => x.quantidade > 0).sort((a, b) => b.valor - a.valor || a.nome.localeCompare(b.nome, 'pt-BR'));
-    return responder({ diasHistorico, diasCobertura, itens, totalPecas: itens.reduce((s, x) => s + x.quantidade, 0), investimento: itens.reduce((s, x) => s + x.valor, 0) });
-  }
-
   /* ==================================================================
      ESTOQUE (movimentações)
      ================================================================== */
@@ -1212,27 +1102,13 @@
     };
   }
 
-  async function buscarVendasPeriodo(dataInicio, dataFim) {
-    if (MODO !== 'nuvem' || !dataInicio || !dataFim) return db.vendas;
-    const inicio = new Date(`${dataInicio}T00:00:00`).toISOString();
-    const fim = new Date(`${dataFim}T23:59:59.999`).toISOString();
-    const snap = await refLoja().collection('vendas').where('data', '>=', inicio).where('data', '<=', fim).orderBy('data', 'desc').get();
-    const encontradas = snap.docs.map((doc) => ({ ...doc.data(), id: doc.data().id || doc.id }));
-    encontradas.forEach((v) => {
-      const i = db.vendas.findIndex((x) => String(x.id) === String(v.id));
-      if (i >= 0) db.vendas[i] = v; else db.vendas.push(v);
-      espelho.vendas.set(String(v.id), canon(v));
-    });
-    return encontradas;
-  }
-
   /**
    * Histórico de vendas.
    * @param {{busca?, status?, forma?, dataInicio?, dataFim?}} filtros
    */
   function listarVendas(filtros = {}) {
     const busca = normalizar(filtros.busca);
-    const listar = (base) => base
+    const lista = db.vendas
       .filter((v) => {
         if (filtros.status && v.status !== filtros.status) return false;
         if (filtros.forma && !pagamentosDe(v).some((p) => p.forma === filtros.forma)) return false;
@@ -1242,8 +1118,7 @@
       .map(montarVenda)
       .filter((v) => !busca || normalizar(`${v.numero} ${v.clienteNome} ${v.itens.map((i) => i.nome).join(' ')}`).includes(busca))
       .sort((a, b) => b.data.localeCompare(a.data));
-    if (MODO === 'nuvem' && filtros.dataInicio && filtros.dataFim) return buscarVendasPeriodo(filtros.dataInicio, filtros.dataFim).then(listar).then(clonar);
-    return responder(listar(db.vendas));
+    return responder(lista);
   }
 
   function obterVenda(id) {
@@ -1306,12 +1181,6 @@
     const entrada = (dados.pagamentos || []).filter((p) => Number(p.valor) > 0);
     if (!entrada.length) return falhar('Informe a forma de pagamento.');
     const usosVale = [];
-    const regraPontos = { pontosPorReal: 1, valorPorPonto: 0.01, ...(db.config || {}) };
-    const clientePontos = dados.clienteId && db.clientes.find((c) => c.id === dados.clienteId);
-    const resgatePontos = entrada.filter((p) => p.forma === 'pontos').reduce((s, p) => s + Number(p.valor), 0);
-    const pontosResgatados = resgatePontos > 0 && regraPontos.valorPorPonto > 0 ? Math.ceil(resgatePontos / regraPontos.valorPorPonto) : 0;
-    if (resgatePontos > 0 && (!regraPontos.pontosAtivos || !clientePontos)) return falhar('Selecione um cliente para usar os pontos de fidelidade.');
-    if (pontosResgatados > Number(clientePontos?.pontosSaldo || 0)) return falhar(`Saldo insuficiente. O cliente tem ${Number(clientePontos?.pontosSaldo || 0)} ponto(s).`);
     const crediario = entrada.filter((p) => p.forma === 'crediario');
     if (crediario.length) {
       if (crediario.length > 1) return falhar('Use só um lançamento de crediário por venda.');
@@ -1327,7 +1196,6 @@
         if (arred(p.valor) > arred(credito.saldo - jaUsado)) return falhar(`Saldo insuficiente no vale ${credito.codigo} (disponível: R$ ${(credito.saldo - jaUsado).toFixed(2).replace('.', ',')}).`);
         usosVale.push({ credito, valor: arred(p.valor) });
       }
-      if (p.forma === 'pontos' && (p.valor > total + 0.001 || !regraPontos.pontosAtivos)) return falhar('Uso de pontos indisponível ou acima do total da venda.');
     }
     const somaPagamentos = arred(entrada.reduce((s, p) => s + Number(p.valor), 0));
     if (somaPagamentos < total) return falhar(`Falta pagar R$ ${(total - somaPagamentos).toFixed(2).replace('.', ',')}.`);
@@ -1366,8 +1234,6 @@
       desconto,
       descontoAutorizadoPor,
       total,
-      pontosResgatados,
-      pontosGanhos: regraPontos.pontosAtivos && clientePontos ? Math.floor(Math.max(0, total - resgatePontos) * Number(regraPontos.pontosPorReal || 0)) : 0,
       pagamentos,
       // Resumo (compatível com relatórios antigos): forma principal, recebido e troco
       pagamento: {
@@ -1389,11 +1255,6 @@
       credito.saldo = arred(credito.saldo - valor);
       credito.usos.push({ vendaId: venda.id, numeroVenda: numero, valor, data: venda.data });
     });
-
-    if (clientePontos) {
-      clientePontos.pontosSaldo = Math.max(0, Number(clientePontos.pontosSaldo || 0) - pontosResgatados + venda.pontosGanhos);
-      clientePontos.pontosHistorico = [...(clientePontos.pontosHistorico || []), { vendaId: venda.id, data: venda.data, ganhos: venda.pontosGanhos, usados: pontosResgatados }];
-    }
 
     // 3) Baixa estoque e registra saídas
     itens.forEach((it) => {
@@ -1431,17 +1292,6 @@
     const caixa = caixaAberto();
     if (dinheiroDevolvido > 0 && !caixa && usaCaixa()) return falhar('Abra o caixa para devolver o dinheiro ao cliente.');
     if (abatidoCrediario > 0) abaterCrediario(venda.id, abatidoCrediario);
-    if (venda.clienteId && venda.total > 0) {
-      const cliente = db.clientes.find((c) => c.id === venda.clienteId);
-      if (cliente) {
-        const proporcao = Math.min(1, valorPago / venda.total);
-        const pontosEstornados = Math.floor(Number(venda.pontosGanhos || 0) * proporcao);
-        const pontosRestaurados = Math.floor(Number(venda.pontosResgatados || 0) * proporcao);
-        cliente.pontosSaldo = Math.max(0, Number(cliente.pontosSaldo || 0) - pontosEstornados + pontosRestaurados);
-        venda.pontosEstornados = pontosEstornados;
-        venda.pontosRestaurados = pontosRestaurados;
-      }
-    }
 
     itens.forEach((it) => {
       const achado = acharVariacao(it.sku);
@@ -1533,13 +1383,6 @@
     }
 
     venda.status = 'cancelada';
-    if (venda.clienteId) {
-      const cliente = db.clientes.find((c) => c.id === venda.clienteId);
-      if (cliente) {
-        cliente.pontosSaldo = Math.max(0, Number(cliente.pontosSaldo || 0) - Number(venda.pontosGanhos || 0) + Number(venda.pontosResgatados || 0));
-        cliente.pontosHistorico = (cliente.pontosHistorico || []).filter((p) => p.vendaId !== venda.id);
-      }
-    }
     venda.cancelamento = { motivo, data: agora, usuarioId: usuarioLogadoId(), notaCancelada };
     persistir();
     return responder(montarVenda(venda));
@@ -1567,17 +1410,14 @@
      ================================================================== */
 
   function obterRegrasVenda() {
-    return responder({ limiteDescontoVendedor: 10, pontosAtivos: false, pontosPorReal: 1, valorPorPonto: 0.01, ...(db.config || {}) });
+    return responder({ limiteDescontoVendedor: 10, ...(db.config || {}) });
   }
 
   function salvarRegrasVenda(dados) {
     const negado = exigirDono('alterar as regras de venda'); if (negado) return negado;
     const limite = Number(dados.limiteDescontoVendedor);
     if (!Number.isFinite(limite) || limite < 0 || limite > 100) return falhar('O limite deve ficar entre 0% e 100%.');
-    const pontosPorReal = Number(dados.pontosPorReal ?? (db.config || {}).pontosPorReal ?? 1);
-    const valorPorPonto = Number(dados.valorPorPonto ?? (db.config || {}).valorPorPonto ?? 0.01);
-    if (!Number.isFinite(pontosPorReal) || pontosPorReal < 0 || pontosPorReal > 1000 || !Number.isFinite(valorPorPonto) || valorPorPonto <= 0 || valorPorPonto > 100) return falhar('Informe uma regra de pontos válida.');
-    db.config = { ...(db.config || {}), limiteDescontoVendedor: limite, pontosAtivos: !!dados.pontosAtivos, pontosPorReal, valorPorPonto };
+    db.config = { ...(db.config || {}), limiteDescontoVendedor: limite };
     persistir();
     return obterRegrasVenda();
   }
@@ -2605,9 +2445,8 @@
    * Retorna totais, vendas por dia, por categoria, por forma de pagamento,
    * produtos mais vendidos e estoque parado (sem venda no período).
    */
-  async function obterRelatorio({ dataInicio, dataFim }) {
-    const vendasPeriodo = await buscarVendasPeriodo(dataInicio, dataFim);
-    const vendas = vendasPeriodo.filter((v) => vendaValida(v) && noPeriodo(v.data, dataInicio, dataFim));
+  function obterRelatorio({ dataInicio, dataFim }) {
+    const vendas = db.vendas.filter((v) => vendaValida(v) && noPeriodo(v.data, dataInicio, dataFim));
 
     let faturamento = 0, custo = 0, descontos = 0, pecas = 0;
     const porDia = {}, porCategoria = {}, porPagamento = {}, porProduto = {}, porVendedor = {};
@@ -2710,7 +2549,7 @@
   /* ---------- API pública ---------- */
   window.Data = {
     // Modo ('nuvem' | 'local') e carregamento
-    modo: MODO, pronto, prepararTela,
+    modo: MODO, pronto,
     // Autenticação
     entrar, sair, usuarioAtual, recuperarSenha, criarLoja, trocarSenha,
     // Painel do suporte (super admin)
@@ -2727,7 +2566,7 @@
     // Catálogo auxiliar
     listarCategorias, listarMarcas, listarColecoes, listarCores, adicionarCor, listarTamanhos,
     // Produtos
-    listarProdutos, obterProduto, salvarProduto, excluirProduto, buscarPorCodigo, listarEstoqueBaixo, sugerirCompras,
+    listarProdutos, obterProduto, salvarProduto, excluirProduto, buscarPorCodigo, listarEstoqueBaixo,
     // Estoque
     listarMovimentacoes, registrarMovimentacao,
     // Entrada de mercadoria em lote (nota do fornecedor)

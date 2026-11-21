@@ -98,23 +98,5 @@ service cloud.firestore {
         allow delete: if superAdmin();
       }
     }
-
-    // Catalogo publico: somente campos preparados para exposicao aos clientes.
-    match /catalogos/{lojaId} {
-      allow read: if resource.data.publicado == true;
-      allow create, update: if superAdmin() || dono(lojaId);
-      allow delete: if superAdmin() || dono(lojaId);
-      match /produtos/{produtoId} {
-        allow read: if superAdmin() || dono(lojaId) || (get(/databases/$(database)/documents/catalogos/$(lojaId)).data.publicado == true
-          && resource.data.ativo == true);
-        allow create, delete: if superAdmin() || dono(lojaId);
-        allow update: if superAdmin() || dono(lojaId) || (ativo(lojaId)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['disponivel', 'variacoes'])
-          && request.resource.data.nome == resource.data.nome
-          && request.resource.data.preco == resource.data.preco
-          && request.resource.data.foto == resource.data.foto
-          && request.resource.data.ativo == true);
-      }
-    }
   }
 }

@@ -516,19 +516,11 @@ App.aoIniciar(async () => {
   const formRegras = document.getElementById('form-regras');
   const regras = await Data.obterRegrasVenda();
   formRegras.querySelector('#limite-desconto').value = regras.limiteDescontoVendedor;
-  formRegras.querySelector('#pontos-ativos').checked = !!regras.pontosAtivos;
-  formRegras.querySelector('#pontos-por-real').value = regras.pontosPorReal;
-  formRegras.querySelector('#valor-por-ponto').value = regras.valorPorPonto;
   formRegras.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
-      const r = await Data.salvarRegrasVenda({
-        limiteDescontoVendedor: Number(formRegras.querySelector('#limite-desconto').value),
-        pontosAtivos: formRegras.querySelector('#pontos-ativos').checked,
-        pontosPorReal: Number(formRegras.querySelector('#pontos-por-real').value),
-        valorPorPonto: Number(formRegras.querySelector('#valor-por-ponto').value)
-      });
-      App.toast(r.pontosAtivos ? `Fidelidade ativa: ${r.pontosPorReal} ponto(s) por real e ${App.formatarMoeda(r.valorPorPonto)} por ponto.` : `Limite de desconto do vendedor: ${r.limiteDescontoVendedor}%.`);
+      const r = await Data.salvarRegrasVenda({ limiteDescontoVendedor: Number(formRegras.querySelector('#limite-desconto').value) });
+      App.toast(`Limite de desconto do vendedor: ${r.limiteDescontoVendedor}%.`);
     } catch (erro) { App.toast(erro.message, 'erro'); }
   });
 
@@ -639,22 +631,6 @@ App.aoIniciar(async () => {
     const chkAuto = document.getElementById('cfg-recibo-auto');
     const chkNota = document.getElementById('cfg-emitir-nota');
     const ajuda = document.getElementById('cfg-nota-ajuda');
-    const chkCatalogo = document.getElementById('cfg-catalogo-publico');
-    const linkCatalogo = document.getElementById('link-catalogo');
-    chkCatalogo.checked = !!lojaAtual.catalogoPublico;
-    const mostrarLinkCatalogo = () => {
-      linkCatalogo.innerHTML = chkCatalogo.checked && lojaAtual.id
-        ? `<a href="${new URL(`../catalogo.html?loja=${encodeURIComponent(lojaAtual.id)}`, location.href).href}" target="_blank" rel="noopener">Abrir catálogo público</a> · compartilhe este link com clientes.`
-        : chkCatalogo.checked ? 'Publique o sistema na nuvem para gerar o link público.' : '';
-    };
-    mostrarLinkCatalogo();
-    chkCatalogo.addEventListener('change', async () => {
-      try {
-        await Data.salvarLoja({ catalogoPublico: chkCatalogo.checked });
-        mostrarLinkCatalogo();
-        App.toast(chkCatalogo.checked ? 'Catálogo publicado. Os produtos ativos e a disponibilidade estão visíveis publicamente.' : 'Catálogo despublicado.');
-      } catch (e) { App.toast(e.message, 'erro'); chkCatalogo.checked = !chkCatalogo.checked; mostrarLinkCatalogo(); }
-    });
     chkAuto.checked = !!lojaAtual.imprimirReciboAuto;
     const chkCaixa = document.getElementById('cfg-controlar-caixa');
     chkCaixa.checked = !!lojaAtual.controlarCaixa;

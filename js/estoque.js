@@ -486,15 +486,6 @@ App.aoIniciar(async () => {
   form.querySelectorAll('select, input[type=date]').forEach((c) => c.addEventListener('change', carregar));
   document.getElementById('btn-entrada').addEventListener('click', () => abrirModalMovimentacao('entrada'));
   document.getElementById('btn-ajuste').addEventListener('click', () => abrirModalMovimentacao('ajuste'));
-  document.getElementById('btn-sugestao-compra')?.addEventListener('click', async () => {
-    const sugestao = await Data.sugerirCompras();
-    const linhas = sugestao.itens.map((i) => `<tr><td>${App.escapeHtml(i.nome)}</td><td>${App.escapeHtml(`${i.tamanho} / ${i.cor}`)}</td><td>${App.escapeHtml(i.sku)}</td><td class="num">${i.estoque}</td><td class="num">${i.vendidos}</td><td class="num negrito">${i.quantidade}</td><td class="num">${App.formatarMoeda(i.valor)}</td></tr>`).join('');
-    App.abrirModal({
-      titulo: 'Sugestão de compra', tamanho: 'lg',
-      corpo: `<p class="texto-sm mb-4">Estimativa baseada nas vendas dos últimos ${sugestao.diasHistorico} dias para manter ${sugestao.diasCobertura} dias de cobertura. Ajuste a quantidade após conferir pedidos em aberto e sazonalidade.</p>${sugestao.itens.length ? `<div class="tabela-wrap"><table class="tabela tabela-responsiva"><thead><tr><th>Produto</th><th>Variação</th><th>SKU</th><th class="num">Estoque</th><th class="num">Vendidos</th><th class="num">Comprar</th><th class="num">Custo estimado</th></tr></thead><tbody>${linhas}</tbody></table></div><div class="flex justify-between mt-4"><strong>${App.formatarNumero(sugestao.totalPecas)} peças sugeridas</strong><strong>${App.formatarMoeda(sugestao.investimento)}</strong></div>` : App.estadoVazio({ icone: 'package-check', titulo: 'Sem reposição sugerida', texto: 'O estoque atual cobre a demanda estimada.' })}`,
-      acoes: [{ texto: 'Fechar' }]
-    });
-  });
 
   // Vendedor: só consulta (sem movimentar estoque e sem ver custo)
   if (!App.pode('movimentar-estoque')) {
