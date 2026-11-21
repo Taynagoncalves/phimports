@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="../img/favicon.png">
-  <link rel="apple-touch-icon" href="../img/icone-app.png">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="apple-touch-icon" href="../img/app-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PH Imports">
   <meta name="theme-color" content="#18181B">
   <title>Configurações</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -542,6 +545,17 @@
                 </div>
                 <button type="submit" class="btn btn-primario mt-4"><i data-lucide="check"></i>Salvar catálogo</button>
               </form>
+            </div>
+            <div class="card card-corpo">
+              <h2>Instalar como aplicativo</h2>
+              <p class="texto-sm mt-2">O sistema vira um app com ícone na área de trabalho ou na tela do celular: abre sem a barra do navegador e <strong>abre mesmo se a internet cair</strong> (as vendas sobem sozinhas quando a internet volta).</p>
+              <p class="texto-sm mt-4 negrito oculto" id="app-ja">✓ Você já está usando o app instalado.</p>
+              <button type="button" class="btn btn-primario mt-4" data-instalar-app hidden><i data-lucide="download"></i>Instalar o app</button>
+              <ul class="lista-passos texto-sm mt-4" id="app-passos">
+                <li><strong>Computador (Chrome ou Edge):</strong> clique no ícone <i data-lucide="monitor-down"></i> no fim da barra de endereço → <em>Instalar</em>.</li>
+                <li><strong>Android (Chrome):</strong> menu ⋮ → <em>Adicionar à tela inicial</em> / <em>Instalar app</em>.</li>
+                <li><strong>iPhone (Safari):</strong> botão Compartilhar <i data-lucide="share"></i> → <em>Adicionar à Tela de Início</em>.</li>
+              </ul>
             </div>
             <div class="card card-corpo">
               <h2>Dados de exemplo</h2>

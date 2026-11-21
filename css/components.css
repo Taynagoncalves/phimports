@@ -1224,3 +1224,5 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 .pontos-regra { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--esp-3); }
 .pontos-regra.desativado { opacity: .5; }
 .catalogo-link { padding: 12px; border-radius: 10px; background: var(--cor-fundo-2); border: 1px solid var(--cor-borda); word-break: break-all; }
+.lista-passos { display: grid; gap: 8px; padding-left: 18px; color: var(--cor-texto-2); }
+.lista-passos svg { width: 15px; height: 15px; vertical-align: -3px; }

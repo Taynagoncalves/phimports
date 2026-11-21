@@ -1,0 +1,21 @@
+{
+  "id": "/pages/dashboard.html",
+  "name": "PH Imports — Sistema de Gestão",
+  "short_name": "PH Imports",
+  "description": "Frente de caixa, estoque, vendas e clientes da loja.",
+  "lang": "pt-BR",
+  "start_url": "dashboard.html",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "icons": [
+    { "src": "../img/app-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../img/app-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../img/app-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Frente de caixa", "url": "pdv.html", "icons": [{ "src": "../img/app-192.png", "sizes": "192x192" }] },
+    { "name": "Trocas", "url": "trocas.html", "icons": [{ "src": "../img/app-192.png", "sizes": "192x192" }] }
+  ]
+}

@@ -8,6 +8,33 @@
 (function () {
   'use strict';
 
+  /* ---------- App instalável (pages/sw.js + pages/app.webmanifest) ---------- */
+  let pedidoInstalacao = null;   // evento do navegador para mostrar "Instalar app"
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    const pastaPages = location.pathname.includes('/pages/') ? '' : 'pages/';
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register(pastaPages + 'sw.js', { scope: pastaPages || './' }).catch((e) => console.warn('App offline:', e));
+    });
+  }
+  const appInstalado = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  function atualizarBotaoInstalar() {
+    document.querySelectorAll('[data-instalar-app]').forEach((b) => { b.hidden = !pedidoInstalacao; });
+  }
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();          // mostramos o nosso botão em vez do aviso do navegador
+    pedidoInstalacao = e;
+    atualizarBotaoInstalar();
+  });
+  window.addEventListener('appinstalled', () => { pedidoInstalacao = null; atualizarBotaoInstalar(); toast('App instalado! Abra pelo ícone "PH Imports".', 'sucesso'); });
+  async function instalarApp() {
+    if (!pedidoInstalacao) return false;
+    pedidoInstalacao.prompt();
+    const { outcome } = await pedidoInstalacao.userChoice;
+    pedidoInstalacao = null;
+    atualizarBotaoInstalar();
+    return outcome === 'accepted';
+  }
+
   /* ---------- Itens do menu (grupo → links) ---------- */
   const MENU = [
     { grupo: 'Principal', itens: [
@@ -668,6 +695,7 @@
           <div class="nome">${escapeHtml(nomeDoUsuario(usuario, loja))}</div>
           <div class="perfil">${usuario.perfil === 'dono' ? 'Dono(a)' : 'Vendedor(a)'}</div>
         </div>
+        <button type="button" class="btn-icone" data-instalar-app hidden aria-label="Instalar o app no computador" title="Instalar o app">${icone('download')}</button>
         <button type="button" class="btn-icone btn-senha" id="btn-trocar-senha" aria-label="Trocar minha senha" title="Trocar minha senha">${icone('key-round')}</button>
         <button type="button" class="btn-icone btn-sair" id="btn-sair" aria-label="Sair do sistema" title="Sair">${icone('log-out')}</button>
       </div>`;
@@ -741,6 +769,8 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sidebar.classList.contains('aberta')) { alternarMenu(false); btnMenu.focus(); } });
 
     document.getElementById('btn-trocar-senha').addEventListener('click', abrirTrocaDeSenha);
+    document.querySelectorAll('[data-instalar-app]').forEach((b) => b.addEventListener('click', instalarApp));
+    atualizarBotaoInstalar();
 
     document.getElementById('btn-sair').addEventListener('click', async () => {
       await Data.sair();
@@ -1234,6 +1264,8 @@
     corCss, paletaGrafico,
     // impressão / cupom
     imprimir, htmlCupom, gerarCupom, gerarVale,
+    // app instalável
+    instalarApp, get podeInstalar() { return !!pedidoInstalacao; }, get appInstalado() { return appInstalado(); },
     // troca/devolução (telas Vendas e Trocas)
     abrirTroca, mostrarVale,
     // marca da loja (nome/logo em toda a tela)

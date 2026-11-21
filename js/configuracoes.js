@@ -698,6 +698,9 @@ App.aoIniciar(async () => {
     });
   }
 
+  // App instalado? Mostra o aviso no lugar das instruções
+  if (App.appInstalado) { document.getElementById('app-ja').classList.remove('oculto'); document.getElementById('app-passos').classList.add('oculto'); }
+
   /* ==================================================================
      SISTEMA
      ================================================================== */
