@@ -91,7 +91,7 @@
 
               <!-- Preço -->
               <section class="card">
-                <div class="card-cabecalho"><h2>Preço e estoque mínimo</h2></div>
+                <div class="card-cabecalho"><h2>Preço e alerta de estoque</h2></div>
                 <div class="card-corpo form-grid form-grid-3">
                   <div class="campo">
                     <label for="custo">Custo <span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -102,9 +102,9 @@
                     <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="preco" name="preco" inputmode="decimal" data-mascara="moeda" required placeholder="0,00"></div>
                   </div>
                   <div class="campo">
-                    <label for="estoqueMinimo">Estoque mínimo (total)</label>
+                    <label for="estoqueMinimo">Avisar quando sobrarem</label>
                     <input class="input" id="estoqueMinimo" name="estoqueMinimo" type="number" min="0" value="5">
-                    <span class="ajuda">Avisa quando o total ficar abaixo</span>
+                    <span class="ajuda">peças ou menos (é só um alerta — a quantidade que você tem vai na grade de tamanhos abaixo)</span>
                   </div>
                 </div>
                 <div class="card-corpo" style="padding-top:0">
@@ -151,8 +151,8 @@
 
                 <!-- Ferramentas da grade -->
                 <div class="card-corpo flex gap-2 items-end" style="flex-wrap:wrap;border-top:1px solid var(--cor-borda)" id="ferramentas-grade">
-                  <div class="campo" style="width:160px">
-                    <label for="estoque-todos">Estoque para todos</label>
+                  <div class="campo" style="width:220px">
+                    <label for="estoque-todos">Quantidade em cada tamanho/cor</label>
                     <input class="input" id="estoque-todos" type="number" min="0" placeholder="Ex.: 5">
                   </div>
                   <button type="button" class="btn btn-secundario" id="btn-aplicar-estoque">Aplicar</button>

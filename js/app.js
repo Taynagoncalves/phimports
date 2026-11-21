@@ -326,7 +326,7 @@
   }
 
   /** Confirmação (retorna Promise<boolean>) */
-  function confirmar({ titulo = 'Tem certeza?', mensagem = '', textoConfirmar = 'Confirmar', perigo = false }) {
+  function confirmar({ titulo = 'Tem certeza?', mensagem = '', textoConfirmar = 'Confirmar', textoCancelar = 'Cancelar', perigo = false }) {
     return new Promise((resolve) => {
       let respondeu = false;
       abrirModal({
@@ -334,7 +334,7 @@
         tamanho: 'sm',
         corpo: `<p>${escapeHtml(mensagem)}</p>`,
         acoes: [
-          { texto: 'Cancelar', classe: 'btn-secundario' },
+          { texto: textoCancelar, classe: 'btn-secundario' },
           { texto: textoConfirmar, classe: perigo ? 'btn-perigo' : 'btn-primario', aoClicar: (fechar) => { respondeu = true; fechar(); resolve(true); } }
         ],
         aoFechar: () => { if (!respondeu) resolve(false); }

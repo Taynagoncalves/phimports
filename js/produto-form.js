@@ -235,7 +235,12 @@ App.aoIniciar(async () => {
   function atualizarResumoGrade() {
     lerGradeDaTela();
     const pecas = variacoes.reduce((s, v) => s + v.estoque, 0);
-    document.getElementById('resumo-grade').textContent = `${variacoes.length} variações · ${pecas} peças no total`;
+    const el = document.getElementById('resumo-grade');
+    el.textContent = variacoes.length && !pecas
+      ? `${variacoes.length} variações · 0 peças — preencha a coluna Estoque`
+      : `${variacoes.length} variações · ${pecas} peças no total`;
+    el.classList.toggle('valor-negativo', !!variacoes.length && !pecas);
+    el.classList.toggle('negrito', !!variacoes.length && !pecas);
   }
 
   // Aplica o mesmo estoque em todas as linhas
@@ -353,6 +358,16 @@ App.aoIniciar(async () => {
       foto,
       variacoes
     };
+    // Produto novo sem nenhuma peça: quase sempre é porque a quantidade não foi preenchida na grade
+    if (!idEdicao && variacoes.length && variacoes.every((v) => !v.estoque)) {
+      const ok = await App.confirmar({
+        titulo: 'Nenhuma peça no estoque',
+        mensagem: 'A quantidade de cada tamanho/cor está zerada, então o produto vai aparecer como "Esgotado". Preencha a coluna "Estoque" na grade (ou use "Quantidade em cada tamanho/cor" + Aplicar).',
+        textoConfirmar: 'Salvar esgotado mesmo',
+        textoCancelar: 'Voltar e preencher'
+      });
+      if (!ok) { const campo = document.getElementById('estoque-todos'); campo.scrollIntoView({ block: 'center' }); campo.focus(); return; }
+    }
     if (produto.preco < produto.custo) {
       const ok = await App.confirmar({ titulo: 'Preço abaixo do custo', mensagem: 'O preço de venda está menor que o custo. Deseja salvar mesmo assim?', textoConfirmar: 'Salvar assim mesmo' });
       if (!ok) return;
