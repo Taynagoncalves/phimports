@@ -47,7 +47,8 @@
     { grupo: 'Catálogo', itens: [
       { id: 'produtos', texto: 'Produtos', icone: 'shirt', href: 'produtos.html' },
       { id: 'estoque', texto: 'Estoque', icone: 'package', href: 'estoque.html' },
-      { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' }
+      { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' },
+      { id: 'aparencia', texto: 'Aparência', icone: 'palette', href: 'aparencia.html' }
     ] },
     { grupo: 'Ferramentas', itens: [
       { id: 'promocoes', texto: 'Promoções', icone: 'badge-percent', href: 'promocoes.html' },

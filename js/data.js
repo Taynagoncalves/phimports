@@ -2753,6 +2753,7 @@
       publicado: true, nome: loja.nome || '', logo: fotoPublica(loja.logo), whatsapp,
       instagram: String(loja.instagram || '').replace(/^@/, '').trim(), mensagem: c.mensagem || '',
       endereco: String(loja.endereco || '').slice(0, 160), entrega: c.entrega !== false,
+      tema: c.tema && typeof c.tema === 'object' ? c.tema : {},
       mostrarPrecos: precos, produtos, atualizadoEm: new Date().toISOString()
     };
   }

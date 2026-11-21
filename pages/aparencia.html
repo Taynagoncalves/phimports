@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="../img/favicon.png">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="apple-touch-icon" href="../img/app-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PH Imports">
+  <meta name="theme-color" content="#18181B">
+  <title>Aparência</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="aparencia" data-titulo="Aparência">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Aparência</h1>
+            <p>Deixe o sistema e o catálogo com a cara da loja. A prévia muda na hora.</p>
+          </div>
+        </div>
+
+        <div class="abas" role="tablist" aria-label="O que personalizar" id="abas-ap" style="margin-bottom:var(--esp-5)">
+          <button type="button" role="tab" class="aba" data-aba="catalogo" aria-selected="true"><i data-lucide="store"></i>Site do catálogo</button>
+          <button type="button" role="tab" class="aba" data-aba="sistema" aria-selected="false"><i data-lucide="layout-dashboard"></i>Sistema de gestão</button>
+        </div>
+
+        <!-- ================= CATÁLOGO ================= -->
+        <section id="painel-catalogo" class="ap-layout">
+          <form class="ap-opcoes" id="form-ap-cat" novalidate>
+            <section class="card cfg-bloco">
+              <h2>Cores</h2>
+              <div class="ap-campo">
+                <span class="ap-rotulo">Fundo</span>
+                <div class="ap-fundos" id="ap-fundos" role="radiogroup" aria-label="Cor de fundo"></div>
+              </div>
+              <div class="ap-campo">
+                <span class="ap-rotulo">Cor de destaque <small>botões, faixa e seleção</small></span>
+                <div class="ap-cores" id="ap-cores" role="radiogroup" aria-label="Cor de destaque"></div>
+              </div>
+            </section>
+
+            <section class="card cfg-bloco">
+              <h2>Textos</h2>
+              <div class="ap-campo">
+                <span class="ap-rotulo">Letra dos títulos</span>
+                <div class="ap-fontes" id="ap-fontes" role="radiogroup" aria-label="Letra dos títulos"></div>
+              </div>
+              <div class="ap-campo">
+                <label class="ap-rotulo" for="ap-frase1">Frase do topo</label>
+                <input class="input" id="ap-frase1" maxlength="40" placeholder="Sua presença fala,">
+                <input class="input mt-2" id="ap-frase2" maxlength="40" placeholder="seu estilo confirma" style="font-style:italic">
+              </div>
+              <label class="cfg-linha">
+                <span><strong>Faixa animada no topo</strong><small>Os avisos que rolam (envio, WhatsApp…).</small></span>
+                <span class="interruptor"><input type="checkbox" id="ap-faixa"></span>
+              </label>
+            </section>
+
+            <section class="card cfg-bloco">
+              <h2>Peças</h2>
+              <div class="ap-campo">
+                <span class="ap-rotulo">Formato da foto</span>
+                <div class="alternar-visao" role="radiogroup" aria-label="Formato da foto">
+                  <button type="button" role="radio" data-foto="retrato">Retrato</button>
+                  <button type="button" role="radio" data-foto="alta">Alta</button>
+                  <button type="button" role="radio" data-foto="quadrada">Quadrada</button>
+                </div>
+              </div>
+              <div class="ap-campo">
+                <span class="ap-rotulo">Cantos</span>
+                <div class="alternar-visao" role="radiogroup" aria-label="Cantos">
+                  <button type="button" role="radio" data-cantos="retos">Retos</button>
+                  <button type="button" role="radio" data-cantos="arredondados">Arredondados</button>
+                </div>
+              </div>
+              <div class="ap-campo">
+                <span class="ap-rotulo">No celular</span>
+                <div class="alternar-visao" role="radiogroup" aria-label="Peças por linha no celular">
+                  <button type="button" role="radio" data-colunas="2">2 por linha</button>
+                  <button type="button" role="radio" data-colunas="1">1 por linha</button>
+                </div>
+              </div>
+            </section>
+
+            <div class="ap-barra">
+              <button type="button" class="btn btn-secundario" id="ap-padrao"><i data-lucide="rotate-ccw"></i>Voltar ao padrão</button>
+              <span class="texto-xs texto-3" id="ap-status"></span>
+              <button type="submit" class="btn btn-primario"><i data-lucide="check"></i>Salvar e publicar</button>
+            </div>
+          </form>
+
+          <aside class="ap-previa">
+            <div class="ap-previa-topo">
+              <span class="negrito texto-sm"><i data-lucide="eye"></i>Prévia</span>
+              <div class="alternar-visao" role="radiogroup" aria-label="Tamanho da prévia">
+                <button type="button" role="radio" data-tela="celular" aria-checked="true"><i data-lucide="smartphone"></i></button>
+                <button type="button" role="radio" data-tela="computador" aria-checked="false"><i data-lucide="monitor"></i></button>
+              </div>
+            </div>
+            <div class="ap-moldura" id="ap-moldura">
+              <iframe id="ap-iframe" title="Prévia do catálogo" src="catalogo.html?previa=1"></iframe>
+            </div>
+            <a class="texto-xs" id="ap-abrir" target="_blank" rel="noopener">Abrir o catálogo →</a>
+          </aside>
+        </section>
+
+        <!-- ================= SISTEMA ================= -->
+        <section id="painel-sistema" hidden>
+          <div class="ap-layout ap-layout-sistema">
+            <div class="ap-opcoes">
+              <section class="card cfg-bloco">
+                <h2>Cor principal</h2>
+                <p class="texto-xs texto-3">Botões, links, menu, gráficos e login. Vale para todos que usam o sistema.</p>
+                <div class="paleta-cores mt-4" id="paleta-cores" role="radiogroup" aria-label="Cores prontas"></div>
+                <div class="flex items-center gap-3 mt-4" style="flex-wrap:wrap">
+                  <label class="seletor-cor" title="Escolher qualquer cor">
+                    <input type="color" id="cor-picker" aria-label="Seletor de cor">
+                    <i data-lucide="pipette"></i>
+                  </label>
+                  <input class="input mono" id="cor-hex" maxlength="7" placeholder="#18181B" autocomplete="off" spellcheck="false" style="max-width:130px;text-transform:uppercase" aria-describedby="cor-ajuda">
+                  <span class="ajuda" id="cor-ajuda"></span>
+                </div>
+              </section>
+              <section class="card cfg-bloco">
+                <h2>Tema</h2>
+                <div class="alternar-visao" role="radiogroup" aria-label="Tema" id="opcoes-tema">
+                  <button type="button" role="radio" data-tema-opcao="claro"><i data-lucide="sun"></i>Claro</button>
+                  <button type="button" role="radio" data-tema-opcao="escuro"><i data-lucide="moon"></i>Escuro</button>
+                  <button type="button" role="radio" data-tema-opcao="auto"><i data-lucide="monitor"></i>Automático</button>
+                </div>
+                <p class="texto-xs texto-3 mt-2">O tema vale só para este computador.</p>
+              </section>
+              <div class="ap-barra">
+                <button type="button" class="btn btn-secundario" id="btn-cor-padrao"><i data-lucide="rotate-ccw"></i>Cor padrão</button>
+                <span></span>
+                <button type="button" class="btn btn-primario" id="btn-salvar-cor"><i data-lucide="check"></i>Salvar cor</button>
+              </div>
+            </div>
+            <aside class="ap-previa">
+              <div class="ap-previa-topo"><span class="negrito texto-sm"><i data-lucide="eye"></i>Prévia</span></div>
+              <div class="previas">
+                <div class="previa-tema" data-tema="claro" id="previa-claro"></div>
+                <div class="previa-tema" data-tema="escuro" id="previa-escuro"></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/cloudinary-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/aparencia.js"></script>
+</body>
+</html>

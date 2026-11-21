@@ -416,3 +416,33 @@ svg.cheio { fill: currentColor; stroke: none; }
 .hero { margin-top: 0; }
 .hero:not(.com-foto) .hero-texto { padding-top: 2px; }
 @media (min-width: 900px) { .hero:not(.com-foto) .hero-texto { padding-top: 6px; } }
+
+/* ==========================================================================
+   Tema do catálogo (Catálogo → Aparência)
+   ========================================================================== */
+:root { --acao: #141414; --acao-texto: #FFFFFF; --proporcao: 4 / 5; --raio-loja: 0px; }
+.anuncio, .btn-cheio, .btn-escuro, .barra-sacola, .contador, .selo.promo { background: var(--acao); color: var(--acao-texto); }
+.anuncio-trilho span { color: var(--acao-texto); opacity: .92; }
+.tamanhos button[aria-pressed="true"], .cores button.texto[aria-pressed="true"], .opcoes-entrega input:checked + span { background: var(--acao); border-color: var(--acao); color: var(--acao-texto); }
+.cores button[aria-pressed="true"] { border-color: var(--acao); }
+.categorias button[aria-pressed="true"], .topo-nav button[aria-current="true"], .topo-nav button:hover { border-bottom-color: var(--acao); }
+.btn-avise { border-color: var(--acao); color: var(--acao); }
+.btn-avise:hover { background: var(--acao); color: var(--acao-texto); }
+.card-foto { aspect-ratio: var(--proporcao); }
+.card-foto, .btn-cheio, .btn-escuro, .btn-whats, .btn-avise, .barra-sacola, .tamanhos button, .qtd, .campo input, .opcoes-entrega span, .item-foto, .peca-foto, .cat-busca input { border-radius: var(--raio-loja); }
+.selo { border-radius: calc(var(--raio-loja) / 2); }
+@media (min-width: 860px) { .folha.peca { border-radius: var(--raio-loja); overflow: hidden; } }
+body.titulos-modernos .hero h1, body.titulos-modernos .secao-cabeca h2, body.titulos-modernos .peca-info h2, body.titulos-modernos .sacola-topo h2, body.titulos-modernos .rodape-frase { font-weight: 600; letter-spacing: -0.03em; }
+body.titulos-modernos .hero h1 em, body.titulos-modernos .rodape-frase em { font-style: normal; font-weight: 400; }
+@media (max-width: 699px) { body.uma-coluna .grade { grid-template-columns: 1fr; } body.uma-coluna .trilho { grid-auto-columns: 78%; } }
+
+/* Fundo preto */
+body.tema-escuro { --tinta: #F2EEE8; --tinta-2: #C9C3BA; --tinta-3: #8E887F; color: var(--tinta); }
+body.tema-escuro .topo { background: rgba(18, 18, 18, .94); }
+body.tema-escuro .topo-marca img { filter: invert(1); }
+body.tema-escuro .card-foto { background: #232220; }
+body.tema-escuro .card-ver, body.tema-escuro .selo { background: rgba(25, 25, 25, .92); color: var(--tinta); }
+body.tema-escuro .fechar { background: rgba(30, 30, 30, .9); color: var(--tinta); }
+body.tema-escuro .rodape { background: #0A0A0A; }
+body.tema-escuro .campo input { background: var(--fundo-2); color: var(--tinta); }
+body.tema-escuro .selo.promo { background: var(--acao); color: var(--acao-texto); }

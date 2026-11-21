@@ -62,6 +62,57 @@
     clearTimeout(aviso.t); aviso.t = setTimeout(() => { el.hidden = true; }, 2200);
   }
 
+  /* ---------- Aparência (escolhida em Catálogo → Aparência) ---------- */
+  const FUNDOS = {
+    creme: { fundo: '#FAF8F5', fundo2: '#F1EDE7', papel: '#FFFFFF', linha: '#E6E1DA' },
+    branco: { fundo: '#FFFFFF', fundo2: '#F4F4F3', papel: '#FFFFFF', linha: '#ECECEA' },
+    areia: { fundo: '#F3EDE4', fundo2: '#E8DFD2', papel: '#FBF8F3', linha: '#DCD1C1' },
+    cinza: { fundo: '#F4F4F5', fundo2: '#E9E9EB', papel: '#FFFFFF', linha: '#E0E0E3' },
+    preto: { fundo: '#121212', fundo2: '#1D1D1D', papel: '#191919', linha: '#2E2D2B', escuro: true }
+  };
+  const FONTES = {
+    classica: "'Cormorant Garamond', Georgia, serif",
+    editorial: "'Playfair Display', Georgia, serif",
+    moderna: "Inter, system-ui, sans-serif"
+  };
+  const PROPORCOES = { retrato: '4 / 5', alta: '3 / 4', quadrada: '1 / 1' };
+  function aplicarTema(t = {}) {
+    const raizEl = document.documentElement.style;
+    const f = FUNDOS[t.fundo] || FUNDOS.creme;
+    raizEl.setProperty('--fundo', f.fundo);
+    raizEl.setProperty('--fundo-2', f.fundo2);
+    raizEl.setProperty('--papel', f.papel);
+    raizEl.setProperty('--linha', f.linha);
+    document.body.classList.toggle('tema-escuro', !!f.escuro);
+    const acao = /^#[0-9a-f]{6}$/i.test(t.destaque || '') ? t.destaque : (f.escuro ? '#F2EEE8' : '#141414');
+    raizEl.setProperty('--acao', acao);
+    raizEl.setProperty('--acao-texto', corDeTexto(acao));
+    raizEl.setProperty('--serifa', FONTES[t.fonte] || FONTES.classica);
+    document.body.classList.toggle('titulos-modernos', t.fonte === 'moderna');
+    raizEl.setProperty('--proporcao', PROPORCOES[t.foto] || PROPORCOES.retrato);
+    raizEl.setProperty('--raio-loja', t.cantos === 'arredondados' ? '14px' : '0px');
+    document.body.classList.toggle('uma-coluna', String(t.colunas) === '1');
+    $('anuncio').hidden = t.faixa === false;
+    const l1 = (t.frase1 || '').trim() || 'Sua presença fala,';
+    const l2 = (t.frase2 || '').trim() || 'seu estilo confirma';
+    $('hero-titulo').innerHTML = `${esc(l1)}<br><em>${esc(l2)}</em>`;
+    const frase = document.querySelector('.rodape-frase');
+    if (frase) frase.innerHTML = `${esc(l1)} <em>${esc(l2)}</em>`;
+  }
+  /** Texto branco ou preto, o que ler melhor sobre a cor */
+  function corDeTexto(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const l = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+    return l > 0.6 ? '#141414' : '#FFFFFF';
+  }
+  // Prévia ao vivo (tela Aparência do sistema manda o tema antes de salvar)
+  let temaPrevia = null;
+  window.addEventListener('message', (e) => {
+    if (e.origin !== location.origin || !e.data || e.data.tipo !== 'tema-catalogo') return;
+    temaPrevia = e.data.tema || {};
+    if (cat) aplicarTema(temaPrevia);
+  });
+
   /* ---------- Topo, abertura e rodapé ---------- */
   function desenharMarca() {
     document.title = `${cat.nome} — Catálogo`;
@@ -533,6 +584,7 @@
     if (cat.entrega === false) $('f-entrega-bloco').hidden = true;
     try { const c = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || '{}'); $('f-nome').value = c.nome || ''; $('f-endereco').value = c.endereco || ''; } catch (e) { /* ignora */ }
     desenharMarca();
+    aplicarTema(temaPrevia || cat.tema || {});
     desenharVitrines();
     desenharCategorias();
     desenharGrade();

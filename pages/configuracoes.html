@@ -41,7 +41,6 @@
           <button type="button" class="aba" role="tab" id="aba-loja" aria-controls="painel-loja" aria-selected="true">Dados da loja</button>
           <button type="button" class="aba so-nota" role="tab" id="aba-fiscal" aria-controls="painel-fiscal" aria-selected="false" tabindex="-1">Dados fiscais</button>
           <button type="button" class="aba" role="tab" id="aba-usuarios" aria-controls="painel-usuarios" aria-selected="false" tabindex="-1">Usuários</button>
-          <button type="button" class="aba" role="tab" id="aba-aparencia" aria-controls="painel-aparencia" aria-selected="false" tabindex="-1">Aparência</button>
           <button type="button" class="aba" role="tab" id="aba-sistema" aria-controls="painel-sistema" aria-selected="false" tabindex="-1">Sistema</button>
         </div>
 
@@ -411,70 +410,6 @@
                 <tbody id="lista-usuarios"></tbody>
               </table>
             </div>
-          </div>
-        </section>
-
-        <!-- ===== Aparência (cor principal e tema) ===== -->
-        <section id="painel-aparencia" role="tabpanel" aria-labelledby="aba-aparencia" hidden>
-          <div class="form-layout">
-            <div class="form-secoes">
-              <div class="card">
-                <div class="card-cabecalho">
-                  <div>
-                    <h2>Cor principal</h2>
-                    <p class="texto-sm">Botões, links, menu, gráficos e tela de login. A versão do modo escuro é ajustada automaticamente.</p>
-                  </div>
-                </div>
-                <div class="card-corpo">
-                  <span class="rotulo" id="rot-paleta">Cores prontas</span>
-                  <div class="paleta-cores mt-2" id="paleta-cores" role="radiogroup" aria-labelledby="rot-paleta"></div>
-
-                  <div class="campo mt-6">
-                    <label for="cor-hex">Ou escolha qualquer cor</label>
-                    <div class="flex items-center gap-3" style="flex-wrap:wrap">
-                      <label class="seletor-cor" title="Abrir seletor de cor">
-                        <input type="color" id="cor-picker" aria-label="Seletor de cor">
-                        <i data-lucide="pipette"></i>
-                      </label>
-                      <input class="input mono" id="cor-hex" maxlength="7" placeholder="#4F46E5" autocomplete="off" spellcheck="false" style="max-width:150px;text-transform:uppercase" aria-describedby="cor-ajuda">
-                      <span class="ajuda" id="cor-ajuda">Código hexadecimal, ex.: #E11D48</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="card">
-                <div class="card-cabecalho">
-                  <div>
-                    <h2>Prévia</h2>
-                    <p class="texto-sm">Como a cor fica no modo claro e no escuro.</p>
-                  </div>
-                </div>
-                <div class="card-corpo previas">
-                  <div class="previa-tema" data-tema="claro" id="previa-claro"></div>
-                  <div class="previa-tema" data-tema="escuro" id="previa-escuro"></div>
-                </div>
-              </div>
-            </div>
-
-            <aside class="form-lateral">
-              <div class="card">
-                <div class="card-cabecalho"><h2>Tema</h2></div>
-                <div class="card-corpo">
-                  <div class="chips" role="radiogroup" aria-label="Tema" id="opcoes-tema" style="display:grid;grid-template-columns:1fr;gap:8px">
-                    <button type="button" class="chip" role="radio" data-tema-opcao="claro" style="justify-content:flex-start"><i data-lucide="sun"></i>Claro</button>
-                    <button type="button" class="chip" role="radio" data-tema-opcao="escuro" style="justify-content:flex-start"><i data-lucide="moon"></i>Escuro</button>
-                    <button type="button" class="chip" role="radio" data-tema-opcao="auto" style="justify-content:flex-start"><i data-lucide="monitor"></i>Automático (segue o aparelho)</button>
-                  </div>
-                  <p class="texto-xs texto-3 mt-4">O tema vale só para este computador. A cor principal vale para todos que usam o sistema.</p>
-                </div>
-              </div>
-            </aside>
-          </div>
-
-          <div class="barra-acoes">
-            <button type="button" class="btn btn-secundario" id="btn-cor-padrao"><i data-lucide="rotate-ccw"></i>Voltar à cor padrão</button>
-            <button type="button" class="btn btn-primario" id="btn-salvar-cor"><i data-lucide="check"></i>Salvar cor</button>
           </div>
         </section>
 
