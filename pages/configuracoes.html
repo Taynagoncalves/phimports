@@ -489,6 +489,32 @@
               <p class="texto-xs texto-3 mt-2" id="cfg-nota-ajuda"></p>
             </div>
             <div class="card card-corpo">
+              <h2>Programa de pontos</h2>
+              <p class="texto-sm mt-2">O cliente cadastrado ganha pontos em cada compra e usa como desconto na Frente de caixa (forma <strong>Pontos</strong>). O saldo sai no recibo.</p>
+              <form id="form-pontos" class="mt-4" novalidate>
+                <label class="interruptor"><input type="checkbox" id="pt-ativo"><span>Usar programa de pontos</span></label>
+                <div class="pontos-regra mt-4" id="pt-campos">
+                  <div class="campo">
+                    <label for="pt-reais">A cada (R$) em compras</label>
+                    <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="pt-reais" inputmode="decimal" data-mascara="moeda" placeholder="1,00"></div>
+                    <span class="ajuda">o cliente ganha 1 ponto</span>
+                  </div>
+                  <div class="campo">
+                    <label for="pt-valor">Cada ponto vale</label>
+                    <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="pt-valor" inputmode="decimal" placeholder="0,05"></div>
+                    <span class="ajuda">de desconto</span>
+                  </div>
+                  <div class="campo">
+                    <label for="pt-minimo">Mínimo para usar</label>
+                    <input class="input" id="pt-minimo" type="number" min="0" step="1" placeholder="100">
+                    <span class="ajuda">pontos</span>
+                  </div>
+                </div>
+                <div class="alerta info mt-4"><i data-lucide="star"></i><span id="pt-exemplo"></span></div>
+                <button type="submit" class="btn btn-primario mt-4"><i data-lucide="check"></i>Salvar programa de pontos</button>
+              </form>
+            </div>
+            <div class="card card-corpo">
               <h2>Dados de exemplo</h2>
               <p class="texto-sm mt-2">Este protótipo guarda suas alterações no navegador. Restaure para voltar aos produtos, vendas e clientes de exemplo.</p>
               <button type="button" class="btn btn-perigo mt-4" id="btn-resetar"><i data-lucide="rotate-ccw"></i>Restaurar dados de exemplo</button>

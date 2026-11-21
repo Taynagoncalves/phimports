@@ -166,8 +166,8 @@
     return `<span class="badge ${tipo ? 'badge-' + tipo : ''}">${escapeHtml(texto)}</span>`;
   }
 
-  const FORMAS_PAGAMENTO = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Cartão de débito', credito: 'Cartão de crédito', vale: 'Vale-troca', crediario: 'Crediário', multiplo: 'Múltiplas formas' };
-  const FORMAS_CURTAS = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito', vale: 'Vale-troca', crediario: 'Crediário' };
+  const FORMAS_PAGAMENTO = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Cartão de débito', credito: 'Cartão de crédito', vale: 'Vale-troca', crediario: 'Crediário', pontos: 'Pontos de fidelidade', multiplo: 'Múltiplas formas' };
+  const FORMAS_CURTAS = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito', vale: 'Vale-troca', crediario: 'Crediário', pontos: 'Pontos' };
 
   /**
    * Nome do pagamento. Aceita a venda (com pagamentos divididos) ou um pagamento.
@@ -918,6 +918,7 @@
       ${linhaPag}
       ${venda.pagamento.troco ? `<div class="c-linha"><span>Troco R$</span><span>${m(venda.pagamento.troco)}</span></div>` : ''}
       ${!nota && venda.subtotal - venda.total > 0.004 ? `<div class="c-economia">Você economizou R$ ${m(venda.subtotal - venda.total)}</div>` : ''}
+      ${venda.pontosSaldo !== null && venda.pontosSaldo !== undefined ? `<div class="c-pontos"><div class="c-negrito">★ Programa de pontos</div>${venda.pontosUsados ? `<div>Usou ${venda.pontosUsados} pontos nesta compra</div>` : ''}<div>Ganhou ${venda.pontosGanhos} pontos nesta compra</div><div class="c-negrito">Seu saldo: ${venda.pontosSaldo} pontos (R$ ${m(venda.pontosValorSaldo)})</div></div>` : ''}
       <div class="c-sep"></div>
       ${nota ? `
         <div class="c-centro c-negrito">Consulte pela Chave de Acesso em</div>

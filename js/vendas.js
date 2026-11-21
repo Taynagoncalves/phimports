@@ -14,7 +14,7 @@ App.aoIniciar(async () => {
   const FORMAS = [
     ['pix', 'Pix', 'qr-code', '#0EA5A4'], ['dinheiro', 'Dinheiro', 'banknote', '#16A34A'],
     ['debito', 'Débito', 'credit-card', '#2563EB'], ['credito', 'Crédito', 'credit-card', '#7C3AED'],
-    ['vale', 'Vale-troca', 'ticket', '#D97706'], ['crediario', 'Crediário', 'calendar-clock', '#DB2777']
+    ['vale', 'Vale-troca', 'ticket', '#D97706'], ['crediario', 'Crediário', 'calendar-clock', '#DB2777'], ['pontos', 'Pontos', 'star', '#CA8A04']
   ];
   const STATUS = [['', 'Todas'], ['concluida', 'Concluídas'], ['trocada', 'Trocadas'], ['devolvida', 'Devolvidas'], ['cancelada', 'Canceladas']];
 

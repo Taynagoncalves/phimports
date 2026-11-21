@@ -372,7 +372,7 @@
   }
 
   /* ---------- Pagamentos e valores da venda ---------- */
-  const FORMAS_VALIDAS = ['pix', 'dinheiro', 'debito', 'credito', 'vale', 'crediario'];
+  const FORMAS_VALIDAS = ['pix', 'dinheiro', 'debito', 'credito', 'vale', 'crediario', 'pontos'];
   const arred = (n) => Math.round(Number(n || 0) * 100) / 100;
 
   /** Lista de pagamentos da venda (vendas antigas tinham um só "pagamento") */
@@ -400,6 +400,42 @@
   // Vendas que contam como faturamento (o valor líquido já exclui o que voltou).
   // Troca = devolução + vale: a venda nova paga com vale é que fatura as peças novas.
   const vendaValida = (v) => v.status !== 'cancelada' && valorLiquido(v) > 0;
+
+  /* ---------- Programa de pontos (fidelidade) ----------
+     Regra em loja.fidelidade = { ativo, reaisPorPonto, valorPonto, minimoResgate }.
+     O saldo NÃO fica guardado: é a soma das vendas do cliente (ganhos − usados).
+     Assim trocas, devoluções e cancelamentos acertam os pontos sozinhos. */
+  function regraPontos() {
+    const f = (db.loja && db.loja.fidelidade) || {};
+    if (!f.ativo) return null;
+    return {
+      reaisPorPonto: Math.max(0.01, Number(f.reaisPorPonto) || 1),
+      valorPonto: Math.max(0.001, Number(f.valorPonto) || 0.05),
+      minimoResgate: Math.max(0, Math.floor(Number(f.minimoResgate ?? 100) || 0))
+    };
+  }
+  /** Pontos que a venda deu (sobre o que foi pago sem pontos e sem o que voltou em troca) */
+  function pontosGanhosDa(v) {
+    if (!v.pontos || !v.clienteId || v.status === 'cancelada') return 0;
+    const base = Math.max(0, valorLiquido(v) - (v.pontos.valorUsado || 0));
+    return Math.floor(base / (v.pontos.reaisPorPonto || 1) + 1e-9);
+  }
+  const pontosUsadosDa = (v) => (v.pontos && v.status !== 'cancelada' ? (v.pontos.usados || 0) : 0);
+  function saldoPontosCliente(clienteId) {
+    if (!clienteId) return 0;
+    return db.vendas.filter((v) => v.clienteId === clienteId).reduce((s, v) => s + pontosGanhosDa(v) - pontosUsadosDa(v), 0);
+  }
+  /** Saldo de pontos do cliente e quanto vale em R$ */
+  function resumoPontos(clienteId) {
+    const regra = regraPontos();
+    const saldo = Math.max(0, saldoPontosCliente(clienteId));
+    return responder({
+      ativo: !!regra, saldo, regra,
+      valor: regra ? arred(saldo * regra.valorPonto) : 0,
+      minimo: regra ? regra.minimoResgate : 0,
+      podeUsar: !!regra && saldo > 0 && saldo >= regra.minimoResgate
+    });
+  }
 
   function usuarioLogadoId() {
     if (MODO === 'nuvem') return uidAtual;
@@ -1095,6 +1131,10 @@
       vendedorNome: u ? u.nome : (v.vendedorNome || (v.vendedorId && v.vendedorId === usuarioLogadoId() ? usuarioLogado().nome : '') || '—'),
       qtdItens,
       credito: credito || null,
+      pontosGanhos: pontosGanhosDa(v),
+      pontosUsados: pontosUsadosDa(v),
+      pontosSaldo: v.clienteId && v.pontos ? Math.max(0, saldoPontosCliente(v.clienteId)) : null,
+      pontosValorSaldo: v.clienteId && v.pontos ? arred(Math.max(0, saldoPontosCliente(v.clienteId)) * (v.pontos.valorPonto || 0)) : null,
       cancelamento: v.cancelamento ? { ...v.cancelamento, usuarioNome: cancelador ? cancelador.nome : '—' } : null,
       // Parcelas do crediário desta venda (se houver)
       parcelasCrediario: (db.contasReceber || []).filter((c) => c.vendaId === v.id).map(montarParcela).sort((a, b) => a.parcela - b.parcela),
@@ -1198,6 +1238,19 @@
       }
     }
     const somaPagamentos = arred(entrada.reduce((s, p) => s + Number(p.valor), 0));
+    // Pontos de fidelidade usados como pagamento
+    const regraP = regraPontos();
+    const valorPontos = arred(entrada.filter((p) => p.forma === 'pontos').reduce((s, p) => s + Number(p.valor), 0));
+    let pontosUsados = 0;
+    if (valorPontos > 0) {
+      if (!regraP) return falhar('O programa de pontos está desligado.');
+      if (!dados.clienteId) return falhar('Escolha o cliente para usar os pontos.');
+      const saldoP = Math.max(0, saldoPontosCliente(dados.clienteId));
+      if (saldoP < regraP.minimoResgate) return falhar(`O cliente precisa de pelo menos ${regraP.minimoResgate} pontos para usar (tem ${saldoP}).`);
+      if (valorPontos > total + 0.001) return falhar('Os pontos não podem passar do total da venda.');
+      pontosUsados = Math.ceil(valorPontos / regraP.valorPonto - 1e-9);
+      if (pontosUsados > saldoP) return falhar(`Pontos insuficientes: o cliente tem ${saldoP} pontos (R$ ${(saldoP * regraP.valorPonto).toFixed(2).replace('.', ',')}).`);
+    }
     if (somaPagamentos < total) return falhar(`Falta pagar R$ ${(total - somaPagamentos).toFixed(2).replace('.', ',')}.`);
     const troco = arred(somaPagamentos - total);
     const dinheiroRecebido = arred(entrada.filter((p) => p.forma === 'dinheiro').reduce((s, p) => s + Number(p.valor), 0));
@@ -1235,6 +1288,8 @@
       descontoAutorizadoPor,
       total,
       pagamentos,
+      // Fidelidade: regra do dia da venda (os pontos ganhos são recalculados se houver troca)
+      pontos: dados.clienteId && regraP ? { reaisPorPonto: regraP.reaisPorPonto, valorPonto: regraP.valorPonto, usados: pontosUsados, valorUsado: valorPontos } : null,
       // Resumo (compatível com relatórios antigos): forma principal, recebido e troco
       pagamento: {
         forma: pagamentos.length === 1 ? pagamentos[0].forma : 'multiplo',
@@ -2400,6 +2455,12 @@
       const r = resumoCrediario(cli.id);
       if (r.emAberto > 0 || r.limite > 0) Object.assign(de(cli.id), { crediarioAberto: r.emAberto, crediarioVencido: r.vencido, limiteCredito: r.limite });
     });
+    // Pontos de fidelidade (só com o programa ligado)
+    const regra = regraPontos();
+    if (regra) db.clientes.forEach((cli) => {
+      const saldo = Math.max(0, saldoPontosCliente(cli.id));
+      if (saldo > 0) Object.assign(de(cli.id), { pontos: saldo, pontosValor: arred(saldo * regra.valorPonto), pontosMinimo: regra.minimoResgate });
+    });
     return responder(mapa);
   }
 
@@ -2653,7 +2714,7 @@
     // Vendas
     listarVendas, obterVenda, registrarVenda, registrarDevolucao, cancelarVenda,
     // Vale-troca (crédito do cliente)
-    listarCreditos, obterCreditoPorCodigo,
+    listarCreditos, obterCreditoPorCodigo, resumoPontos,
     // Caixa
     obterCaixaAberto, obterCaixa, listarCaixas, abrirCaixa, registrarMovimentoCaixa, fecharCaixa,
     // Regras de venda (limite de desconto) e autorização do dono

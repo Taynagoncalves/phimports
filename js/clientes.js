@@ -50,7 +50,7 @@
           <div><span>Última compra</span><strong>${r.ultimaCompra ? haQuanto(r.ultimaCompra) : '—'}</strong></div>
         </div>
 
-        ${(r.limiteCredito || r.crediarioAberto || r.credito) ? `
+        ${(r.limiteCredito || r.crediarioAberto || r.credito || r.pontos) ? `
         <div class="ficha-saldos">
           ${(r.limiteCredito || r.crediarioAberto) ? `
           <div class="ficha-saldo ${r.crediarioVencido > 0 ? 'perigo' : ''}">
@@ -64,6 +64,11 @@
           <div class="ficha-saldo info">
             <i data-lucide="ticket"></i>
             <div><span>Vale-troca</span><strong>${r$(r.credito)} de saldo</strong><small>Use na Frente de caixa, em "Vale".</small></div>
+          </div>` : ''}
+          ${r.pontos > 0 ? `
+          <div class="ficha-saldo">
+            <i data-lucide="star"></i>
+            <div><span>Pontos</span><strong>${App.formatarNumero(r.pontos)} pontos = ${r$(r.pontosValor)}</strong><small>${r.pontos >= r.pontosMinimo ? 'Já pode usar na Frente de caixa, em "Pontos".' : `Usa a partir de ${r.pontosMinimo} pontos.`}</small></div>
           </div>` : ''}
         </div>` : ''}
 

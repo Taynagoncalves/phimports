@@ -124,6 +124,7 @@
               <div class="campo mt-4">
                 <label for="cliente">Cliente (opcional)</label>
                 <select class="select" id="cliente"></select>
+                <div class="pontos-cliente oculto" id="pontos-cliente" aria-live="polite"></div>
                 <div id="cliente-avulso" class="flex-col gap-2 mt-2">
                   <input class="input" id="cliente-nome" maxlength="60" autocomplete="off" placeholder="Ou digite o nome do cliente (sai no recibo)" aria-label="Nome do cliente">
                   <label class="checkbox oculto" id="cliente-salvar-rotulo"><input type="checkbox" id="cliente-salvar"> Salvar nos clientes</label>
@@ -161,6 +162,7 @@
                   <button type="button" class="chip" data-forma="debito" role="radio" aria-checked="false"><i data-lucide="credit-card"></i>Débito</button>
                   <button type="button" class="chip" data-forma="credito" role="radio" aria-checked="false"><i data-lucide="credit-card"></i>Crédito</button>
                   <button type="button" class="chip" data-forma="vale" role="radio" aria-checked="false"><i data-lucide="ticket"></i>Vale</button>
+                  <button type="button" class="chip oculto" data-forma="pontos" role="radio" aria-checked="false"><i data-lucide="star"></i>Pontos</button>
                   <button type="button" class="chip" data-forma="crediario" role="radio" aria-checked="false"><i data-lucide="calendar-clock"></i>Crediário</button>
                 </div>
               </div>
@@ -187,6 +189,7 @@
                   <div class="chips mt-2" id="vales-cliente"></div>
                   <span class="ajuda" id="info-vale" aria-live="polite"></span>
                 </div>
+                <div class="campo mt-2 oculto" id="campo-pontos"><span class="ajuda" id="info-pontos" aria-live="polite"></span></div>
                 <div class="campo mt-2 oculto" id="campo-crediario">
                   <div class="flex gap-2" style="flex-wrap:wrap">
                     <div class="campo" style="flex:1;min-width:140px">

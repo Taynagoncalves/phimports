@@ -1118,6 +1118,7 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 .implantacao-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--esp-3); flex-wrap: wrap; }
 .implantacao-pix { display: flex; gap: var(--esp-5); flex-wrap: wrap; align-items: flex-start; margin-top: var(--esp-4); padding-top: var(--esp-4); border-top: 1px dashed var(--cor-borda-forte); }
 
+.cupom .c-pontos { text-align: center; margin-top: 8px; padding: 6px 0 0; border-top: 1px dashed #555; line-height: 1.5; }
 .cupom .c-economia { text-align: center; font-weight: 700; margin-top: 8px; padding: 4px 0; border: 1px dashed #555; }
 .cupom .c-mensagem { white-space: pre-line; }
 
@@ -1216,3 +1217,9 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 .lista-compras th:nth-child(n+4), .lista-compras td:nth-child(n+4) { text-align: right; }
 .lista-compras td:last-child { width: 28px; border: 1px solid #999; }
 .lista-compras .total { margin-top: 16px; font-size: 14px; font-weight: 700; color: #111; text-align: right; }
+
+/* ---------- Programa de pontos ---------- */
+.pontos-cliente { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 10px; border-radius: 8px; font-size: var(--fs-xs); background: color-mix(in srgb, #CA8A04 12%, transparent); color: var(--cor-texto); }
+.pontos-cliente svg { width: 14px; height: 14px; color: #CA8A04; flex-shrink: 0; }
+.pontos-regra { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--esp-3); }
+.pontos-regra.desativado { opacity: .5; }

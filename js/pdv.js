@@ -22,6 +22,8 @@ App.aoIniciar(async () => {
   let calc = null;              // preços do carrinho com promoções (Data.calcularCarrinho)
   let calcSeq = 0;              // evita usar um cálculo antigo se o carrinho mudar rápido
   let regras = { limiteDescontoVendedor: 10 };
+  let pontosInfo = null;        // pontos do cliente escolhido (fidelidade)
+  let pontosAtivo = false;      // a loja usa o programa de pontos?
   let crediarioInfo = null;     // limite/aberto do cliente escolhido
   let ultimoItem = null;        // {nome, tamanho, cor, sku, qtd, preco, foto} — visor
   let linhaSel = -1;            // linha selecionada na lista (Del remove)
@@ -433,6 +435,26 @@ App.aoIniciar(async () => {
     atualizarPagamento();
   }
 
+  /* ---------- Pontos de fidelidade do cliente escolhido ---------- */
+  async function carregarPontos() {
+    const clienteId = $('cliente').value;
+    pontosInfo = clienteId && pontosAtivo ? await Data.resumoPontos(clienteId) : null;
+    if ($('cliente').value !== clienteId) return; // trocou de cliente enquanto carregava
+    const el = $('pontos-cliente');
+    el.classList.toggle('oculto', !pontosInfo);
+    if (pontosInfo) {
+      el.innerHTML = `<i data-lucide="star"></i><span><strong>${App.formatarNumero(pontosInfo.saldo)} pontos</strong> = ${App.formatarMoeda(pontosInfo.valor)}${pontosInfo.podeUsar ? ' para usar' : ` · usa a partir de ${pontosInfo.minimo}`}</span>`;
+      App.icones();
+    }
+    atualizarPagamento();
+  }
+  /** Quanto dos pontos ainda dá para usar nesta venda (R$) */
+  function saldoPontosLivre() {
+    if (!pontosInfo || !pontosInfo.podeUsar) return 0;
+    const usado = pagamentos.filter((p) => p.forma === 'pontos').reduce((s, p) => s + p.valor, 0);
+    return Math.max(0, r2(pontosInfo.valor - usado));
+  }
+
   /** Saldo do vale consultado, descontando o que já foi lançado dele nesta venda */
   function saldoValeLivre() {
     if (!valeConsultado) return 0;
@@ -447,6 +469,12 @@ App.aoIniciar(async () => {
     if (p.forma === 'vale') {
       if (!valeConsultado || valeConsultado.codigo !== p.codigoVale) return 'Consulte o código do vale-troca.';
       if (p.valor > saldoValeLivre() + 0.001) return `O vale tem só ${App.formatarMoeda(saldoValeLivre())} de saldo.`;
+    }
+    if (p.forma === 'pontos') {
+      if (!$('cliente').value) return 'Escolha o cliente para usar os pontos.';
+      if (!pontosInfo) return 'Carregando os pontos do cliente…';
+      if (!pontosInfo.podeUsar) return `O cliente precisa de ${pontosInfo.minimo} pontos para usar (tem ${pontosInfo.saldo}).`;
+      if (p.valor > saldoPontosLivre() + 0.001) return `Os pontos do cliente valem até ${App.formatarMoeda(saldoPontosLivre())}.`;
     }
     if (p.forma === 'crediario') {
       if (pagamentos.some((x) => x.forma === 'crediario')) return 'Já há um lançamento de crediário nesta venda.';
@@ -469,7 +497,7 @@ App.aoIniciar(async () => {
     // as próximas já vêm com o que falta.
     const primeiraParte = dividindo && !pagamentos.length;
     if (formaPagamento && !valorEditado) {
-      const sugerido = formaPagamento === 'vale' ? Math.min(falta, saldoValeLivre()) : falta;
+      const sugerido = formaPagamento === 'vale' ? Math.min(falta, saldoValeLivre()) : formaPagamento === 'pontos' ? Math.min(falta, saldoPontosLivre()) : falta;
       inputValor.value = !primeiraParte && sugerido > 0 ? App.formatarValorInput(sugerido) : '';
     }
     inputValor.placeholder = primeiraParte ? 'Quanto vai pagar nesta forma?' : '0,00';
@@ -516,7 +544,7 @@ App.aoIniciar(async () => {
     btnDiv.title = pagamentos.length ? 'Remova as partes lançadas para voltar a pagar de uma vez' : 'Pagar parte em uma forma e o resto em outra';
     $('lista-pagamentos').innerHTML = pagamentos.map((p, i) => `
       <li class="lista-item" style="padding:8px 0">
-        <span class="stat-icone" style="width:30px;height:30px"><i data-lucide="${{ pix: 'qr-code', dinheiro: 'banknote', vale: 'ticket' }[p.forma] || 'credit-card'}"></i></span>
+        <span class="stat-icone" style="width:30px;height:30px"><i data-lucide="${{ pix: 'qr-code', dinheiro: 'banknote', vale: 'ticket', pontos: 'star' }[p.forma] || 'credit-card'}"></i></span>
         <div class="info"><div class="titulo">${App.nomePagamento(p)}${p.codigoVale ? ` · <span class="mono">${App.escapeHtml(p.codigoVale)}</span>` : ''}</div></div>
         <span class="valor">${App.formatarMoeda(p.valor)}</span>
         <button type="button" class="btn-icone perigo" data-remover-pag="${i}" aria-label="Remover pagamento ${App.nomePagamento(p)}"><i data-lucide="x"></i></button>
@@ -599,6 +627,13 @@ App.aoIniciar(async () => {
     $('pag-detalhe').classList.toggle('oculto', !forma);
     $('campo-parcelas').classList.toggle('oculto', forma !== 'credito');
     $('campo-vale').classList.toggle('oculto', forma !== 'vale');
+    $('campo-pontos').classList.toggle('oculto', forma !== 'pontos');
+    if (forma === 'pontos') {
+      $('info-pontos').textContent = !$('cliente').value ? 'Escolha o cliente (acima) para usar os pontos dele.'
+        : !pontosInfo ? 'Carregando…'
+        : pontosInfo.podeUsar ? `${App.formatarNumero(pontosInfo.saldo)} pontos = ${App.formatarMoeda(pontosInfo.valor)} disponíveis.`
+        : `Tem ${pontosInfo.saldo} pontos. Dá para usar a partir de ${pontosInfo.minimo}.`;
+    }
     $('campo-crediario').classList.toggle('oculto', forma !== 'crediario');
     if (forma === 'vale') carregarValesCliente();
     if (forma === 'crediario') {
@@ -700,6 +735,9 @@ App.aoIniciar(async () => {
 
   /* ---------- Cliente ---------- */
   const clientes = await Data.listarClientes();
+  // Programa de pontos ligado em Configurações? Mostra a forma "Pontos"
+  pontosAtivo = !!(await Data.resumoPontos(null)).ativo;
+  document.querySelector('[data-forma="pontos"]').classList.toggle('oculto', !pontosAtivo);
   App.preencherSelect($('cliente'), clientes.map((c) => ({ valor: c.id, texto: `${c.nome} — ${c.documento}` })), { vazio: 'Consumidor final (não identificado)' });
   // Nome do cliente sem cadastro: só aparece com "Consumidor final" escolhido
   function atualizarClienteAvulso() {
@@ -713,6 +751,7 @@ App.aoIniciar(async () => {
     if (formaPagamento === 'vale') carregarValesCliente();
     crediarioInfo = null;
     carregarCrediario();
+    carregarPontos().then(() => { if (formaPagamento === 'pontos') selecionarForma('pontos'); });
   });
   $('parcelas-crediario').addEventListener('change', atualizarPagamento);
   $('vencimento-crediario').addEventListener('change', atualizarPagamento);
@@ -803,6 +842,8 @@ App.aoIniciar(async () => {
     inputVale.value = '';
     $('info-vale').textContent = '';
     $('cliente').value = '';
+    pontosInfo = null;
+    $('pontos-cliente').classList.add('oculto');
     $('cliente-nome').value = '';
     $('cliente-salvar').checked = false;
     atualizarClienteAvulso();
@@ -1163,6 +1204,7 @@ App.aoIniciar(async () => {
       `Pagamento: ${App.nomePagamento(venda)}`,
       venda.pagamento.troco > 0 ? `Troco: ${m(venda.pagamento.troco)}` : '',
       '',
+      venda.pontosSaldo !== null && venda.pontosSaldo !== undefined ? `⭐ Você ganhou *${venda.pontosGanhos} pontos* nesta compra. Saldo: *${venda.pontosSaldo} pontos* (${m(venda.pontosValorSaldo)} de desconto).` : '',
       'Trocas em até 30 dias com este recibo.',
       'Obrigado pela preferência! 💜'
     ];
