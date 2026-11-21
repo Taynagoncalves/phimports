@@ -58,8 +58,14 @@ App.aoIniciar(async () => {
   /* ==================================================================
      CONSULTA DE PRODUTOS (F2) — catálogo em janela
      ================================================================== */
+  // Pedido online sendo atendido (vem de Pedidos online → "Virar venda")
+  const pedidoId = App.parametroUrl('pedido');
+  let pedidoAtual = null;
   async function carregarProdutos() {
     produtos = await Data.listarProdutos();
+    // Peças reservadas em OUTROS pedidos online não aparecem como disponíveis
+    const reservas = await Data.reservasPorSku(pedidoId || null);
+    produtos.forEach((p) => p.variacoes.forEach((v) => { if (reservas[v.sku]) v.estoque = Math.max(0, v.estoque - reservas[v.sku]); }));
   }
 
   const normalizar = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -1131,8 +1137,10 @@ App.aoIniciar(async () => {
         itens: carrinho.map((i) => ({ produtoId: i.produtoId, sku: i.sku, qtd: i.qtd })),
         desconto: t.desconto,
         pagamentos: todos,
-        autorizacao
+        autorizacao,
+        pedidoId: pedidoAtual ? pedidoAtual.id : null
       });
+      if (pedidoAtual) { App.toast(`Pedido online #${pedidoAtual.codigo} virou a venda #${venda.numero}.`, 'sucesso', 6000); pedidoAtual = null; history.replaceState(null, '', 'pdv.html'); document.getElementById('aviso-pedido')?.remove(); }
       resetarVenda();
       await carregarProdutos();
       verificarCaixa(); // atualiza o nº da próxima venda
@@ -1273,6 +1281,29 @@ App.aoIniciar(async () => {
 
   /* ---------- Início ---------- */
   await carregarProdutos();
+  // Veio de "Virar venda": coloca as peças do pedido no carrinho
+  if (pedidoId) {
+    try {
+      pedidoAtual = await Data.obterPedido(pedidoId);
+      if (!['novo', 'confirmado'].includes(pedidoAtual.status)) { App.toast('Este pedido não está mais em aberto.', 'aviso'); pedidoAtual = null; }
+    } catch (e) { App.toast(e.message, 'erro'); pedidoAtual = null; }
+    if (pedidoAtual) {
+      let faltou = 0;
+      (pedidoAtual.itens || []).forEach((it) => {
+        const prod = produtos.find((p) => p.id === it.produtoId) || produtos.find((p) => p.variacoes.some((v) => v.sku === it.sku));
+        const vari = prod && (prod.variacoes.find((v) => v.sku === it.sku) || prod.variacoes.find((v) => v.cor === it.cor && v.tamanho === it.tamanho));
+        if (!vari || !adicionarItem(prod, vari, Number(it.qtd) || 1)) faltou++;
+      });
+      const nome = (pedidoAtual.cliente && pedidoAtual.cliente.nome) || '';
+      if (nome) { $('cliente-nome').value = nome; atualizarClienteAvulso(); }
+      const aviso = document.createElement('div');
+      aviso.id = 'aviso-pedido';
+      aviso.className = 'alerta info mb-4';
+      aviso.innerHTML = `<i data-lucide="shopping-basket"></i><span>Atendendo o <strong>pedido online #${App.escapeHtml(pedidoAtual.codigo)}</strong>${nome ? ' de ' + App.escapeHtml(nome) : ''}. Confira as peças, receba o pagamento e finalize.${faltou ? ` <strong>${faltou} item(ns) não foram encontrados no estoque.</strong>` : ''}</span>`;
+      document.querySelector('.caixa-venda')?.prepend(aviso);
+      App.icones();
+    }
+  }
   regras = await Data.obterRegrasVenda();
   await verificarCaixa();
   atualizarTotais();

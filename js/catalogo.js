@@ -537,6 +537,27 @@
     history.pushState({ camada: 'sacola' }, '');
   }
 
+  /* ---------- Pedido online (cai na aba "Pedidos online" do sistema) ---------- */
+  function codigoPedido() {
+    const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let c = 'P';
+    for (let i = 0; i < 5; i++) c += letras[Math.floor(Math.random() * letras.length)];
+    return c;
+  }
+  function gravarPedido(pedido) {
+    const cfg = window.FIREBASE_CONFIG;
+    if (cfg && cfg.apiKey && lojaId && window.firebase) {
+      return firebase.firestore().collection('lojas').doc(lojaId).collection('pedidos').doc(pedido.id).set(pedido);
+    }
+    // Teste no computador (sem nuvem): grava no banco local do sistema
+    try {
+      const chave = 'gestaoloja:db:v1';
+      const banco = JSON.parse(localStorage.getItem(chave) || 'null');
+      if (banco) { banco.pedidos = [...(banco.pedidos || []), pedido]; localStorage.setItem(chave, JSON.stringify(banco)); }
+    } catch (e) { /* ignora */ }
+    return Promise.resolve();
+  }
+
   /* ---------- Finalizar pelo WhatsApp ---------- */
   document.querySelectorAll('input[name=entrega]').forEach((r) => r.addEventListener('change', () => {
     $('f-endereco-bloco').hidden = document.querySelector('input[name=entrega]:checked').value !== 'entregar';
@@ -549,7 +570,9 @@
     const entrega = cat.entrega === false ? 'retirar' : document.querySelector('input[name=entrega]:checked').value;
     const endereco = $('f-endereco').value.trim();
     if (entrega === 'entregar' && !endereco) { $('f-endereco').focus(); return aviso('Informe o endereço com CEP.'); }
-    try { localStorage.setItem(CHAVE_CLIENTE, JSON.stringify({ nome, endereco })); } catch (e) { /* ignora */ }
+    const fone = $('f-fone').value.trim();
+    try { localStorage.setItem(CHAVE_CLIENTE, JSON.stringify({ nome, endereco, fone })); } catch (e) { /* ignora */ }
+    const codigo = codigoPedido();
     const linhas = sacola.map((i, n) => {
       const p = acharPeca(i.id); const preco = precoDe(p);
       const det = [i.c, i.t && `Tam. ${i.t}`].filter(Boolean).join(' · ');
@@ -557,6 +580,7 @@
     });
     const texto = [
       `Olá! Quero fazer um pedido pelo catálogo 🛍️`,
+      `*Pedido #${codigo}*`,
       '',
       ...linhas,
       '',
@@ -567,7 +591,25 @@
       '',
       'Pode confirmar a disponibilidade? 😊'
     ].filter((l, i, arr) => l !== '' || arr[i - 1] !== '').join('\n');
+    // Grava o pedido no sistema (a loja vê na aba "Pedidos online", com as peças reservadas)
+    const pedido = {
+      id: 'ped' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      codigo, status: 'novo', origem: 'catalogo', criadoEm: new Date().toISOString(),
+      cliente: { nome: nome.slice(0, 60), telefone: fone.slice(0, 20) },
+      entrega, endereco: entrega === 'entregar' ? endereco.slice(0, 160) : '', obs: $('f-obs').value.trim().slice(0, 140),
+      itens: sacola.map((i) => {
+        const p = acharPeca(i.id); const v = variacao(p, i.c, i.t) || {};
+        return { produtoId: p.id, sku: v.s || '', nome: p.nome, cor: i.c || '', tamanho: i.t || '', qtd: i.qtd, preco: precoDe(p) || 0 };
+      }),
+      total: Math.round(totalSacola() * 100) / 100
+    };
+    gravarPedido(pedido).catch((e) => console.warn('Pedido não foi gravado no sistema:', e));
     window.open(linkWhats(texto), '_blank', 'noopener');
+    // Sacola esvaziada + confirmação
+    sacola = [];
+    salvarSacola();
+    $('s-fim').hidden = true;
+    $('s-itens').innerHTML = `<div class="sacola-vazia pedido-ok"><p>Pedido #${esc(codigo)} enviado!</p>A loja vai confirmar a disponibilidade e o pagamento com você pelo WhatsApp. Obrigada! 💛</div>`;
   });
 
   /* ---------- Camadas (abrir/fechar, botão voltar do celular) ---------- */
@@ -600,7 +642,7 @@
     if (!dados || !dados.publicado) { $('estado').textContent = 'Este catálogo não está disponível no momento.'; return; }
     cat = { ...dados, produtos: dados.produtos || [] };
     if (cat.entrega === false) $('f-entrega-bloco').hidden = true;
-    try { const c = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || '{}'); $('f-nome').value = c.nome || ''; $('f-endereco').value = c.endereco || ''; } catch (e) { /* ignora */ }
+    try { const c = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || '{}'); $('f-nome').value = c.nome || ''; $('f-endereco').value = c.endereco || ''; $('f-fone').value = c.fone || ''; } catch (e) { /* ignora */ }
     desenharMarca();
     aplicarTema(temaPrevia || cat.tema || {});
     desenharVitrines();

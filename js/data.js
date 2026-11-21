@@ -30,7 +30,7 @@
 
   // No Firestore: um documento por registro nestas coleções…
   const COLECOES = ['usuarios', 'produtos', 'clientes', 'fornecedores', 'vendas', 'notas', 'movimentacoes',
-    'creditos', 'caixas', 'entradas', 'promocoes', 'contasReceber', 'contasPagar', 'inventarios', 'ajustesPontos'];
+    'creditos', 'caixas', 'entradas', 'promocoes', 'contasReceber', 'contasPagar', 'inventarios', 'ajustesPontos', 'pedidos'];
   // …e um documento cada para estes ajustes (objetos ou listas simples)
   const AJUSTES = ['loja', 'fiscal', 'config', 'cores', 'tamanhos', 'categorias'];
 
@@ -1429,11 +1429,16 @@
     const caixa = caixaAberto();
     if (!caixa && usaCaixa()) return falhar('O caixa está fechado. Abra o caixa para registrar vendas.');
 
-    // 1) Valida estoque de todos os itens antes de gravar
+    // 1) Valida estoque de todos os itens antes de gravar (peças reservadas em pedidos online não contam)
+    const pedido = dados.pedidoId ? (db.pedidos || []).find((p) => p.id === dados.pedidoId) : null;
+    if (dados.pedidoId && (!pedido || !PEDIDO_ABERTO.includes(pedido.status))) return falhar('Este pedido online não está mais em aberto.');
+    const reservas = reservasPorSku(dados.pedidoId || null);
     for (const it of dados.itens) {
       const achado = acharVariacao(it.sku);
       if (!achado) return falhar(`Item ${it.sku} não encontrado.`);
       if (achado.variacao.estoque < it.qtd) return falhar(`Estoque insuficiente para ${achado.produto.nome} (${achado.variacao.tamanho}/${achado.variacao.cor}).`);
+      const reservado = reservas[it.sku] || 0;
+      if (reservado && achado.variacao.estoque - reservado < it.qtd) return falhar(`${achado.produto.nome} (${achado.variacao.tamanho}/${achado.variacao.cor}): ${reservado} peça(s) estão reservadas em pedido online. Cancele ou conclua o pedido primeiro.`);
     }
 
     // 2) Monta a venda — preços SEMPRE recalculados aqui (promoções ativas),
@@ -1554,6 +1559,15 @@
     // Crediário: gera as parcelas a receber (vencimento mensal)
     const pCred = pagamentos.find((p) => p.forma === 'crediario');
     if (pCred) gerarParcelasCrediario(venda, pCred);
+
+    // Pedido online que virou venda
+    if (pedido) {
+      pedido.status = 'concluido';
+      pedido.vendaId = venda.id;
+      pedido.numeroVenda = numero;
+      pedido.historico = [...(pedido.historico || []), { status: 'concluido', data: venda.data, usuario: usuarioLogado().nome || '' }];
+      venda.pedidoOnline = pedido.codigo || pedido.id;
+    }
 
     // Consome o saldo dos vales usados
     usosVale.forEach(({ credito, valor }) => {
@@ -2715,6 +2729,49 @@
   }
 
   /* ==================================================================
+     PEDIDOS ONLINE (feitos pelo catálogo)
+     Status: novo → confirmado → concluido (virou venda) | cancelado.
+     Enquanto está novo ou confirmado, as peças ficam RESERVADAS: saem da
+     disponibilidade do catálogo e não podem ser vendidas no caixa por engano.
+     ================================================================== */
+  const PEDIDO_ABERTO = ['novo', 'confirmado'];
+  /** Peças reservadas em pedidos abertos (sku → quantidade). excluir = id de um pedido a ignorar */
+  function reservasPorSku(excluir = null) {
+    const r = {};
+    (db.pedidos || []).forEach((p) => {
+      if (!PEDIDO_ABERTO.includes(p.status) || p.id === excluir) return;
+      (p.itens || []).forEach((it) => { r[it.sku] = (r[it.sku] || 0) + (Number(it.qtd) || 0); });
+    });
+    return r;
+  }
+  function listarPedidos() {
+    const lista = [...(db.pedidos || [])].sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm)));
+    return responder(lista);
+  }
+  function obterPedido(id) {
+    const p = (db.pedidos || []).find((x) => x.id === id);
+    return p ? responder(p) : falhar('Pedido não encontrado.');
+  }
+  /** Muda o status (confirmar ou cancelar). Concluir é feito pela venda. */
+  function atualizarPedido(id, { status, observacaoLoja }) {
+    const p = (db.pedidos || []).find((x) => x.id === id);
+    if (!p) return falhar('Pedido não encontrado.');
+    if (status && !['novo', 'confirmado', 'cancelado'].includes(status)) return falhar('Situação inválida.');
+    if (p.status === 'concluido') return falhar('Este pedido já virou venda.');
+    if (status) {
+      p.status = status;
+      p.historico = [...(p.historico || []), { status, data: new Date().toISOString(), usuario: usuarioLogado().nome || '' }];
+    }
+    if (observacaoLoja !== undefined) p.observacaoLoja = String(observacaoLoja).slice(0, 200);
+    persistir();
+    return responder(p);
+  }
+  function resumoPedidos() {
+    const lista = db.pedidos || [];
+    return responder({ novos: lista.filter((p) => p.status === 'novo').length, abertos: lista.filter((p) => PEDIDO_ABERTO.includes(p.status)).length });
+  }
+
+  /* ==================================================================
      CATÁLOGO ONLINE (página pública pages/catalogo.html)
      Uma CÓPIA separada, só com o que o cliente pode ver: nome, foto, preço e
      tamanhos/cores com estoque. Nada de custo, vendas ou clientes.
@@ -2729,10 +2786,13 @@
     if (c.ativo === false) return { publicado: false, atualizadoEm: new Date().toISOString() };
     const precos = c.mostrarPrecos !== false;
     const recente = Date.now() - 15 * 86400000;
+    const reservas = reservasPorSku();
+    const livre = (v) => Math.max(0, Number(v.estoque || 0) - (reservas[v.sku] || 0));
     const produtos = db.produtos
       .filter((p) => p.ativo !== false)
       .map(comTotais)
-      .sort((a, b) => (b.estoqueTotal > 0) - (a.estoqueTotal > 0) || String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')))
+      .map((p) => ({ ...p, estoqueLivre: p.variacoes.reduce((s, v) => s + livre(v), 0) }))
+      .sort((a, b) => (b.estoqueLivre > 0) - (a.estoqueLivre > 0) || String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')))
       .map((p) => ({
         id: String(p.id), nome: p.nome || '', categoria: p.categoria || '', marca: p.marca || '',
         foto: fotoPublica(p.foto) || Object.values(p.fotosCores || {}).map(fotoPublica).find(Boolean) || '',
@@ -2742,9 +2802,9 @@
         promo: precos && p.precoPromocional ? Number(p.precoPromocional) : null,
         novo: !!p.criadoEm && new Date(p.criadoEm).getTime() > recente,
         descricao: String(p.descricao || '').slice(0, 400),
-        estoque: Math.max(0, Number(p.estoqueTotal) || 0),
-        // todas as variações, com a quantidade em estoque de cada uma (0 = esgotada)
-        variacoes: p.variacoes.map((v) => ({ t: v.tamanho || '', c: v.cor || '', h: corHexCatalogo(v.cor), q: Math.max(0, Number(v.estoque || 0)) }))
+        estoque: p.estoqueLivre,
+        // todas as variações, com a quantidade disponível de cada uma (0 = esgotada ou reservada)
+        variacoes: p.variacoes.map((v) => ({ s: v.sku, t: v.tamanho || '', c: v.cor || '', h: corHexCatalogo(v.cor), q: livre(v) }))
       }));
     // O documento do Firestore aceita até 1 MB: se crescer muito, tira as descrições
     if (JSON.stringify(produtos).length > 850000) produtos.forEach((p) => { p.descricao = ''; });
@@ -3053,7 +3113,8 @@
     // Vendas
     listarVendas, obterVenda, registrarVenda, registrarDevolucao, cancelarVenda,
     // Vale-troca (crédito do cliente)
-    listarCreditos, obterCreditoPorCodigo, resumoPontos, painelPontos, ajustarPontos, publicarCatalogo, linkCatalogo,
+    listarCreditos, obterCreditoPorCodigo, resumoPontos, painelPontos, ajustarPontos,
+    listarPedidos, obterPedido, atualizarPedido, resumoPedidos, reservasPorSku: (excluir) => responder(reservasPorSku(excluir)), publicarCatalogo, linkCatalogo,
     // Caixa
     obterCaixaAberto, obterCaixa, listarCaixas, abrirCaixa, registrarMovimentoCaixa, fecharCaixa,
     // Regras de venda (limite de desconto) e autorização do dono

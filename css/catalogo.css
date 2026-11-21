@@ -446,3 +446,5 @@ body.tema-escuro .fechar { background: rgba(30, 30, 30, .9); color: var(--tinta)
 body.tema-escuro .rodape { background: #0A0A0A; }
 body.tema-escuro .campo input { background: var(--fundo-2); color: var(--tinta); }
 body.tema-escuro .selo.promo { background: var(--acao); color: var(--acao-texto); }
+
+.pedido-ok p { font-size: 26px; }

@@ -40,6 +40,7 @@
     { grupo: 'Principal', itens: [
       { id: 'dashboard', texto: 'Dashboard', icone: 'layout-dashboard', href: 'dashboard.html' },
       { id: 'pdv', texto: 'Frente de caixa', icone: 'scan-barcode', href: 'pdv.html' },
+      { id: 'pedidos', texto: 'Pedidos online', icone: 'shopping-basket', href: 'pedidos.html' },
       { id: 'caixa', texto: 'Caixa', icone: 'wallet', href: 'caixa.html' },
       { id: 'trocas', texto: 'Trocas', icone: 'repeat', href: 'trocas.html' },
       { id: 'notas', texto: 'Notas fiscais', icone: 'file-text', href: 'notas.html' }
@@ -75,7 +76,7 @@
   /* ---------- Permissões por perfil ----------
      Dono: tudo. Vendedor: vender, operar o caixa, trocas, clientes e consultas.
      As mesmas regras são conferidas em data.js (e, no Firebase, nas Security Rules). */
-  const PAGINAS_VENDEDOR = ['dashboard', 'pdv', 'caixa', 'vendas', 'trocas', 'notas', 'produtos', 'estoque', 'etiquetas', 'clientes'];
+  const PAGINAS_VENDEDOR = ['dashboard', 'pdv', 'pedidos', 'caixa', 'vendas', 'trocas', 'notas', 'produtos', 'estoque', 'etiquetas', 'clientes'];
   const ACOES_DONO = [
     'gerenciar-produtos',   // cadastrar, editar, excluir produtos
     'movimentar-estoque',   // entrada, ajuste, saída, entrada de nota em lote
@@ -629,6 +630,26 @@
   function lerCascaGuardada() {
     try { return JSON.parse(localStorage.getItem(CHAVE_CASCA)); } catch (e) { return null; }
   }
+  /* ---------- Pedidos online: contador no menu e aviso de pedido novo ---------- */
+  let pedidosNovos = null;
+  async function atualizarPedidosMenu(avisar = false) {
+    if (!Data.resumoPedidos || !podeAcessar('pedidos')) return;
+    let r;
+    try { r = await Data.resumoPedidos(); } catch (e) { return; }
+    const link = document.querySelector('.sidebar .nav-link[data-menu-id="pedidos"]');
+    if (link) {
+      let b = link.querySelector('.nav-contador');
+      if (!b) { b = document.createElement('span'); b.className = 'nav-contador'; link.appendChild(b); }
+      b.textContent = r.novos;
+      b.hidden = !r.novos;
+    }
+    if (avisar && pedidosNovos !== null && r.novos > pedidosNovos) {
+      toast(`🛍️ Novo pedido online! ${r.novos} aguardando.`, 'sucesso', 8000);
+      try { new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=').play().catch(() => {}); } catch (e) { /* ignora */ }
+    }
+    pedidosNovos = r.novos;
+  }
+
   /* ---------- Grupos do menu que abrem e fecham ---------- */
   const CHAVE_GRUPOS = 'gestaoloja:menu-fechados';
   const gruposFechados = () => { try { return JSON.parse(localStorage.getItem(CHAVE_GRUPOS)) || []; } catch (e) { return []; } };
@@ -806,6 +827,8 @@
     document.getElementById('btn-trocar-senha').addEventListener('click', abrirTrocaDeSenha);
     document.querySelectorAll('[data-instalar-app]').forEach((b) => b.addEventListener('click', instalarApp));
     atualizarBotaoInstalar();
+    atualizarPedidosMenu();
+    window.addEventListener('dados-alterados', () => atualizarPedidosMenu(true));
 
     document.getElementById('btn-sair').addEventListener('click', async () => {
       await Data.sair();

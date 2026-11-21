@@ -69,6 +69,20 @@ service cloud.firestore {
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['bloqueada', 'motivoBloqueio']));
       allow delete: if false;
 
+      // Pedidos online: a cliente do catálogo (sem login) só pode CRIAR um pedido novo,
+      // com campos conferidos. Ler e mudar o pedido é só para quem trabalha na loja.
+      match /pedidos/{pedidoId} {
+        allow create: if request.resource.data.keys().hasOnly(['id', 'codigo', 'status', 'origem', 'criadoEm', 'cliente', 'entrega', 'endereco', 'obs', 'itens', 'total'])
+          && request.resource.data.status == 'novo'
+          && request.resource.data.origem == 'catalogo'
+          && request.resource.data.id == pedidoId
+          && request.resource.data.itens is list
+          && request.resource.data.itens.size() > 0 && request.resource.data.itens.size() <= 40
+          && request.resource.data.total is number
+          && exists(/databases/$(database)/documents/catalogos/$(lojaId))
+          && get(/databases/$(database)/documents/catalogos/$(lojaId)).data.publicado == true;
+      }
+
       // Dados da loja: todos os membros leem (loja ativa).
       // O vendedor grava o que o dia a dia exige (vendas, caixa, estoque, clientes…);
       // o resto (configurações, usuários, fornecedores, contas a pagar, promoções) é só do dono.
@@ -76,7 +90,7 @@ service cloud.firestore {
         allow read: if superAdmin() || ativo(lojaId);
         allow write: if superAdmin() || dono(lojaId) || (ativo(lojaId) && colecao in [
           'vendas', 'produtos', 'movimentacoes', 'caixas', 'creditos',
-          'clientes', 'contasReceber', 'notas', 'inventarios'
+          'clientes', 'contasReceber', 'notas', 'inventarios', 'pedidos'
         ]);
       }
     }
