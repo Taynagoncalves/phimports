@@ -22,6 +22,7 @@
       { id: 'produtos', texto: 'Produtos', icone: 'shirt', href: 'produtos.html' },
       { id: 'estoque', texto: 'Estoque', icone: 'package', href: 'estoque.html' },
       { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' },
+      { id: 'reposicao', texto: 'Reposição', icone: 'shopping-cart', href: 'reposicao.html' },
       { id: 'inventario', texto: 'Inventário', icone: 'clipboard-check', href: 'inventario.html' },
       { id: 'promocoes', texto: 'Promoções', icone: 'badge-percent', href: 'promocoes.html' }
     ] },

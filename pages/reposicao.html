@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="../img/favicon.png">
+  <link rel="apple-touch-icon" href="../img/icone-app.png">
+  <meta name="theme-color" content="#18181B">
+  <title>Reposição</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="reposicao" data-titulo="Reposição">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Reposição</h1>
+            <p>O que comprar de novo (por tamanho e cor) e as peças que estão paradas na loja.</p>
+          </div>
+          <div class="pagina-acoes">
+            <button type="button" class="btn btn-secundario" id="btn-imprimir"><i data-lucide="printer"></i>Imprimir lista de compras</button>
+          </div>
+        </div>
+
+        <section class="grid-stats" id="indicadores" aria-label="Resumo"></section>
+
+        <div class="abas mt-6" role="tablist" aria-label="Listas" id="abas" style="margin-bottom:var(--esp-4)">
+          <button type="button" role="tab" class="aba" data-aba="comprar" aria-selected="true">O que comprar <span class="aba-contagem" id="cont-comprar">0</span></button>
+          <button type="button" role="tab" class="aba" data-aba="parados" aria-selected="false">Peças paradas <span class="aba-contagem" id="cont-parados">0</span></button>
+        </div>
+
+        <!-- Ajustes de cada lista -->
+        <div class="reposicao-filtros" id="filtros-comprar">
+          <label class="reposicao-filtro">Olhar as vendas dos últimos
+            <select class="select" id="f-dias-venda"><option value="30" selected>30 dias</option><option value="60">60 dias</option><option value="90">90 dias</option></select>
+          </label>
+          <label class="reposicao-filtro">e ter estoque para
+            <select class="select" id="f-dias-cobrir"><option value="15">15 dias</option><option value="30" selected>30 dias</option><option value="60">60 dias</option></select>
+          </label>
+          <label class="reposicao-filtro">Fornecedor
+            <select class="select" id="f-fornecedor"><option value="">Todos</option></select>
+          </label>
+        </div>
+        <div class="reposicao-filtros oculto" id="filtros-parados">
+          <label class="reposicao-filtro">Sem vender há pelo menos
+            <select class="select" id="f-dias-parado"><option value="30">30 dias</option><option value="60" selected>60 dias</option><option value="90">90 dias</option><option value="120">120 dias</option></select>
+          </label>
+        </div>
+
+        <section class="card mt-4" id="lista" style="overflow:hidden"></section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/cloudinary-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/reposicao.js"></script>
+</body>
+</html>

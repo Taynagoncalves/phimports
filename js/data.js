@@ -2445,6 +2445,85 @@
    * Retorna totais, vendas por dia, por categoria, por forma de pagamento,
    * produtos mais vendidos e estoque parado (sem venda no período).
    */
+  /**
+   * Reposição e peças paradas (por tamanho e cor).
+   * - comprar: o que vendeu nos últimos `diasVenda` dias e não dura `diasCobrir` dias no estoque
+   * - parados: produtos com estoque sem venda há `diasParado` dias (ou mais)
+   */
+  function analisarEstoque({ diasVenda = 30, diasCobrir = 30, diasParado = 60 } = {}) {
+    diasVenda = Math.max(7, Number(diasVenda) || 30);
+    diasCobrir = Math.max(7, Number(diasCobrir) || 30);
+    diasParado = Math.max(15, Number(diasParado) || 60);
+    const agora = Date.now();
+    const diasDesde = (iso) => (iso ? Math.max(0, Math.floor((agora - new Date(iso).getTime()) / 86400000)) : null);
+    const inicioJanela = new Date(agora - diasVenda * 86400000).toISOString();
+
+    const vendidos = {};       // sku → peças vendidas na janela (sem trocas/devoluções)
+    const ultimaVendaSku = {}; // sku → data da última venda
+    db.vendas.filter(vendaValida).forEach((v) => v.itens.forEach((it) => {
+      const qtd = it.qtd - qtdDevolvida(v, it.sku);
+      if (qtd <= 0) return;
+      if (!ultimaVendaSku[it.sku] || v.data > ultimaVendaSku[it.sku]) ultimaVendaSku[it.sku] = v.data;
+      if (v.data >= inicioJanela) vendidos[it.sku] = (vendidos[it.sku] || 0) + qtd;
+    }));
+    // Última chegada de mercadoria (entrada de nota, cadastro, ajuste) — trocas e cancelamentos não contam
+    const ultimaEntradaSku = {};
+    (db.movimentacoes || []).forEach((m) => {
+      if (m.tipo !== 'entrada' || /^(troca|devolu|cancel)/i.test(m.motivo || '')) return;
+      if (!ultimaEntradaSku[m.sku] || m.data > ultimaEntradaSku[m.sku]) ultimaEntradaSku[m.sku] = m.data;
+    });
+    const nomeFornecedor = (id) => ((db.fornecedores || []).find((f) => f.id === id) || {}).nome || '';
+
+    const comprar = [];
+    const parados = [];
+    db.produtos.filter((p) => p.ativo !== false).forEach((p) => {
+      const custo = Number(p.custo || 0);
+      const fornecedor = nomeFornecedor(p.fornecedorId);
+      const base = { produtoId: p.id, nome: p.nome, categoria: p.categoria, foto: p.foto || '', fornecedorId: p.fornecedorId || '', fornecedor, custo, preco: Number(p.preco || 0) };
+
+      // O que comprar (por variação)
+      p.variacoes.forEach((v) => {
+        const vendeu = vendidos[v.sku] || 0;
+        if (!vendeu) return;
+        const estoque = Number(v.estoque || 0);
+        const porDia = vendeu / diasVenda;
+        const duraDias = porDia > 0 ? Math.floor(estoque / porDia) : null;
+        const comprarQtd = Math.max(0, Math.ceil(porDia * diasCobrir) - estoque);
+        if (comprarQtd <= 0) return;
+        comprar.push({ ...base, sku: v.sku, tamanho: v.tamanho, cor: v.cor, estoque, vendeu, duraDias, comprar: comprarQtd,
+          urgencia: estoque <= 0 ? 'esgotado' : duraDias <= 7 ? 'acabando' : 'repor', valor: arred(comprarQtd * custo) });
+      });
+
+      // Peças paradas (por produto, com as variações que ainda têm estoque)
+      const comEstoque = p.variacoes.filter((v) => Number(v.estoque || 0) > 0);
+      if (!comEstoque.length) return;
+      const ultimaVenda = comEstoque.map((v) => ultimaVendaSku[v.sku]).concat(p.variacoes.map((v) => ultimaVendaSku[v.sku])).filter(Boolean).sort().pop() || null;
+      const chegada = comEstoque.map((v) => ultimaEntradaSku[v.sku]).filter(Boolean).sort().pop() || p.criadoEm || null;
+      // Conta a partir do que for mais recente: última venda ou chegada da mercadoria
+      const referencia = [ultimaVenda, chegada].filter(Boolean).sort().pop() || null;
+      const dias = diasDesde(referencia);
+      if (dias === null || dias < diasParado) return;
+      const pecas = comEstoque.reduce((s, v) => s + Number(v.estoque || 0), 0);
+      parados.push({ ...base, pecas, dias, ultimaVenda, chegada,
+        valorCusto: arred(pecas * custo), valorVenda: arred(pecas * Number(p.preco || 0)),
+        variacoes: comEstoque.map((v) => ({ sku: v.sku, tamanho: v.tamanho, cor: v.cor, estoque: Number(v.estoque || 0), ultimaVenda: ultimaVendaSku[v.sku] || null })) });
+    });
+
+    const ordemUrgencia = { esgotado: 0, acabando: 1, repor: 2 };
+    comprar.sort((a, b) => ordemUrgencia[a.urgencia] - ordemUrgencia[b.urgencia] || (a.duraDias ?? 0) - (b.duraDias ?? 0) || b.vendeu - a.vendeu);
+    parados.sort((a, b) => b.dias - a.dias || b.valorCusto - a.valorCusto);
+    return responder({
+      diasVenda, diasCobrir, diasParado, comprar, parados,
+      totais: {
+        pecasComprar: comprar.reduce((s, x) => s + x.comprar, 0),
+        investimento: arred(comprar.reduce((s, x) => s + x.valor, 0)),
+        esgotados: comprar.filter((x) => x.urgencia === 'esgotado').length,
+        pecasParadas: parados.reduce((s, x) => s + x.pecas, 0),
+        valorParado: arred(parados.reduce((s, x) => s + x.valorCusto, 0))
+      }
+    });
+  }
+
   function obterRelatorio({ dataInicio, dataFim }) {
     const vendas = db.vendas.filter((v) => vendaValida(v) && noPeriodo(v.data, dataInicio, dataFim));
 
@@ -2596,7 +2675,7 @@
     // Fornecedores
     listarFornecedores: crudFornecedores.listar, obterFornecedor: crudFornecedores.obter, salvarFornecedor: crudFornecedores.salvar, excluirFornecedor: crudFornecedores.excluir,
     // Indicadores e relatórios
-    obterResumoDashboard, obterVendasPorDia, obterRelatorio,
+    obterResumoDashboard, obterVendasPorDia, obterRelatorio, analisarEstoque,
     // Mock
     resetarDados
   };
