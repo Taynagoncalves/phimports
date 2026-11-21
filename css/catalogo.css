@@ -287,3 +287,5 @@ svg.cheio { fill: currentColor; stroke: none; }
   .beneficios span { font-size: 11px; }
   .beneficios svg { width: 19px; height: 19px; margin-bottom: 2px; }
 }
+
+.rodape-destaque { color: #fff !important; font-weight: 600; margin-top: 10px !important; letter-spacing: .04em; }

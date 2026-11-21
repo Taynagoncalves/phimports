@@ -58,12 +58,10 @@
     if (cat.logo) $('logo-topo').src = cat.logo;
     $('logo-topo').alt = cat.nome;
     $('hero-sobre').textContent = cat.nome;
-    if (cat.mensagem) { $('anuncio').textContent = cat.mensagem; $('anuncio').hidden = false; }
+    $('anuncio').textContent = cat.mensagem || (cat.entrega === false ? 'Pedidos pelo WhatsApp' : 'Enviamos para todo o Brasil');
+    $('anuncio').hidden = false;
     if (cat.entrega === false) $('beneficio-entrega').innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 10 12 4l8 6v10H4z"/><path d="M10 20v-6h4v6"/></svg><strong>Retire na loja</strong><span>Separamos para você</span>';
     if (cat.whatsapp) { $('whats-flutuante').href = linkWhats(`Olá! Vim pelo catálogo da ${cat.nome} e tenho uma dúvida.`); }
-    // Foto de abertura: a peça mais nova que tem foto
-    const capa = cat.produtos.find((p) => p.foto);
-    if (capa) { $('hero').classList.add('com-foto'); $('hero-foto').style.backgroundImage = `url("${foto(capa.foto, 1600)}")`; }
     const links = [];
     if (cat.whatsapp) links.push(`<a href="${linkWhats(`Olá! Vim pelo catálogo da ${cat.nome}.`)}" target="_blank" rel="noopener">${ICONE_WHATS}WhatsApp</a>`);
     if (cat.instagram) links.push(`<a href="https://instagram.com/${encodeURIComponent(cat.instagram)}" target="_blank" rel="noopener">${ICONE_INSTA}@${esc(cat.instagram)}</a>`);
@@ -77,7 +75,8 @@
           <h3>Como comprar</h3>
           <p>1. Escolha as peças e o tamanho</p>
           <p>2. Finalize a sacola pelo WhatsApp</p>
-          <p>3. A loja confirma e combina pagamento e ${cat.entrega === false ? 'retirada' : 'entrega'}</p>
+          <p>3. A loja confirma e combina pagamento e ${cat.entrega === false ? 'retirada' : 'envio'}</p>
+          ${cat.entrega === false ? '' : '<p class="rodape-destaque">Enviamos para todo o Brasil</p>'}
         </div>
         <div class="rodape-col">
           <h3>Fale com a gente</h3>
@@ -278,7 +277,7 @@
     const nome = $('f-nome').value.trim();
     const entrega = cat.entrega === false ? 'retirar' : document.querySelector('input[name=entrega]:checked').value;
     const endereco = $('f-endereco').value.trim();
-    if (entrega === 'entregar' && !endereco) { $('f-endereco').focus(); return aviso('Informe o endereço de entrega.'); }
+    if (entrega === 'entregar' && !endereco) { $('f-endereco').focus(); return aviso('Informe o endereço com CEP.'); }
     try { localStorage.setItem(CHAVE_CLIENTE, JSON.stringify({ nome, endereco })); } catch (e) { /* ignora */ }
     const linhas = sacola.map((i, n) => {
       const p = acharPeca(i.id); const preco = precoDe(p);
@@ -292,7 +291,7 @@
       '',
       `*Total: ${moeda(totalSacola())}*${sacola.some((i) => precoDe(acharPeca(i.id)) === null) ? ' + itens a consultar' : ''}`,
       nome ? `Nome: ${nome}` : '',
-      entrega === 'entregar' ? `Entrega: ${endereco}` : 'Vou retirar na loja',
+      entrega === 'entregar' ? `Enviar para: ${endereco}` : 'Vou retirar na loja',
       $('f-obs').value.trim() ? `Obs.: ${$('f-obs').value.trim()}` : '',
       '',
       'Pode confirmar a disponibilidade? 😊'
