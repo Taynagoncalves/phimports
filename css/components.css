@@ -1447,3 +1447,59 @@ select.pt-campo { width: auto; min-width: 180px; }
 .foto-extra.mais { display: grid; place-items: center; border-style: dashed; cursor: pointer; color: var(--cor-texto-3); }
 .foto-extra.mais:hover { border-color: var(--cor-texto-3); }
 .foto-extra.mais svg { width: 20px; height: 20px; }
+
+/* ==========================================================================
+   Mensalidade (visual limpo)
+   ========================================================================== */
+#mensalidade { display: flex; flex-direction: column; gap: var(--esp-4); max-width: 980px; }
+.m2-topo { display: flex; align-items: center; justify-content: space-between; gap: var(--esp-5); flex-wrap: wrap; padding: var(--esp-6); }
+.m2-topo-esq { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.m2-estado { display: inline-flex; align-items: center; gap: 6px; width: max-content; padding: 4px 10px; border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-semi); margin-bottom: 10px; background: var(--cor-sucesso-suave); color: var(--cor-sucesso); }
+.m2-estado svg { width: 14px; height: 14px; }
+.m2-topo.aberto .m2-estado, .m2-topo.informado .m2-estado { background: var(--cor-alerta-suave); color: var(--cor-alerta); }
+.m2-topo.atraso .m2-estado { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
+.m2-legenda { font-size: var(--fs-sm); color: var(--cor-texto-3); }
+.m2-valor { font-size: 2.25rem; font-weight: var(--fw-semi); letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.m2-sub { font-size: var(--fs-sm); color: var(--cor-texto-2); }
+.m2-pagar { display: grid; grid-template-columns: 1fr 340px; }
+@media (max-width: 860px) { .m2-pagar { grid-template-columns: 1fr; } }
+.m2-itens { padding: var(--esp-5) var(--esp-6); display: flex; flex-direction: column; }
+.m2-itens h2, .m2-plano h2, .m2-historico h2 { font-size: 11px; font-weight: var(--fw-semi); letter-spacing: .08em; text-transform: uppercase; color: var(--cor-texto-3); margin-bottom: 10px; }
+.m2-itens ul { list-style: none; margin: 0; padding: 0; flex: 1; }
+.m2-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--cor-borda); cursor: pointer; }
+.m2-item input { width: 18px; height: 18px; accent-color: var(--cor-destaque); flex-shrink: 0; }
+.m2-item-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.m2-item-info strong { font-size: var(--fs-sm); font-weight: var(--fw-medio); }
+.m2-item-info small { font-size: var(--fs-xs); color: var(--cor-texto-3); }
+.m2-item-valor { font-weight: var(--fw-semi); font-variant-numeric: tabular-nums; }
+.m2-item:not(.marcada) { opacity: .55; }
+.m2-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px; }
+.m2-total span { font-size: var(--fs-sm); color: var(--cor-texto-3); }
+.m2-total strong { font-size: var(--fs-lg); }
+.m2-pix { padding: var(--esp-5) var(--esp-6); background: var(--cor-fundo-2); border-left: 1px solid var(--cor-borda); border-radius: 0 var(--raio) var(--raio) 0; display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+@media (max-width: 860px) { .m2-pix { border-left: 0; border-top: 1px solid var(--cor-borda); border-radius: 0 0 var(--raio) var(--raio); } }
+.m2-qr { background: #fff; border-radius: 14px; padding: 12px; width: 200px; margin: 0 auto; border: 1px solid var(--cor-borda); }
+.m2-qr svg { width: 100%; height: auto; display: block; }
+.m2-pix-dica { font-size: var(--fs-xs); color: var(--cor-texto-3); text-align: center; }
+.m2-copia { display: flex; gap: 6px; }
+.m2-copia .input { flex: 1; min-width: 0; font-size: var(--fs-xs); }
+.m2-pix-vazio { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; color: var(--cor-texto-3); font-size: var(--fs-sm); padding: var(--esp-6) 0; margin: auto 0; }
+.m2-baixo { display: grid; grid-template-columns: 1fr 1fr; gap: var(--esp-4); }
+@media (max-width: 860px) { .m2-baixo { grid-template-columns: 1fr; } }
+.m2-plano, .m2-historico { padding: var(--esp-5) var(--esp-6); }
+.m2-plano-valor { font-size: 1.75rem; font-weight: var(--fw-semi); letter-spacing: -0.02em; }
+.m2-plano-valor small { font-size: var(--fs-sm); font-weight: 400; color: var(--cor-texto-3); margin-left: 2px; }
+.m2-dados { margin: 12px 0 0; display: grid; gap: 8px; }
+.m2-dados div { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); padding-top: 8px; border-top: 1px solid var(--cor-borda); }
+.m2-dados dt { color: var(--cor-texto-3); }
+.m2-dados dd { margin: 0; text-align: right; color: var(--cor-texto); }
+.m2-incluso { margin-top: 14px; font-size: var(--fs-xs); color: var(--cor-texto-3); }
+.m2-meses { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.m2-mes { padding: 3px 10px; border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-medio); background: var(--cor-superficie-2); color: var(--cor-texto-2); }
+.m2-mes.pago { background: var(--cor-sucesso-suave); color: var(--cor-sucesso); }
+.m2-mes.atrasado { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
+.m2-mes.informado, .m2-mes.aberto { background: var(--cor-alerta-suave); color: var(--cor-alerta); }
+.m2-lista { list-style: none; margin: 0; padding: 0; }
+.m2-lista li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--cor-borda); font-size: var(--fs-sm); }
+.m2-lista li span { display: flex; flex-direction: column; }
+.m2-lista small { font-size: var(--fs-xs); color: var(--cor-texto-3); }

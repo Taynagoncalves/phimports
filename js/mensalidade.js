@@ -85,112 +85,96 @@ App.aoIniciar(async () => {
       try { codigo = Pix.gerarCodigo({ chave: pix.chave, nome: pix.nome, cidade: pix.cidade, valor: totalMarcado, txid: `PH${ref}${String(m.lojaId).slice(-6)}`, descricao: marcadas.length === 1 ? marcadas[0].titulo : 'Mensalidade do sistema' }); } catch (e) { codigo = ''; }
     }
 
-    const resumo = pendencias.length ? `
-      <section class="mens-resumo ${temAtraso ? 'perigo' : 'alerta'}">
-        <span class="mens-resumo-icone"><i data-lucide="${temAtraso ? 'circle-alert' : 'clock'}"></i></span>
-        <div class="mens-resumo-texto">
-          <strong>${temAtraso ? 'Você tem pagamento em atraso' : `Você tem ${pendencias.length} pagamento${pendencias.length === 1 ? '' : 's'} em aberto`}</strong>
-          <span>${pendencias.map((p) => p.titulo).join(' · ')}</span>
+    // ---------- Topo: situação em um cartão só ----------
+    const diaV = String((assinatura && assinatura.diaVencimento) || 10).padStart(2, '0');
+    const estado = pendencias.length ? (temAtraso ? 'atraso' : 'aberto') : informados.length ? 'informado' : 'emdia';
+    const rotuloEstado = { atraso: 'Em atraso', aberto: 'A pagar', informado: 'Aguardando confirmação', emdia: 'Em dia' }[estado];
+    const iconeEstado = { atraso: 'circle-alert', aberto: 'clock', informado: 'hourglass', emdia: 'badge-check' }[estado];
+    const proximaData = primeiraFutura || (proximo ? `${proximo}-${diaV}` : null);
+    const proximoValor = primeiraFutura ? Data.valorDaMensalidade(assinatura, inicioCobranca) : (proximo ? Data.valorDaMensalidade(assinatura, proximo) : 0);
+    const topo = `
+      <section class="card m2-topo ${estado}">
+        <div class="m2-topo-esq">
+          <span class="m2-estado"><i data-lucide="${iconeEstado}"></i>${rotuloEstado}</span>
+          ${pendencias.length ? `
+            <span class="m2-legenda">Total em aberto</span>
+            <strong class="m2-valor">${moeda(totalPendente)}</strong>
+            <span class="m2-sub">${pendencias.map((p) => p.titulo).join(' · ')}</span>`
+          : informados.length ? `
+            <span class="m2-legenda">Pagamento informado</span>
+            <strong class="m2-valor">${moeda(informados.reduce((s, i) => s + i.valor, 0))}</strong>
+            <span class="m2-sub">O suporte vai conferir o Pix e confirmar em breve.</span>`
+          : `
+            <span class="m2-legenda">${primeiraFutura ? '1ª mensalidade' : 'Próxima mensalidade'}</span>
+            <strong class="m2-valor">${proximaData ? moeda(proximoValor) : '—'}</strong>
+            <span class="m2-sub">${proximaData ? `Vence em ${App.formatarData(proximaData)}` : 'Nenhum pagamento pendente.'}</span>`}
         </div>
-        <div class="mens-resumo-total"><span>Total</span><strong>${moeda(totalPendente)}</strong></div>
-        <a href="#pagar" class="btn btn-primario">Pagar agora</a>
-      </section>` : `
-      <section class="mens-resumo sucesso">
-        <span class="mens-resumo-icone"><i data-lucide="${informados.length ? 'hourglass' : 'badge-check'}"></i></span>
-        <div class="mens-resumo-texto">
-          <strong>${informados.length ? 'Pagamento informado — aguardando confirmação' : 'Tudo em dia!'}</strong>
-          <span>${informados.length ? 'O suporte vai conferir o Pix e confirmar em breve.' : (primeiraFutura ? `A 1ª mensalidade (${moeda(Data.valorDaMensalidade(assinatura, inicioCobranca))}) vence em ${App.formatarData(primeiraFutura)}.` : proximo ? `Próxima mensalidade: ${moeda(Data.valorDaMensalidade(assinatura, proximo))} em ${App.formatarData(`${proximo}-${String(assinatura.diaVencimento).padStart(2, '0')}`)}.` : 'Nenhum pagamento pendente.')}</span>
-        </div>
+        ${pendencias.length ? '<a href="#pagar" class="btn btn-primario btn-grande"><i data-lucide="qr-code"></i>Pagar com Pix</a>' : ''}
       </section>`;
 
-    const blocoPendencias = pendencias.length ? `
-      <section class="card" id="pagar">
-        <div class="card-cabecalho"><h2>O que pagar</h2><span class="texto-sm texto-3">Marque o que vai pagar agora</span></div>
-        <ul class="mens-pendencias">
-          ${pendencias.map((p) => `
-            <li>
-              <label class="mens-pendencia ${selecionados.has(p.id) ? 'marcada' : ''}">
-                <input type="checkbox" data-pendencia="${p.id}" ${selecionados.has(p.id) ? 'checked' : ''}>
-                <span class="mens-pendencia-info"><strong>${p.titulo}</strong><span class="${p.tom === 'perigo' ? 'valor-negativo' : 'texto-3'}">${p.detalhe}</span></span>
-                <span class="mens-pendencia-valor">${moeda(p.valor)}</span>
-              </label>
-            </li>`).join('')}
-        </ul>
-        <div class="mens-total-marcado"><span>Total a pagar</span><strong>${moeda(totalMarcado)}</strong></div>
-      </section>` : '';
-
-    const blocoPix = pendencias.length ? `
-      <section class="card card-corpo mens-pix">
-        ${totalMarcado <= 0 ? '<div class="vazio"><div class="vazio-icone"><i data-lucide="mouse-pointer-click"></i></div><h3>Marque o que vai pagar</h3><p>O Pix é gerado com o valor do que estiver marcado.</p></div>'
-        : codigo ? `
-          <div class="flex items-center justify-between gap-3"><h2 class="flex items-center gap-2"><i data-lucide="qr-code"></i>Pagar com Pix</h2><span class="mens-pix-valor">${moeda(totalMarcado)}</span></div>
-          <div class="pix-qr">${Pix.qrSvg(codigo, 6)}</div>
-          <ol class="mens-passos">
-            <li>Abra o app do seu banco e entre em <strong>Pix</strong>.</li>
-            <li>Escolha <strong>Ler QR Code</strong> e aponte para o código, ou <strong>Pix copia e cola</strong> e cole o código abaixo.</li>
-            <li>Confira o valor e o recebedor (<strong>${App.escapeHtml(pix.nome || '')}</strong>) e confirme.</li>
-          </ol>
-          <div class="flex gap-2">
-            <input class="input mono" id="pix-copia" readonly value="${App.escapeHtml(codigo)}" aria-label="Pix copia e cola" style="flex:1">
-            <button type="button" class="btn btn-secundario" id="btn-copiar"><i data-lucide="copy"></i><span>Copiar</span></button>
-          </div>
-          <button type="button" class="btn btn-primario btn-bloco btn-grande mt-4" id="btn-ja-paguei"><i data-lucide="check-check"></i>Já paguei ${moeda(totalMarcado)}</button>
-          <p class="texto-xs texto-3 texto-centro mt-2">Depois de pagar, clique em "Já paguei" para avisar o suporte.</p>`
-        : '<div class="alerta"><i data-lucide="triangle-alert"></i><span>A chave Pix do suporte ainda não foi configurada. Fale com o suporte para pagar.</span></div>'}
-      </section>` : '';
-
-    const linhaTempo = listaMeses.length ? `
-      <section class="card card-corpo">
-        <h2 class="mb-4">Últimos meses</h2>
-        <div class="mens-linha">
-          ${listaMeses.slice(-6).map((x) => `
-            <div class="mens-mes ${x.status}" title="${nomeMes(x.competencia)}: ${{ pago: 'paga', informado: 'pagamento informado', atrasado: 'atrasada', aberto: 'em aberto' }[x.status]}">
-              <span class="mens-mes-ponto"><i data-lucide="${{ pago: 'check', informado: 'hourglass', atrasado: 'x', aberto: 'clock' }[x.status]}"></i></span>
-              <strong>${nomeMes(x.competencia, true)}</strong>
-              <span>${{ pago: 'Paga', informado: 'Informada', atrasado: 'Atrasada', aberto: 'Em aberto' }[x.status]}</span>
-            </div>`).join('')}
+    // ---------- Pagar: o que pagar + Pix, num cartão só ----------
+    const blocoPagar = pendencias.length ? `
+      <section class="card m2-pagar" id="pagar">
+        <div class="m2-itens">
+          <h2>O que pagar</h2>
+          <ul>
+            ${pendencias.map((p) => `
+              <li>
+                <label class="m2-item ${selecionados.has(p.id) ? 'marcada' : ''}">
+                  <input type="checkbox" data-pendencia="${p.id}" ${selecionados.has(p.id) ? 'checked' : ''}>
+                  <span class="m2-item-info"><strong>${p.titulo}</strong><small class="${p.tom === 'perigo' ? 'valor-negativo' : ''}">${p.detalhe}</small></span>
+                  <span class="m2-item-valor">${moeda(p.valor)}</span>
+                </label>
+              </li>`).join('')}
+          </ul>
+          <div class="m2-total"><span>Total</span><strong>${moeda(totalMarcado)}</strong></div>
+        </div>
+        <div class="m2-pix">
+          ${totalMarcado <= 0 ? '<div class="m2-pix-vazio"><i data-lucide="mouse-pointer-click"></i><span>Marque o que vai pagar para gerar o Pix.</span></div>'
+          : codigo ? `
+            <div class="pix-qr m2-qr">${Pix.qrSvg(codigo, 6)}</div>
+            <p class="m2-pix-dica">Abra o app do banco → <strong>Pix</strong> → <strong>Ler QR Code</strong> ou <strong>Copia e cola</strong>. Recebedor: ${App.escapeHtml(pix.nome || '')}.</p>
+            <div class="m2-copia">
+              <input class="input mono" id="pix-copia" readonly value="${App.escapeHtml(codigo)}" aria-label="Pix copia e cola">
+              <button type="button" class="btn btn-secundario" id="btn-copiar"><i data-lucide="copy"></i><span>Copiar</span></button>
+            </div>
+            <button type="button" class="btn btn-primario btn-bloco btn-grande" id="btn-ja-paguei"><i data-lucide="check-check"></i>Já paguei ${moeda(totalMarcado)}</button>`
+          : '<div class="alerta"><i data-lucide="triangle-alert"></i><span>A chave Pix do suporte ainda não foi configurada. Fale com o suporte para pagar.</span></div>'}
         </div>
       </section>` : '';
 
+    // ---------- Plano + histórico ----------
     const plano = `
-      <section class="card card-corpo mens-plano">
-        <span class="texto-sm texto-3">Seu plano</span>
+      <section class="card m2-plano">
+        <h2>Seu plano</h2>
         ${cobrancaAtiva ? (() => {
           const fim = Data.fimDaPromocao(assinatura);
           const ref = mesAtual() < inicioCobranca ? inicioCobranca : mesAtual();
           const emPromo = fim && ref <= fim;
-          return `<div class="mensalidade-valor">${moeda(Data.valorDaMensalidade(assinatura, ref))}<small>/mês</small></div>
-          ${primeiraFutura ? `<div class="texto-sm texto-2">1ª mensalidade em <strong>${App.formatarData(primeiraFutura)}</strong></div>` : ''}
-          ${emPromo ? `<div class="mens-promo"><i data-lucide="tag"></i>Valor promocional até ${nomeMes(fim).toLowerCase()} · depois <strong>${moeda(assinatura.valor)}/mês</strong></div>` : ''}
-          <div class="texto-sm texto-2">Vence todo dia <strong>${assinatura.diaVencimento}</strong></div>`;
-        })() : '<div class="texto-sm texto-2 mt-2">Sem mensalidade ativa.</div>'}
-        ${implantacao.status !== 'sem' ? `<div class="texto-sm texto-2 mt-2">Implantação: <strong>${moeda(implantacao.valor)}</strong> · ${{ paga: '<span class="valor-positivo">paga</span>', informada: 'informada', pendente: 'pendente' }[implantacao.status]}</div>` : ''}
-        <ul class="mens-incluso">
-          <li><i data-lucide="check"></i>Sistema completo: caixa, estoque, vendas e relatórios</li>
-          <li><i data-lucide="check"></i>Dados guardados na nuvem, com backup</li>
-          <li><i data-lucide="check"></i>Atualizações e melhorias</li>
-          <li><i data-lucide="check"></i>Suporte</li>
-        </ul>
-        ${assinatura.observacao ? `<p class="texto-xs texto-3 mt-4">${App.escapeHtml(assinatura.observacao)}</p>` : ''}
+          return `<div class="m2-plano-valor">${moeda(Data.valorDaMensalidade(assinatura, ref))}<small>/mês</small></div>
+            <dl class="m2-dados">
+              <div><dt>Vencimento</dt><dd>Todo dia ${assinatura.diaVencimento}</dd></div>
+              ${emPromo ? `<div><dt>Promoção</dt><dd>Até ${nomeMes(fim).toLowerCase()} · depois ${moeda(assinatura.valor)}</dd></div>` : ''}
+              ${implantacao.status !== 'sem' ? `<div><dt>Implantação</dt><dd>${moeda(implantacao.valor)} · ${{ paga: 'paga', informada: 'informada', pendente: 'pendente' }[implantacao.status]}</dd></div>` : ''}
+            </dl>`;
+        })() : '<p class="texto-sm texto-3">Sem mensalidade ativa.</p>'}
+        <p class="m2-incluso">Inclui o sistema completo, dados na nuvem com backup, atualizações e suporte.</p>
+        ${assinatura.observacao ? `<p class="texto-xs texto-3">${App.escapeHtml(assinatura.observacao)}</p>` : ''}
       </section>`;
-
+    const rotuloMes = { pago: 'Paga', informado: 'Informada', atrasado: 'Atrasada', aberto: 'Em aberto' };
     const historicoHtml = `
-      <section class="card">
-        <div class="card-cabecalho"><h2>Histórico de pagamentos</h2><span class="texto-sm texto-3">${pagamentos.length} pagamento${pagamentos.length === 1 ? '' : 's'}</span></div>
-        ${pagamentos.length ? `<ul class="lista">${pagamentos.map((p) => `
-          <li class="lista-item">
-            <span class="stat-icone" style="width:32px;height:32px;background:var(--cor-sucesso-suave);color:var(--cor-sucesso)"><i data-lucide="check"></i></span>
-            <div class="info"><div class="titulo">${p.competencia === 'implantacao' ? 'Implantação do sistema' : nomeMes(p.competencia)}</div><div class="sub">Pago em ${App.formatarData(p.pagoEm)} · ${App.escapeHtml(p.forma === 'pix' ? 'Pix' : p.forma || '')}</div></div>
-            <span class="valor">${moeda(p.valor)}</span>
-          </li>`).join('')}</ul>`
-        : '<p class="card-corpo texto-sm texto-3">Nenhum pagamento registrado ainda.</p>'}
+      <section class="card m2-historico">
+        <h2>Pagamentos</h2>
+        ${listaMeses.length ? `<div class="m2-meses">${listaMeses.slice(-6).map((x) => `<span class="m2-mes ${x.status}" title="${nomeMes(x.competencia)}: ${rotuloMes[x.status].toLowerCase()}">${nomeMes(x.competencia, true)}</span>`).join('')}</div>` : ''}
+        ${pagamentos.length ? `<ul class="m2-lista">${[...pagamentos].sort((a, b) => String(b.pagoEm).localeCompare(String(a.pagoEm))).slice(0, 8).map((p) => `
+          <li><span>${p.competencia === 'implantacao' ? 'Implantação' : nomeMes(p.competencia)}<small>Pago em ${App.formatarData(p.pagoEm)}</small></span><strong>${moeda(p.valor)}</strong></li>`).join('')}</ul>`
+        : '<p class="texto-sm texto-3">Nenhum pagamento registrado ainda.</p>'}
       </section>`;
 
     el.innerHTML = `
-      ${resumo}
-      ${pendencias.length ? `<div class="mens-grade">${blocoPendencias}${blocoPix}</div>` : ''}
-      <div class="mens-grade mens-grade-2">${linhaTempo || ''}${plano}</div>
-      ${historicoHtml}`;
+      ${topo}
+      ${blocoPagar}
+      <div class="m2-baixo">${plano}${historicoHtml}</div>`;
 
     // Marcar/desmarcar pendências → recalcula o Pix
     el.querySelectorAll('[data-pendencia]').forEach((c) => c.addEventListener('change', () => {
