@@ -1436,3 +1436,14 @@ select.pt-campo { width: auto; min-width: 180px; }
 .pedido-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: var(--esp-3) var(--esp-5) var(--esp-4); }
 .pedido-espaco { flex: 1; }
 .pedido-cliente svg { display: inline-block; }
+
+/* Mais fotos (cadastro) */
+.fotos-extras-bloco { width: 100%; display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--cor-borda); }
+.fotos-extras { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.foto-extra { position: relative; aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; background: var(--cor-fundo-2); border: 1px solid var(--cor-borda); }
+.foto-extra img { width: 100%; height: 100%; object-fit: cover; }
+.foto-extra button { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, .6); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.foto-extra button svg { width: 12px; height: 12px; }
+.foto-extra.mais { display: grid; place-items: center; border-style: dashed; cursor: pointer; color: var(--cor-texto-3); }
+.foto-extra.mais:hover { border-color: var(--cor-texto-3); }
+.foto-extra.mais svg { width: 20px; height: 20px; }

@@ -18,6 +18,8 @@ App.aoIniciar(async () => {
   let foto = '';
   let envioFoto = null; // envio da foto em andamento (o salvar espera terminar)
   let fotosCores = {};  // cor → foto daquela cor (opcional)
+  let fotosExtras = []; // mais fotos da peça (até 5)
+  const enviosExtras = new Set();
   const enviosCores = new Map(); // cor → envio em andamento
   let produtoOriginal = null;
 
@@ -128,6 +130,30 @@ App.aoIniciar(async () => {
       .finally(() => { envioFoto = null; });
   });
   btnRemover.addEventListener('click', () => { inputFoto.value = ''; mostrarFoto(''); });
+
+  /* ---------- Mais fotos (galeria) ---------- */
+  function desenharFotosExtras() {
+    const el = document.getElementById('fotos-extras');
+    el.innerHTML = fotosExtras.map((url, i) => `
+      <div class="foto-extra"><img src="${App.escapeHtml(url)}" alt="Foto ${i + 2}"><button type="button" data-tirar-extra="${i}" aria-label="Tirar foto ${i + 2}">${App.icone('x')}</button></div>`).join('')
+      + (fotosExtras.length < 5 ? `<label class="foto-extra mais" title="Adicionar foto">${App.icone('plus')}<input type="file" accept="image/*" id="nova-foto-extra" multiple hidden></label>` : '');
+    el.querySelectorAll('[data-tirar-extra]').forEach((b) => b.addEventListener('click', () => { fotosExtras.splice(Number(b.dataset.tirarExtra), 1); desenharFotosExtras(); }));
+    const inp = document.getElementById('nova-foto-extra');
+    if (inp) inp.addEventListener('change', () => {
+      [...inp.files].filter((a) => a.type.startsWith('image/')).slice(0, 5 - fotosExtras.length).forEach((arquivo) => {
+        const pos = fotosExtras.length;
+        fotosExtras.push('');
+        let enviada = false;
+        App.comprimirImagem(arquivo, 500).then((previa) => { if (!enviada) { fotosExtras[pos] = previa; desenharFotosExtras(); } }).catch(() => {});
+        const envio = App.enviarImagem(arquivo, { maximo: 1400, subpasta: 'produtos' })
+          .then((url) => { enviada = true; fotosExtras[pos] = url; desenharFotosExtras(); })
+          .catch((e) => { App.toast(e.message, 'erro', 7000); fotosExtras.splice(pos, 1); desenharFotosExtras(); throw e; })
+          .finally(() => enviosExtras.delete(envio));
+        enviosExtras.add(envio);
+      });
+      desenharFotosExtras();
+    });
+  }
 
   /* ---------- Foto de cada cor (opcional) ---------- */
   function desenharFotosCores() {
@@ -331,6 +357,7 @@ App.aoIniciar(async () => {
       form.estoqueMinimo.value = p.estoqueMinimo ?? 5;
       mostrarFoto(p.foto);
       fotosCores = { ...(p.fotosCores || {}) };
+      fotosExtras = [...(p.fotosExtras || [])];
       variacoes = p.variacoes.map((v) => ({ ...v }));
       variacoes.forEach((v) => { selecionados.tamanhos.add(v.tamanho); selecionados.cores.add(v.cor); });
     } catch (e) {
@@ -341,6 +368,7 @@ App.aoIniciar(async () => {
   desenharChips();
   if (variacoes.length) desenharGrade(); else gerarGrade();
   desenharFotosCores();
+  desenharFotosExtras();
   atualizarMargem();
   atualizarNcm();
 
@@ -363,6 +391,10 @@ App.aoIniciar(async () => {
     if (envioFoto) {
       App.toast('Terminando de enviar a foto…');
       try { await envioFoto; } catch (er) { return; }
+    }
+    if (enviosExtras.size) {
+      App.toast('Terminando de enviar as fotos…');
+      try { await Promise.all([...enviosExtras]); } catch (er) { return; }
     }
     if (enviosCores.size) {
       App.toast('Terminando de enviar as fotos das cores…');
@@ -397,6 +429,7 @@ App.aoIniciar(async () => {
       preco: App.lerNumero(dados.preco),
       estoqueMinimo: parseInt(dados.estoqueMinimo, 10) || 0,
       foto,
+      fotosExtras: fotosExtras.filter(Boolean).slice(0, 5),
       fotosCores: Object.fromEntries(Object.entries(fotosCores).filter(([cor, url]) => url && variacoes.some((v) => v.cor === cor))),
       recolorFoto: document.getElementById('recolor-foto').checked,
       variacoes

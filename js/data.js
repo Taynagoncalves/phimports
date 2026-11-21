@@ -2796,6 +2796,7 @@
       .map((p) => ({
         id: String(p.id), nome: p.nome || '', categoria: p.categoria || '', marca: p.marca || '',
         foto: fotoPublica(p.foto) || Object.values(p.fotosCores || {}).map(fotoPublica).find(Boolean) || '',
+        fotosExtras: (p.fotosExtras || []).map(fotoPublica).filter(Boolean).slice(0, 5),
         fotosCores: Object.fromEntries(Object.entries(p.fotosCores || {}).map(([cor, url]) => [cor, fotoPublica(url)]).filter(([, url]) => url)),
         recolor: p.recolorFoto !== false,
         preco: precos ? Number(p.preco || 0) : null,

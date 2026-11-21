@@ -374,6 +374,8 @@
     const selo = $('p-cor-ilustrativa');
     if (!img) return;
     // A cor tem foto própria: mostra a foto real (não precisa pintar)
+    const trilhoG = $('galeria-trilho');
+    if (trilhoG && trilhoG.scrollLeft > 0) trilhoG.scrollTo({ left: 0, behavior: 'smooth' });
     const fotoDaCor = p.fotosCores && escolha.c && p.fotosCores[escolha.c];
     if (fotoDaCor) { pedidoFoto++; img.src = foto(fotoDaCor, 1100); selo.hidden = true; $('p-foto').classList.remove('pintando'); return; }
     if (p.recolor === false) { img.src = foto(p.foto, 1100); selo.hidden = true; return; }
@@ -399,6 +401,68 @@
     }
   }
 
+  /* ---------- Galeria de fotos da peça (deslizar) + zoom ---------- */
+  function galeriaHtml(p) {
+    const fotos = [p.foto, ...(p.fotosExtras || [])].filter(Boolean);
+    return `<div class="galeria-trilho" id="galeria-trilho">${fotos.map((f, i) => `<figure class="galeria-slide"><img src="${esc(foto(f, 1100))}" alt="${esc(p.nome)} — foto ${i + 1}" ${i ? 'loading="lazy"' : ''}></figure>`).join('')}</div>
+      <span class="cor-ilustrativa" id="p-cor-ilustrativa" hidden>Cor ilustrativa</span>
+      ${fotos.length > 1 ? `
+        <button type="button" class="galeria-seta ant" data-galeria="-1" aria-label="Foto anterior">‹</button>
+        <button type="button" class="galeria-seta prox" data-galeria="1" aria-label="Próxima foto">›</button>
+        <div class="galeria-pontos" id="galeria-pontos">${fotos.map((_, i) => `<span class="${i ? '' : 'ativo'}"></span>`).join('')}</div>` : ''}
+      <span class="galeria-lupa" aria-hidden="true">⤢</span>`;
+  }
+  function ligarGaleria() {
+    const trilho = $('galeria-trilho');
+    const pontos = $('galeria-pontos');
+    const atual = () => Math.round(trilho.scrollLeft / trilho.clientWidth);
+    trilho.addEventListener('scroll', () => {
+      if (!pontos) return;
+      const i = atual();
+      pontos.querySelectorAll('span').forEach((s, k) => s.classList.toggle('ativo', k === i));
+    }, { passive: true });
+    $('p-foto').querySelectorAll('[data-galeria]').forEach((b) => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      trilho.scrollTo({ left: (atual() + Number(b.dataset.galeria)) * trilho.clientWidth, behavior: 'smooth' });
+    }));
+    trilho.addEventListener('click', (e) => { const img = e.target.closest('img'); if (img) abrirZoom(img.src); });
+  }
+  function abrirZoom(src) {
+    const area = $('zoom-area');
+    area.classList.remove('ampliada');
+    $('zoom-img').src = src.startsWith('data:') ? src : src.replace(/,w_\d+\//, ',w_1800/');
+    $('zoom').hidden = false;
+    history.pushState({ camada: 'zoom' }, '');
+  }
+  let ignorarVoltar = false;   // o "voltar" disparado pelo próprio zoom não fecha a peça
+  function fecharZoom(voltar = true) {
+    if ($('zoom').hidden) return false;
+    $('zoom').hidden = true;
+    if (voltar && history.state && history.state.camada === 'zoom') { ignorarVoltar = true; history.back(); }
+    return true;
+  }
+  // Toque duplo (ou clique) aproxima no ponto tocado; arrastar/rolar para passear
+  (() => {
+    const area = $('zoom-area');
+    let ultimoToque = 0;
+    const alternar = (x, y) => {
+      const r = area.getBoundingClientRect();
+      const fx = (x - r.left + area.scrollLeft) / area.scrollWidth, fy = (y - r.top + area.scrollTop) / area.scrollHeight;
+      area.classList.toggle('ampliada');
+      if (area.classList.contains('ampliada')) {
+        area.scrollLeft = fx * area.scrollWidth - r.width / 2;
+        area.scrollTop = fy * area.scrollHeight - r.height / 2;
+      }
+    };
+    area.addEventListener('click', (e) => { if (window.matchMedia('(hover: hover)').matches) alternar(e.clientX, e.clientY); });
+    area.addEventListener('touchend', (e) => {
+      const agora = Date.now();
+      if (agora - ultimoToque < 300 && e.changedTouches[0]) { e.preventDefault(); alternar(e.changedTouches[0].clientX, e.changedTouches[0].clientY); }
+      ultimoToque = agora;
+    });
+    $('zoom-fechar').addEventListener('click', () => fecharZoom());
+  })();
+
   /* ---------- Peça (escolher cor, tamanho e quantidade) ---------- */
   function abrirPeca(id) {
     aberta = acharPeca(id);
@@ -413,7 +477,8 @@
     $('p-avise').hidden = !fora || !cat.whatsapp;
     if (fora && cat.whatsapp) $('p-avise').href = linkWhats(`Olá! Vi no catálogo a peça *${p.nome}*, que está esgotada. Vai chegar de novo? Pode me avisar? 😊`);
     $('p-foto').classList.toggle('vazia', !p.foto);
-    $('p-foto').innerHTML = p.foto ? `<img src="${esc(foto(p.foto, 1100))}" alt="${esc(p.nome)}"><span class="cor-ilustrativa" id="p-cor-ilustrativa" hidden>Cor ilustrativa</span>` : ICONE_CABIDE;
+    $('p-foto').innerHTML = p.foto ? galeriaHtml(p) : ICONE_CABIDE;
+    if (p.foto) ligarGaleria();
     pedidoFoto++;
     if (p.foto && p.recolor !== false && coresDe(p).filter(([, h]) => h).length > 1) Recolor.preparar(foto(p.foto, 900)).catch(() => {});
     $('p-cat').textContent = [p.categoria, p.marca].filter(Boolean).join(' · ');
@@ -627,8 +692,11 @@
     if (voltar && history.state && history.state.camada) history.back();
   }
   document.querySelectorAll('[data-fechar]').forEach((b) => b.addEventListener('click', () => fecharCamadas()));
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharCamadas(); });
-  window.addEventListener('popstate', () => fecharCamadas(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !fecharZoom()) fecharCamadas(); });
+  window.addEventListener('popstate', () => {
+    if (ignorarVoltar) { ignorarVoltar = false; return; }
+    if (!fecharZoom(false)) fecharCamadas(false);
+  });
   $('btn-sacola').addEventListener('click', abrirSacola);
   $('barra-sacola').addEventListener('click', abrirSacola);
   $('btn-busca').addEventListener('click', () => { const b = $('topo-busca'); b.hidden = !b.hidden; if (!b.hidden) $('q').focus(); });
