@@ -695,7 +695,6 @@
           <div class="nome">${escapeHtml(nomeDoUsuario(usuario, loja))}</div>
           <div class="perfil">${usuario.perfil === 'dono' ? 'Dono(a)' : 'Vendedor(a)'}</div>
         </div>
-        <button type="button" class="btn-icone" data-instalar-app hidden aria-label="Instalar o app no computador" title="Instalar o app">${icone('download')}</button>
         <button type="button" class="btn-icone btn-senha" id="btn-trocar-senha" aria-label="Trocar minha senha" title="Trocar minha senha">${icone('key-round')}</button>
         <button type="button" class="btn-icone btn-sair" id="btn-sair" aria-label="Sair do sistema" title="Sair">${icone('log-out')}</button>
       </div>`;
@@ -709,6 +708,7 @@
         <input id="busca-global" name="busca" class="input" type="search" placeholder="Buscar produto, SKU ou código" autocomplete="off">
         <span class="atalho" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
       </form>
+      <button type="button" class="btn btn-secundario btn-sm btn-instalar" data-instalar-app hidden title="Instalar o sistema como aplicativo">${icone('download')}<span>Instalar app</span></button>
       <button type="button" class="btn-icone btn-tema" id="btn-tema" aria-label="Alternar tema claro/escuro" title="Tema claro/escuro">
         <span class="icone-claro">${icone('moon')}</span><span class="icone-escuro">${icone('sun')}</span>
       </button>
