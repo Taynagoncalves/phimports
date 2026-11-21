@@ -1351,3 +1351,29 @@ select.pt-campo { width: auto; min-width: 180px; }
 .carrinho, .caixa-status, .pdv-qtd, .ultimo-item, .qtd { box-shadow: none; }
 @media (min-width: 1200px) { .carrinho { box-shadow: none !important; } }
 .visor-total { background: var(--cor-fundo-2); border-color: var(--cor-borda); }
+
+/* ---------- Configurações → Sistema (lista limpa) ---------- */
+.cfg-lista { display: flex; flex-direction: column; gap: var(--esp-4); max-width: 760px; }
+.cfg-bloco { padding: var(--esp-2) var(--esp-6) var(--esp-4); }
+.cfg-bloco > h2 { font-size: 11px; font-weight: var(--fw-semi); letter-spacing: .08em; text-transform: uppercase; color: var(--cor-texto-3); padding: var(--esp-4) 0 var(--esp-2); }
+.cfg-linha { display: flex; align-items: center; justify-content: space-between; gap: var(--esp-4); padding: 14px 0; border-top: 1px solid var(--cor-borda); cursor: pointer; text-decoration: none; color: inherit; }
+.cfg-bloco > h2 + .cfg-linha { border-top: 0; }
+.cfg-linha > span:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cfg-linha strong { font-size: var(--fs-sm); font-weight: var(--fw-medio); color: var(--cor-texto); }
+.cfg-linha small { font-size: var(--fs-xs); color: var(--cor-texto-3); }
+.cfg-linha .interruptor { flex-shrink: 0; }
+.cfg-link svg { width: 18px; height: 18px; color: var(--cor-texto-3); flex-shrink: 0; transition: transform var(--transicao); }
+.cfg-link:hover svg { transform: translateX(2px); color: var(--cor-texto); }
+.cfg-campos { display: grid; grid-template-columns: 1fr 1fr; gap: var(--esp-3); padding: 14px 0; border-top: 1px solid var(--cor-borda); }
+@media (max-width: 640px) { .cfg-campos { grid-template-columns: 1fr; } }
+.cfg-link-catalogo { display: flex; align-items: center; justify-content: space-between; gap: var(--esp-3); padding: 10px 12px; border-radius: var(--raio-sm); background: var(--cor-fundo-2); font-size: var(--fs-sm); color: var(--cor-texto); }
+.cfg-link-catalogo .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cfg-acoes-link { display: flex; gap: 2px; flex-shrink: 0; }
+.cfg-rodape { display: flex; justify-content: flex-end; padding-top: var(--esp-4); }
+.cfg-detalhes { border-top: 1px solid var(--cor-borda); padding-top: 12px; }
+.cfg-detalhes summary { cursor: pointer; font-size: var(--fs-xs); color: var(--cor-texto-3); list-style: none; }
+.cfg-detalhes summary::-webkit-details-marker { display: none; }
+.cfg-detalhes summary::after { content: ' +'; }
+.cfg-detalhes[open] summary::after { content: ' −'; }
+.cfg-detalhes .lista-passos { margin-top: 10px; }
+.btn-instalar-cfg[hidden], .cfg-linha [data-instalar-app][hidden] { display: none !important; }

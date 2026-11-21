@@ -661,7 +661,7 @@ App.aoIniciar(async () => {
   }
 
   // App instalado? Mostra o aviso no lugar das instruções
-  if (App.appInstalado) { document.getElementById('app-ja').classList.remove('oculto'); document.getElementById('app-passos').classList.add('oculto'); }
+  if (App.appInstalado) { document.getElementById('app-ja').textContent = '✓ Você já está usando o app instalado.'; document.getElementById('app-passos').hidden = true; }
 
   /* ==================================================================
      SISTEMA
@@ -669,10 +669,8 @@ App.aoIniciar(async () => {
   // Vendas e recibo: impressão automática e emissão de nota fiscal
   {
     const lojaAtual = await Data.obterLoja();
-    const chkAuto = document.getElementById('cfg-recibo-auto');
     const chkNota = document.getElementById('cfg-emitir-nota');
     const ajuda = document.getElementById('cfg-nota-ajuda');
-    chkAuto.checked = !!lojaAtual.imprimirReciboAuto;
     const chkCaixa = document.getElementById('cfg-controlar-caixa');
     chkCaixa.checked = !!lojaAtual.controlarCaixa;
     chkCaixa.addEventListener('change', async () => {
@@ -685,16 +683,10 @@ App.aoIniciar(async () => {
     chkNota.checked = !!lojaAtual.emitirNota;
     const textoAjuda = () => {
       ajuda.textContent = chkNota.checked
-        ? 'Nota fiscal ligada: preencha a aba "Dados fiscais" (precisa de CNPJ e inscrição estadual).'
-        : 'Sem nota fiscal: o menu "Notas fiscais", o botão "Emitir nota" e os avisos de NCM ficam escondidos. Ligue quando a loja tiver CNPJ.';
+        ? 'Ligada: preencha a aba "Dados fiscais" (CNPJ e inscrição estadual).'
+        : 'Desligada: só recibo. Ligue quando a loja tiver CNPJ.';
     };
     textoAjuda();
-    chkAuto.addEventListener('change', async () => {
-      try {
-        await Data.salvarLoja({ imprimirReciboAuto: chkAuto.checked });
-        App.toast(chkAuto.checked ? 'O recibo vai abrir para impressão ao finalizar cada venda.' : 'Impressão automática do recibo desligada.');
-      } catch (e) { App.toast(e.message, 'erro'); chkAuto.checked = !chkAuto.checked; }
-    });
     chkNota.addEventListener('change', async () => {
       try {
         await Data.salvarLoja({ emitirNota: chkNota.checked });
