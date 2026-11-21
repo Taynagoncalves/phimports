@@ -1005,7 +1005,7 @@
       ${nota && nota.status === 'pendente' ? '<div class="c-centro c-negrito">EMITIDA EM CONTINGÊNCIA<br>Pendente de autorização</div>' : ''}
       ${homologacao ? '<div class="c-sep"></div><div class="c-centro c-negrito">EMITIDA EM AMBIENTE DE HOMOLOGAÇÃO<br>SEM VALOR FISCAL</div>' : ''}
       <div class="c-sep"></div>
-      <div class="c-linha c-negrito"><span>DESCRIÇÃO</span><span>VL TOTAL</span></div>
+      <div class="c-linha c-negrito"><span>${nota ? 'DESCRIÇÃO' : 'PRODUTOS'}</span><span>VL TOTAL</span></div>
       ${venda.itens.map((it, i) => `
         <div class="c-item">
           ${op.codigo || nota ? `<div>${String(i + 1).padStart(3, '0')} ${e(it.sku)}</div>` : ''}
