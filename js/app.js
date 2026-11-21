@@ -64,6 +64,7 @@
       { id: 'financeiro', texto: 'Financeiro', icone: 'landmark', href: 'financeiro.html' },
       { id: 'relatorios', texto: 'Relatórios', icone: 'trending-up', href: 'relatorios.html' },
       { id: 'mensalidade', texto: 'Mensalidade', icone: 'badge-dollar-sign', href: 'mensalidade.html' },
+      { id: 'impressao', texto: 'Impressão', icone: 'printer', href: 'impressao.html' },
       { id: 'configuracoes', texto: 'Configurações', icone: 'settings', href: 'configuracoes.html' }
     ] }
   ];
@@ -888,7 +889,49 @@
     return raiz + 'img/logo-phimports.png';
   }
 
+  /* ---------- Opções de impressão (tela "Impressão") ---------- */
+  const IMPRESSAO_PADRAO = {
+    largura: 80, fonte: 'normal',
+    logo: true, endereco: true, telefone: true, instagram: true, site: true,
+    codigo: true, cliente: true, vendedor: true, economia: true, pontos: true,
+    mensagem: true, qrInstagram: true, textoQr: 'Nos siga no Instagram'
+  };
+  const opcoesImpressao = (loja) => ({ ...IMPRESSAO_PADRAO, ...((loja && loja.impressao) || {}) });
+  const usuarioInstagram = (loja) => String((loja && loja.instagram) || '').trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/[/?#].*$/, '');
+  // Biblioteca do QR Code (a mesma do Pix): carrega em segundo plano em todas as telas
+  if (!window.qrcode && !document.querySelector('script[data-qr]')) {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+    sc.async = true; sc.dataset.qr = '1';
+    document.head.appendChild(sc);
+  }
+  function qrCodeSvg(texto) {
+    if (!window.qrcode) return '';
+    const qr = window.qrcode(0, 'M');
+    qr.addData(texto);
+    qr.make();
+    return qr.createSvgTag({ cellSize: 4, margin: 1, scalable: true });
+  }
+  /** Bloco "Nos siga no Instagram" com o QR Code do perfil */
+  function blocoQrInstagram(loja, op) {
+    const user = usuarioInstagram(loja);
+    if (!op.qrInstagram || !user) return '';
+    const svg = qrCodeSvg(`https://instagram.com/${user}`);
+    if (!svg) return '';
+    return `<div class="c-sep"></div>
+      <div class="c-centro c-negrito">${escapeHtml(op.textoQr || 'Nos siga no Instagram')}</div>
+      <div class="c-qr">${svg}</div>
+      <div class="c-centro">@${escapeHtml(user)}</div>`;
+  }
+  /** Largura e letra do papel */
+  function estiloPapel(op) {
+    const largura = Number(op.largura) === 58 ? 48 : 72;          // área impressa de cada bobina (mm)
+    const fonte = { pequena: 11, normal: 12, grande: 13.5 }[op.fonte] || 12;
+    return `max-width:${largura}mm;font-size:${fonte}px`;
+  }
+
   function htmlCupom({ loja, fiscal = null, venda, nota = null }) {
+    const op = opcoesImpressao(loja);
     const m = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const e = escapeHtml;
     const qtdTotal = venda.itens.reduce((s, i) => s + i.qtd, 0);
@@ -916,17 +959,17 @@
       return `<div class="c-linha"><span>${e(nome)}${e(extra)}</span><span>${m(valor)}</span></div>`;
     }).join('');
 
-    return `<div class="cupom">
+    return `<div class="cupom" style="${estiloPapel(op)}">
       ${nota && nota.status === 'cancelada' ? '<div class="c-carimbo">CANCELADA</div>' : ''}
-      <div class="c-logo"><img src="${e(logoDoRecibo(loja))}" alt="${e(loja.nome)}"></div>
+      ${op.logo ? `<div class="c-logo"><img src="${e(logoDoRecibo(loja))}" alt="${e(loja.nome)}"></div>` : ''}
       <div class="c-centro c-negrito" style="font-size:15px;letter-spacing:.02em">${e(loja.nome).toUpperCase()}</div>
       ${loja.razaoSocial && (nota || loja.emitirNota) ? `<div class="c-centro">${e(loja.razaoSocial)}</div>` : ''}
       ${loja.cnpj && (nota || loja.emitirNota) ? `<div class="c-centro">CNPJ: ${e(loja.cnpj)} ${loja.inscricaoEstadual ? 'IE: ' + e(loja.inscricaoEstadual) : ''}</div>` : ''}
       ${(nota || loja.emitirNota) && fiscal && fiscal.inscricaoMunicipal ? `<div class="c-centro">IM: ${e(fiscal.inscricaoMunicipal)}</div>` : ''}
-      ${enderecoHtml ? `<div class="c-centro">${enderecoHtml}</div>` : ""}
-      ${loja.telefone ? `<div class="c-centro">Tel./WhatsApp: ${e(loja.telefone)}</div>` : ''}
-      ${loja.instagram ? `<div class="c-centro">Instagram: ${e(String(loja.instagram).startsWith('@') ? loja.instagram : '@' + loja.instagram)}</div>` : ''}
-      ${loja.site ? `<div class="c-centro">${e(loja.site)}</div>` : ''}
+      ${enderecoHtml && (op.endereco || nota) ? `<div class="c-centro">${enderecoHtml}</div>` : ""}
+      ${loja.telefone && op.telefone ? `<div class="c-centro">Tel./WhatsApp: ${e(loja.telefone)}</div>` : ''}
+      ${usuarioInstagram(loja) && op.instagram ? `<div class="c-centro">Instagram: @${e(usuarioInstagram(loja))}</div>` : ''}
+      ${loja.site && op.site ? `<div class="c-centro">${e(loja.site)}</div>` : ''}
       <div class="c-sep"></div>
       ${nota
         ? '<div class="c-centro c-negrito">DANFE NFC-e — Documento Auxiliar da Nota Fiscal de Consumidor Eletrônica</div>'
@@ -937,8 +980,8 @@
       <div class="c-linha c-negrito"><span>DESCRIÇÃO</span><span>VL TOTAL</span></div>
       ${venda.itens.map((it, i) => `
         <div class="c-item">
-          <div>${String(i + 1).padStart(3, '0')} ${e(it.sku)}</div>
-          <div>${e(it.nome)} ${e(it.tamanho)}/${e(it.cor)}</div>
+          ${op.codigo || nota ? `<div>${String(i + 1).padStart(3, '0')} ${e(it.sku)}</div>` : ''}
+          <div>${op.codigo || nota ? '' : `${String(i + 1).padStart(2, '0')} `}${e(it.nome)} ${e(it.tamanho)}/${e(it.cor)}</div>
           <div class="c-linha"><span>${it.qtd} UN x ${m(it.preco)}</span><span>${m(it.qtd * it.preco)}</span></div>
         </div>`).join('')}
       <div class="c-sep"></div>
@@ -950,8 +993,8 @@
       <div class="c-linha c-negrito mt-2"><span>FORMA DE PAGAMENTO</span><span>VALOR PAGO</span></div>
       ${linhaPag}
       ${venda.pagamento.troco ? `<div class="c-linha"><span>Troco R$</span><span>${m(venda.pagamento.troco)}</span></div>` : ''}
-      ${!nota && venda.subtotal - venda.total > 0.004 ? `<div class="c-economia">Você economizou R$ ${m(venda.subtotal - venda.total)}</div>` : ''}
-      ${venda.pontosSaldo !== null && venda.pontosSaldo !== undefined ? `<div class="c-pontos"><div class="c-negrito">★ Programa de pontos</div>${venda.pontosUsados ? `<div>Usou ${venda.pontosUsados} pontos nesta compra</div>` : ''}<div>Ganhou ${venda.pontosGanhos} pontos nesta compra${venda.pontos && venda.pontos.mult > 1 ? ` (${venda.pontos.mult}× pontos!)` : ''}</div><div class="c-negrito">Seu saldo: ${venda.pontosSaldo} pontos (R$ ${m(venda.pontosValorSaldo)})</div></div>` : ''}
+      ${!nota && op.economia && venda.subtotal - venda.total > 0.004 ? `<div class="c-economia">Você economizou R$ ${m(venda.subtotal - venda.total)}</div>` : ''}
+      ${op.pontos && venda.pontosSaldo !== null && venda.pontosSaldo !== undefined ? `<div class="c-pontos"><div class="c-negrito">★ Programa de pontos</div>${venda.pontosUsados ? `<div>Usou ${venda.pontosUsados} pontos nesta compra</div>` : ''}<div>Ganhou ${venda.pontosGanhos} pontos nesta compra${venda.pontos && venda.pontos.mult > 1 ? ` (${venda.pontos.mult}× pontos!)` : ''}</div><div class="c-negrito">Seu saldo: ${venda.pontosSaldo} pontos (R$ ${m(venda.pontosValorSaldo)})</div></div>` : ''}
       <div class="c-sep"></div>
       ${nota ? `
         <div class="c-centro c-negrito">Consulte pela Chave de Acesso em</div>
@@ -969,10 +1012,10 @@
         ${trib.informacoesComplementares ? `<div class="c-sep"></div><div class="c-centro">${e(trib.informacoesComplementares)}</div>` : ''}
       ` : `
         <div class="c-centro">Venda #${venda.numero} · ${formatarDataHora(venda.data)}</div>
-        <div class="c-centro">Cliente: ${e(venda.clienteNome || 'Consumidor final')}</div>
+        ${op.cliente ? `<div class="c-centro">Cliente: ${e(venda.clienteNome || 'Consumidor final')}</div>
         ${venda.clienteDocumento ? `<div class="c-centro">CPF/CNPJ: ${e(venda.clienteDocumento)}</div>` : ''}
-        ${venda.clienteTelefone ? `<div class="c-centro">Telefone: ${e(venda.clienteTelefone)}</div>` : ''}
-        <div class="c-centro">Vendedor(a): ${e(/^admin$/i.test(String(venda.vendedorNome || '').trim()) ? loja.nome : (venda.vendedorNome || '—'))}</div>
+        ${venda.clienteTelefone ? `<div class="c-centro">Telefone: ${e(venda.clienteTelefone)}</div>` : ''}` : ''}
+        ${op.vendedor ? `<div class="c-centro">Vendedor(a): ${e(/^admin$/i.test(String(venda.vendedorNome || '').trim()) ? loja.nome : (venda.vendedorNome || '—'))}</div>` : ''}
         ${venda.parcelasCrediario && venda.parcelasCrediario.length ? `
           <div class="c-sep"></div>
           <div class="c-centro c-negrito">CREDIÁRIO — PARCELAS</div>
@@ -980,8 +1023,9 @@
           <div class="c-centro" style="margin-top:16px">_______________________________</div>
           <div class="c-centro">Assinatura do cliente</div>` : ''}
         <div class="c-sep"></div>
-        <div class="c-centro c-mensagem">${e(loja.mensagemRecibo || 'Trocas em até 30 dias com este recibo.')}</div>
+        ${op.mensagem ? `<div class="c-centro c-mensagem">${e(loja.mensagemRecibo || 'Trocas em até 30 dias com este recibo.')}</div>` : ''}
         <div class="c-centro c-negrito">Obrigado pela preferência!</div>
+        ${blocoQrInstagram(loja, op)}
       `}
     </div>`;
   }
@@ -995,12 +1039,13 @@
    * Cupom do vale-troca (não fiscal) com código e saldo.
    * @param {{credito, venda?}} p
    */
-  async function gerarVale({ credito, venda = null }) {
-    const loja = await Data.obterLoja();
+  async function gerarVale({ credito, venda = null, loja: lojaDada = null }) {
+    const loja = lojaDada || await Data.obterLoja();
     const e = escapeHtml;
     const m = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return `<div class="cupom">
-      <div class="c-logo"><img src="${e(logoDoRecibo(loja))}" alt="${e(loja.nome)}"></div>
+    const op = opcoesImpressao(loja);
+    return `<div class="cupom" style="${estiloPapel(op)}">
+      ${op.logo ? `<div class="c-logo"><img src="${e(logoDoRecibo(loja))}" alt="${e(loja.nome)}"></div>` : ''}
       <div class="c-centro c-negrito" style="font-size:15px">${e(loja.nome).toUpperCase()}</div>
       <div class="c-centro">${e(loja.telefone || '')}</div>
       <div class="c-sep"></div>
@@ -1017,6 +1062,7 @@
       <div class="c-linha"><span>Emitido em</span><span>${formatarData(credito.criadoEm)}</span></div>
       <div class="c-sep"></div>
       <div class="c-centro">Apresente este código no caixa para usar o saldo em novas compras.</div>
+      ${blocoQrInstagram(loja, op)}
     </div>`;
   }
 
@@ -1266,7 +1312,7 @@
     // gráficos
     corCss, paletaGrafico,
     // impressão / cupom
-    imprimir, htmlCupom, gerarCupom, gerarVale,
+    imprimir, htmlCupom, gerarCupom, gerarVale, opcoesImpressao, IMPRESSAO_PADRAO,
     // app instalável
     instalarApp, get podeInstalar() { return !!pedidoInstalacao; }, get appInstalado() { return appInstalado(); },
     // troca/devolução (telas Vendas e Trocas)

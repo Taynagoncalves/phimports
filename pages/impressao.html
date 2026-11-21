@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="../img/favicon.png">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="apple-touch-icon" href="../img/app-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PH Imports">
+  <meta name="theme-color" content="#18181B">
+  <title>Impressão</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="impressao" data-titulo="Impressão">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Impressão</h1>
+            <p>Escolha o que sai no recibo e veja na hora como fica. Vale para todas as impressões do sistema.</p>
+          </div>
+          <div class="pagina-acoes">
+            <span class="texto-xs texto-3" id="salvo" aria-live="polite"></span>
+            <button type="button" class="btn btn-primario" id="btn-teste"><i data-lucide="printer"></i>Imprimir teste</button>
+          </div>
+        </div>
+
+        <div class="imp-layout">
+          <!-- Opções -->
+          <form class="imp-opcoes" id="form-imp" novalidate>
+            <section class="card card-corpo">
+              <h2>Papel</h2>
+              <div class="campo mt-4">
+                <span class="rotulo" id="rot-largura">Largura da bobina</span>
+                <div class="alternar-visao" role="radiogroup" aria-labelledby="rot-largura">
+                  <button type="button" role="radio" data-largura="80" aria-checked="true">80 mm</button>
+                  <button type="button" role="radio" data-largura="58" aria-checked="false">58 mm</button>
+                </div>
+              </div>
+              <div class="campo mt-4">
+                <span class="rotulo" id="rot-fonte">Tamanho da letra</span>
+                <div class="alternar-visao" role="radiogroup" aria-labelledby="rot-fonte">
+                  <button type="button" role="radio" data-fonte="pequena" aria-checked="false">Pequena</button>
+                  <button type="button" role="radio" data-fonte="normal" aria-checked="true">Normal</button>
+                  <button type="button" role="radio" data-fonte="grande" aria-checked="false">Grande</button>
+                </div>
+              </div>
+              <label class="interruptor mt-4"><input type="checkbox" id="imp-auto"><span>Abrir a impressão sozinha ao finalizar a venda</span></label>
+            </section>
+
+            <section class="card card-corpo">
+              <h2>Cabeçalho</h2>
+              <div class="etq-opcoes mt-4">
+                <label class="interruptor"><input type="checkbox" data-op="logo"><span>Logo da loja</span></label>
+                <label class="interruptor"><input type="checkbox" data-op="endereco"><span>Endereço</span></label>
+                <label class="interruptor"><input type="checkbox" data-op="telefone"><span>Telefone / WhatsApp</span></label>
+                <label class="interruptor"><input type="checkbox" data-op="instagram"><span>Instagram (texto)</span></label>
+                <label class="interruptor"><input type="checkbox" data-op="site"><span>Site</span></label>
+              </div>
+            </section>
+
+            <section class="card card-corpo">
+              <h2>Compra</h2>
+              <div class="etq-opcoes mt-4">
+                <label class="interruptor"><input type="checkbox" data-op="codigo"><span>Código (SKU) de cada peça</span></label>
+                <label class="interruptor"><input type="checkbox" data-op="economia"><span>"Você economizou"</span></label>
+                <label class="interruptor"><input type="checkbox" data-op="pontos"><span>Pontos da cliente (programa de pontos)</span></label>
+                <label class="interruptor"><input type="checkbox" data-op="cliente"><span>Nome, CPF e telefone da cliente</span></label>
+                <label class="interruptor"><input type="checkbox" data-op="vendedor"><span>Vendedor(a)</span></label>
+              </div>
+            </section>
+
+            <section class="card card-corpo">
+              <h2>Rodapé</h2>
+              <label class="interruptor mt-4"><input type="checkbox" data-op="mensagem"><span>Mensagem</span></label>
+              <div class="campo mt-2">
+                <label for="imp-mensagem" class="sr-only">Mensagem do rodapé</label>
+                <input class="input" id="imp-mensagem" maxlength="120" placeholder="Trocas em até 30 dias com este recibo.">
+              </div>
+              <label class="interruptor mt-4"><input type="checkbox" data-op="qrInstagram"><span>QR Code do Instagram</span></label>
+              <div class="imp-dois mt-2">
+                <div class="campo">
+                  <label for="imp-insta">Instagram da loja</label>
+                  <div class="input-grupo"><span class="prefixo">@</span><input class="input" id="imp-insta" maxlength="40" placeholder="phimports" autocomplete="off"></div>
+                </div>
+                <div class="campo">
+                  <label for="imp-textoqr">Frase acima do QR</label>
+                  <input class="input" id="imp-textoqr" maxlength="40" placeholder="Nos siga no Instagram">
+                </div>
+              </div>
+              <p class="texto-xs texto-3 mt-2">A cliente aponta a câmera do celular para o QR e cai direto no perfil da loja.</p>
+            </section>
+          </form>
+
+          <!-- Prévia -->
+          <aside class="imp-previa">
+            <div class="imp-previa-topo">
+              <span class="negrito texto-sm"><i data-lucide="eye"></i>Prévia</span>
+              <span class="badge" id="imp-badge">80 mm</span>
+            </div>
+            <div class="alternar-visao imp-tipos" role="radiogroup" aria-label="Modelo">
+              <button type="button" role="radio" data-modelo="venda" aria-checked="true"><i data-lucide="receipt"></i>Recibo de venda</button>
+              <button type="button" role="radio" data-modelo="vale" aria-checked="false"><i data-lucide="ticket"></i>Vale-troca</button>
+            </div>
+            <div class="imp-impressora">
+              <div class="imp-papel" id="imp-papel"></div>
+              <div class="imp-boca" aria-hidden="true"></div>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/cloudinary-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/impressao.js"></script>
+</body>
+</html>
