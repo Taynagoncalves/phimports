@@ -379,3 +379,21 @@ svg.cheio { fill: currentColor; stroke: none; }
 .rodape-passos strong { font-family: var(--serifa); font-weight: 500; font-size: 16px; color: #fff; margin-right: 10px; letter-spacing: 0; }
 .rodape-endereco { font-size: 12px !important; color: #8C857C !important; }
 .rodape small { border-top: 1px solid #2C2A27; margin-top: 44px; }
+
+/* ---------- Estoque no catálogo ---------- */
+.card-pe { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 14px; }
+.card-estoque { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--tinta-3); }
+.card-estoque.poucas { color: var(--promo); }
+.card.esgotado .card-foto img, .card.esgotado .sem-foto { filter: grayscale(1); opacity: .5; }
+.card.esgotado .card-nome, .card.esgotado .preco { color: var(--tinta-3); }
+.card.esgotado .preco strong { color: var(--tinta-3); }
+.selo.esgotado { background: var(--fundo); color: var(--tinta-2); border: 1px solid var(--linha); }
+.card-ver { letter-spacing: .16em; white-space: pre; }
+.estoque-info { display: flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: .06em; color: var(--tinta-2); margin: -2px 0; }
+.estoque-info::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #3D8B5A; flex-shrink: 0; }
+.estoque-info.poucas::before { background: #C77700; }
+.estoque-info.poucas { color: #8A5300; }
+.estoque-info.fora::before { background: var(--tinta-3); }
+.estoque-info.fora { color: var(--tinta-3); }
+.btn-avise { display: flex; align-items: center; justify-content: center; height: 54px; border: 1px solid var(--tinta); color: var(--tinta); text-decoration: none; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; transition: background .2s, color .2s; }
+.btn-avise:hover { background: var(--tinta); color: #fff; }

@@ -627,7 +627,7 @@ App.aoIniciar(async () => {
      ================================================================== */
   {
     const loja = await Data.obterLoja();
-    const c = { ativo: false, mostrarPrecos: true, whatsapp: '', mensagem: '', ...(loja.catalogo || {}) };
+    const c = { ativo: true, mostrarPrecos: true, whatsapp: '', mensagem: '', ...(loja.catalogo || {}) };
     const el = (id) => document.getElementById(id);
     el('ct-ativo').checked = !!c.ativo;
     el('ct-precos').checked = c.mostrarPrecos !== false;

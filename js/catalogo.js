@@ -44,6 +44,16 @@
   const coresDe = (p) => { const m = new Map(); p.variacoes.forEach((v) => { if (v.c && !m.has(v.c)) m.set(v.c, v.h || ''); }); return [...m.entries()]; };
   const tamanhosDe = (p) => [...new Set(p.variacoes.map((v) => v.t).filter(Boolean))];
   const variacao = (p, c, t) => p.variacoes.find((v) => (v.c || '') === (c || '') && (v.t || '') === (t || ''));
+  const qtdDe = (v) => (v && v.q !== undefined && v.q !== null ? Number(v.q) : 10);   // catálogo antigo sem quantidade = disponível
+  const estoqueDe = (p) => (p.estoque !== undefined ? Number(p.estoque) : p.variacoes.reduce((s, v) => s + qtdDe(v), 0));
+  const esgotada = (p) => estoqueDe(p) <= 0;
+  const tamanhosDisponiveis = (p) => [...new Set(p.variacoes.filter((v) => qtdDe(v) > 0).map((v) => v.t).filter(Boolean))];
+  function textoEstoque(n) {
+    if (n <= 0) return 'Esgotado';
+    if (n === 1) return 'Última peça';
+    if (n <= 3) return `Últimas ${n} peças`;
+    return `${n} em estoque`;
+  }
   const linkWhats = (texto) => `https://wa.me/${cat.whatsapp}?text=${encodeURIComponent(texto)}`;
 
   function aviso(texto) {
@@ -97,16 +107,24 @@
   }
   function cardHtml(p) {
     const cores = coresDe(p).filter(([, h]) => h).slice(0, 5);
+    const n = estoqueDe(p);
+    const tams = tamanhosDisponiveis(p);
+    const selo = n <= 0 ? '<span class="selo esgotado">Esgotado</span>'
+      : temPromo(p) ? `<span class="selo promo">−${Math.round((1 - p.promo / p.preco) * 100)}%</span>`
+      : p.novo ? '<span class="selo">Novo</span>' : '';
     return `
-      <button type="button" class="card" data-peca="${esc(p.id)}" aria-label="${esc(p.nome)}">
+      <button type="button" class="card${n <= 0 ? ' esgotado' : ''}" data-peca="${esc(p.id)}" aria-label="${esc(p.nome)} — ${esc(textoEstoque(n))}">
         <div class="card-foto">
           ${p.foto ? `<img src="${esc(foto(p.foto, 600))}" alt="" loading="lazy">` : ICONE_CABIDE}
-          ${temPromo(p) ? `<span class="selo promo">−${Math.round((1 - p.promo / p.preco) * 100)}%</span>` : p.novo ? '<span class="selo">Novo</span>' : p.variacoes.reduce((s, v) => s + (v.q || 0), 0) <= 2 ? '<span class="selo">Últimas peças</span>' : ''}
-          <span class="card-ver" aria-hidden="true">Ver peça</span>
+          ${selo}
+          <span class="card-ver" aria-hidden="true">${n <= 0 ? 'Avise-me quando chegar' : tams.length ? tams.map(esc).join('  ·  ') : 'Ver peça'}</span>
         </div>
         <div class="card-nome">${esc(p.nome)}</div>
-        ${cores.length > 1 ? `<div class="card-cores">${cores.map(([, h]) => `<span style="background:${esc(h)}"></span>`).join('')}</div>` : ''}
         <div class="preco">${precoHtml(p)}</div>
+        <div class="card-pe">
+          ${cores.length > 1 ? `<div class="card-cores">${cores.map(([, h]) => `<span style="background:${esc(h)}"></span>`).join('')}</div>` : '<span></span>'}
+          <span class="card-estoque${n > 0 && n <= 3 ? ' poucas' : ''}">${esc(textoEstoque(n))}</span>
+        </div>
       </button>`;
   }
   // Peças aparecem suavemente ao rolar a página
@@ -119,8 +137,8 @@
   });
 
   function desenharVitrines() {
-    const novos = cat.produtos.filter((p) => p.novo).slice(0, 12);
-    const promo = cat.produtos.filter(temPromo).slice(0, 12);
+    const novos = cat.produtos.filter((p) => p.novo && !esgotada(p)).slice(0, 12);
+    const promo = cat.produtos.filter((p) => temPromo(p) && !esgotada(p)).slice(0, 12);
     $('vitrine-novidades').hidden = novos.length < 2;
     $('vitrine-promo').hidden = promo.length < 1;
     $('trilho-novidades').innerHTML = novos.map(cardHtml).join('');
@@ -146,7 +164,7 @@
     let lista = cat.produtos.filter((p) => (!categoria || p.categoria === categoria)
       && (!q || normalizar(`${p.nome} ${p.categoria} ${p.marca} ${p.variacoes.map((v) => v.c).join(' ')}`).includes(q)));
     const ordem = $('ordem').value;
-    if (ordem !== 'novos') lista = [...lista].sort((a, b) => ((precoDe(a) ?? 0) - (precoDe(b) ?? 0)) * (ordem === 'menor' ? 1 : -1));
+    if (ordem !== 'novos') lista = [...lista].sort((a, b) => esgotada(a) - esgotada(b) || ((precoDe(a) ?? 0) - (precoDe(b) ?? 0)) * (ordem === 'menor' ? 1 : -1));
     $('contagem').textContent = `${categoria || 'Todas as peças'} · ${lista.length} peça${lista.length === 1 ? '' : 's'}`;
     $('grade').innerHTML = lista.map(cardHtml).join('');
     ligarCards($('grade'));
@@ -162,6 +180,11 @@
     const cores = coresDe(p);
     const tams = tamanhosDe(p);
     escolha = { c: cores.length === 1 ? cores[0][0] : '', t: tams.length === 1 ? tams[0] : '', qtd: 1 };
+    // Esgotada: mostra o aviso e o "avise-me" no lugar do botão da sacola
+    const fora = esgotada(p);
+    $('p-adicionar').hidden = fora;
+    $('p-avise').hidden = !fora || !cat.whatsapp;
+    if (fora && cat.whatsapp) $('p-avise').href = linkWhats(`Olá! Vi no catálogo a peça *${p.nome}*, que está esgotada. Vai chegar de novo? Pode me avisar? 😊`);
     $('p-foto').classList.toggle('vazia', !p.foto);
     $('p-foto').innerHTML = p.foto ? `<img src="${esc(foto(p.foto, 1100))}" alt="${esc(p.nome)}">` : ICONE_CABIDE;
     $('p-cat').textContent = [p.categoria, p.marca].filter(Boolean).join(' · ');
@@ -180,12 +203,12 @@
     const v = variacao(p, escolha.c, escolha.t);
     if (!v) return 10;
     const naSacola = sacola.filter((i) => i.id === p.id && i.c === v.c && i.t === v.t).reduce((s, i) => s + i.qtd, 0);
-    return Math.max(0, (v.q || 10) - naSacola);
+    return Math.max(0, qtdDe(v) - naSacola);
   }
   function desenharEscolha() {
     const p = aberta;
     const cores = coresDe(p);
-    const existe = (c, t) => p.variacoes.some((v) => (!c || v.c === c) && (!t || v.t === t));
+    const existe = (c, t) => p.variacoes.some((v) => qtdDe(v) > 0 && (!c || v.c === c) && (!t || v.t === t));
     $('p-cor-escolhida').textContent = escolha.c || '';
     $('p-cores').innerHTML = cores.map(([c, h]) => h
       ? `<button type="button" data-cor="${esc(c)}" aria-pressed="${escolha.c === c}" title="${esc(c)}" aria-label="${esc(c)}" ${existe(c, escolha.t) ? '' : 'disabled'}><span style="background:${esc(h)}"></span></button>`
@@ -199,6 +222,15 @@
     }));
     escolha.qtd = Math.max(1, Math.min(escolha.qtd, maxDisponivel() || 1));
     $('p-qtd').textContent = escolha.qtd;
+    // Quantas peças tem (da cor/tamanho escolhidos, ou da peça toda)
+    const v = variacao(p, escolha.c, escolha.t);
+    const precisaEscolher = (coresDe(p).length && !escolha.c) || (tamanhosDe(p).length && !escolha.t);
+    const n = v && !precisaEscolher ? qtdDe(v) : estoqueDe(p);
+    const el = $('p-estoque');
+    el.className = 'estoque-info' + (n <= 0 ? ' fora' : n <= 3 ? ' poucas' : '');
+    el.textContent = n <= 0 ? (v && !precisaEscolher ? 'Esgotado nesta cor/tamanho' : 'Peça esgotada no momento')
+      : v && !precisaEscolher ? (n === 1 ? 'Última peça neste tamanho' : `${n} disponíveis neste tamanho`)
+      : `${n} ${n === 1 ? 'peça' : 'peças'} em estoque`;
   }
   $('p-menos').addEventListener('click', () => { escolha.qtd = Math.max(1, escolha.qtd - 1); $('p-qtd').textContent = escolha.qtd; });
   $('p-mais').addEventListener('click', () => {
@@ -210,7 +242,7 @@
     const cores = coresDe(p);
     if (cores.length && !escolha.c) { $('p-aviso').textContent = 'Escolha a cor.'; return; }
     if (tamanhosDe(p).length && !escolha.t) { $('p-aviso').textContent = 'Escolha o tamanho.'; return; }
-    if (!variacao(p, escolha.c, escolha.t)) { $('p-aviso').textContent = 'Essa combinação não está disponível.'; return; }
+    if (!variacao(p, escolha.c, escolha.t) || qtdDe(variacao(p, escolha.c, escolha.t)) <= 0) { $('p-aviso').textContent = 'Essa combinação está esgotada.'; return; }
     if (maxDisponivel() < escolha.qtd) { $('p-aviso').textContent = 'Você já colocou na sacola tudo o que temos dessa peça.'; return; }
     const ja = sacola.find((i) => i.id === p.id && i.c === escolha.c && i.t === escolha.t);
     if (ja) ja.qtd += escolha.qtd; else sacola.push({ id: p.id, c: escolha.c, t: escolha.t, qtd: escolha.qtd });
@@ -224,7 +256,7 @@
   function lerSacola() {
     try { sacola = JSON.parse(localStorage.getItem(CHAVE_SACOLA) || '[]'); } catch (e) { sacola = []; }
     // Tira o que saiu do catálogo (esgotou) e ajusta ao disponível
-    sacola = sacola.filter((i) => { const p = acharPeca(i.id); const v = p && variacao(p, i.c, i.t); if (v) i.qtd = Math.min(i.qtd, v.q || 10); return !!v && i.qtd > 0; });
+    sacola = sacola.filter((i) => { const p = acharPeca(i.id); const v = p && variacao(p, i.c, i.t); if (v) i.qtd = Math.min(i.qtd, qtdDe(v)); return !!v && i.qtd > 0; });
   }
   function salvarSacola() {
     try { localStorage.setItem(CHAVE_SACOLA, JSON.stringify(sacola)); } catch (e) { /* ignora */ }
@@ -264,7 +296,7 @@
     el.querySelectorAll('[data-menos]').forEach((b) => b.addEventListener('click', () => { const i = sacola[b.dataset.menos]; i.qtd--; if (i.qtd <= 0) sacola.splice(b.dataset.menos, 1); salvarSacola(); }));
     el.querySelectorAll('[data-mais]').forEach((b) => b.addEventListener('click', () => {
       const i = sacola[b.dataset.mais]; const v = variacao(acharPeca(i.id), i.c, i.t);
-      if (i.qtd + 1 > (v.q || 10)) return aviso('Essa é a quantidade disponível.');
+      if (i.qtd + 1 > qtdDe(v)) return aviso('Essa é a quantidade disponível.');
       i.qtd++; salvarSacola();
     }));
     el.querySelectorAll('[data-remover]').forEach((b) => b.addEventListener('click', () => { sacola.splice(b.dataset.remover, 1); salvarSacola(); }));

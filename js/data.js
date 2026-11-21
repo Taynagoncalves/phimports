@@ -194,7 +194,7 @@
         if (primeira) { primeira = false; resolve(); } else if (!snap.metadata.hasPendingWrites) avisarMudancaRemota();
       }, (erro) => { if (primeira) reject(erro); else console.error('Firestore:', erro); }));
     }));
-    return Promise.all(carregamentos);
+    return Promise.all(carregamentos).then((r) => { setTimeout(() => publicarCatalogo(), 4000); return r; });
   }
 
   /* ---------- Pacotes mensais ----------
@@ -2726,14 +2726,13 @@
 
   function montarCatalogo() {
     const c = (db.loja && db.loja.catalogo) || {};
-    if (!c.ativo) return { publicado: false, atualizadoEm: new Date().toISOString() };
+    if (c.ativo === false) return { publicado: false, atualizadoEm: new Date().toISOString() };
     const precos = c.mostrarPrecos !== false;
     const recente = Date.now() - 15 * 86400000;
     const produtos = db.produtos
       .filter((p) => p.ativo !== false)
       .map(comTotais)
-      .filter((p) => p.estoqueTotal > 0)
-      .sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')))
+      .sort((a, b) => (b.estoqueTotal > 0) - (a.estoqueTotal > 0) || String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')))
       .map((p) => ({
         id: String(p.id), nome: p.nome || '', categoria: p.categoria || '', marca: p.marca || '',
         foto: fotoPublica(p.foto),
@@ -2741,9 +2740,12 @@
         promo: precos && p.precoPromocional ? Number(p.precoPromocional) : null,
         novo: !!p.criadoEm && new Date(p.criadoEm).getTime() > recente,
         descricao: String(p.descricao || '').slice(0, 400),
-        // quantas peças tem (até 10: o suficiente para a sacola, sem expor o estoque todo)
-        variacoes: p.variacoes.filter((v) => Number(v.estoque || 0) > 0).map((v) => ({ t: v.tamanho || '', c: v.cor || '', h: corHexCatalogo(v.cor), q: Math.min(10, Number(v.estoque || 0)) }))
+        estoque: Math.max(0, Number(p.estoqueTotal) || 0),
+        // todas as variações, com a quantidade em estoque de cada uma (0 = esgotada)
+        variacoes: p.variacoes.map((v) => ({ t: v.tamanho || '', c: v.cor || '', h: corHexCatalogo(v.cor), q: Math.max(0, Number(v.estoque || 0)) }))
       }));
+    // O documento do Firestore aceita até 1 MB: se crescer muito, tira as descrições
+    if (JSON.stringify(produtos).length > 850000) produtos.forEach((p) => { p.descricao = ''; });
     const loja = db.loja || {};
     let whatsapp = soDigitos(c.whatsapp || loja.telefone);
     if (whatsapp && whatsapp.length <= 11) whatsapp = '55' + whatsapp;   // número brasileiro sem o 55
