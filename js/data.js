@@ -2735,7 +2735,8 @@
       .sort((a, b) => (b.estoqueTotal > 0) - (a.estoqueTotal > 0) || String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')))
       .map((p) => ({
         id: String(p.id), nome: p.nome || '', categoria: p.categoria || '', marca: p.marca || '',
-        foto: fotoPublica(p.foto),
+        foto: fotoPublica(p.foto) || Object.values(p.fotosCores || {}).map(fotoPublica).find(Boolean) || '',
+        fotosCores: Object.fromEntries(Object.entries(p.fotosCores || {}).map(([cor, url]) => [cor, fotoPublica(url)]).filter(([, url]) => url)),
         recolor: p.recolorFoto !== false,
         preco: precos ? Number(p.preco || 0) : null,
         promo: precos && p.precoPromocional ? Number(p.precoPromocional) : null,

@@ -369,10 +369,14 @@
   let pedidoFoto = 0;
   async function mostrarCorNaFoto() {
     const p = aberta;
-    if (!p || !p.foto || p.recolor === false) return;
+    if (!p || !p.foto) return;
     const img = $('p-foto').querySelector('img');
     const selo = $('p-cor-ilustrativa');
     if (!img) return;
+    // A cor tem foto própria: mostra a foto real (não precisa pintar)
+    const fotoDaCor = p.fotosCores && escolha.c && p.fotosCores[escolha.c];
+    if (fotoDaCor) { pedidoFoto++; img.src = foto(fotoDaCor, 1100); selo.hidden = true; $('p-foto').classList.remove('pintando'); return; }
+    if (p.recolor === false) { img.src = foto(p.foto, 1100); selo.hidden = true; return; }
     const url = foto(p.foto, 900);
     const cores = coresDe(p).filter(([, h]) => h);
     const meu = ++pedidoFoto;
@@ -509,7 +513,7 @@
       const p = acharPeca(i.id);
       const preco = precoDe(p);
       return `<div class="item">
-        <div class="item-foto">${p.foto ? `<img src="${esc(foto(p.foto, 200))}" alt="">` : ICONE_CABIDE}</div>
+        <div class="item-foto">${p.foto ? `<img src="${esc(foto((p.fotosCores && p.fotosCores[i.c]) || p.foto, 200))}" alt="">` : ICONE_CABIDE}</div>
         <div>
           <div class="item-nome">${esc(p.nome)}</div>
           <div class="item-var">${[i.c, i.t && `Tam. ${i.t}`].filter(Boolean).map(esc).join(' · ')}</div>

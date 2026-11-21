@@ -17,6 +17,8 @@ App.aoIniciar(async () => {
   let variacoes = []; // [{tamanho, cor, sku, codigoBarras, estoque}]
   let foto = '';
   let envioFoto = null; // envio da foto em andamento (o salvar espera terminar)
+  let fotosCores = {};  // cor → foto daquela cor (opcional)
+  const enviosCores = new Map(); // cor → envio em andamento
   let produtoOriginal = null;
 
   /* ---------- Carrega listas auxiliares ---------- */
@@ -127,6 +129,37 @@ App.aoIniciar(async () => {
   });
   btnRemover.addEventListener('click', () => { inputFoto.value = ''; mostrarFoto(''); });
 
+  /* ---------- Foto de cada cor (opcional) ---------- */
+  function desenharFotosCores() {
+    const cores = [...selecionados.cores];
+    const bloco = document.getElementById('fotos-cores-bloco');
+    bloco.hidden = cores.length < 2;
+    document.getElementById('fotos-cores').innerHTML = cores.map((cor, i) => {
+      const url = fotosCores[cor];
+      return `<div class="foto-cor">
+        <label class="foto-cor-slot" title="Foto da cor ${App.escapeHtml(cor)}">
+          ${url ? `<img src="${App.escapeHtml(url)}" alt="">` : App.icone('image-plus')}
+          <input type="file" accept="image/*" data-foto-cor="${i}" aria-label="Foto da cor ${App.escapeHtml(cor)}" hidden>
+        </label>
+        <span class="foto-cor-nome">${App.bolinhaCor(cor)}${App.escapeHtml(cor)}</span>
+        ${url ? `<button type="button" class="foto-cor-tirar" data-tirar-cor="${i}">Tirar</button>` : ''}
+      </div>`;
+    }).join('');
+    document.querySelectorAll('[data-foto-cor]').forEach((inp) => inp.addEventListener('change', () => {
+      const cor = cores[Number(inp.dataset.fotoCor)];
+      const arquivo = inp.files[0];
+      if (!arquivo || !arquivo.type.startsWith('image/')) return;
+      let enviada = false;   // a prévia (reduzida) não pode passar por cima da foto já enviada
+      App.comprimirImagem(arquivo, 600).then((previa) => { if (!enviada) { fotosCores[cor] = previa; desenharFotosCores(); } }).catch(() => {});
+      const envio = App.enviarImagem(arquivo, { maximo: 1200, subpasta: 'produtos' })
+        .then((url) => { enviada = true; fotosCores[cor] = url; desenharFotosCores(); return url; })
+        .catch((e) => { App.toast(e.message, 'erro', 7000); delete fotosCores[cor]; desenharFotosCores(); throw e; })
+        .finally(() => enviosCores.delete(cor));
+      enviosCores.set(cor, envio);
+    }));
+    document.querySelectorAll('[data-tirar-cor]').forEach((b) => b.addEventListener('click', () => { delete fotosCores[cores[Number(b.dataset.tirarCor)]]; desenharFotosCores(); }));
+  }
+
   /* ==================================================================
      GRADE DE VARIAÇÕES
      ================================================================== */
@@ -194,6 +227,7 @@ App.aoIniciar(async () => {
     });
     variacoes = lista;
     desenharGrade();
+    desenharFotosCores();
   }
 
   /** Lê os valores digitados na tabela para o array de variações */
@@ -296,6 +330,7 @@ App.aoIniciar(async () => {
       form.preco.value = App.formatarValorInput(p.preco);
       form.estoqueMinimo.value = p.estoqueMinimo ?? 5;
       mostrarFoto(p.foto);
+      fotosCores = { ...(p.fotosCores || {}) };
       variacoes = p.variacoes.map((v) => ({ ...v }));
       variacoes.forEach((v) => { selecionados.tamanhos.add(v.tamanho); selecionados.cores.add(v.cor); });
     } catch (e) {
@@ -305,6 +340,7 @@ App.aoIniciar(async () => {
 
   desenharChips();
   if (variacoes.length) desenharGrade(); else gerarGrade();
+  desenharFotosCores();
   atualizarMargem();
   atualizarNcm();
 
@@ -327,6 +363,10 @@ App.aoIniciar(async () => {
     if (envioFoto) {
       App.toast('Terminando de enviar a foto…');
       try { await envioFoto; } catch (er) { return; }
+    }
+    if (enviosCores.size) {
+      App.toast('Terminando de enviar as fotos das cores…');
+      try { await Promise.all([...enviosCores.values()]); } catch (er) { return; }
     }
 
     // NCM: se informado, precisa ter 8 dígitos; se vazio, avisa quando a categoria também não tem
@@ -357,6 +397,7 @@ App.aoIniciar(async () => {
       preco: App.lerNumero(dados.preco),
       estoqueMinimo: parseInt(dados.estoqueMinimo, 10) || 0,
       foto,
+      fotosCores: Object.fromEntries(Object.entries(fotosCores).filter(([cor, url]) => url && variacoes.some((v) => v.cor === cor))),
       recolorFoto: document.getElementById('recolor-foto').checked,
       variacoes
     };
