@@ -448,6 +448,12 @@ App.aoIniciar(async () => {
       if (!valeConsultado || valeConsultado.codigo !== p.codigoVale) return 'Consulte o código do vale-troca.';
       if (p.valor > saldoValeLivre() + 0.001) return `O vale tem só ${App.formatarMoeda(saldoValeLivre())} de saldo.`;
     }
+    if (p.forma === 'pontos') {
+      const cliente = clientes.find((c) => c.id === $('cliente').value);
+      const disponivel = Number(cliente?.pontosSaldo || 0) * Number(regras.valorPorPonto || 0);
+      if (!regras.pontosAtivos || !cliente) return 'Escolha um cliente cadastrado para usar pontos.';
+      if (p.valor > disponivel + 0.001) return `Saldo disponÃ­vel: ${App.formatarMoeda(disponivel)}.`;
+    }
     if (p.forma === 'crediario') {
       if (pagamentos.some((x) => x.forma === 'crediario')) return 'Já há um lançamento de crediário nesta venda.';
       if (!$('cliente').value) return 'Escolha o cliente para vender no crediário.';
@@ -463,13 +469,16 @@ App.aoIniciar(async () => {
   function atualizarPagamento() {
     const t = calcularTotais();
     const falta = restante();
+    const botaoPontos = document.querySelector('[data-forma="pontos"]');
+    const saldoPontos = Number(clientes.find((c) => c.id === $('cliente').value)?.pontosSaldo || 0) * Number(regras.valorPorPonto || 0);
+    botaoPontos?.classList.toggle('oculto', !regras.pontosAtivos || !$('cliente').value || saldoPontos <= 0);
 
     // Valor sugerido acompanha o que falta (até o operador digitar)
     // Dividindo: a 1ª parte começa vazia (o operador digita quanto paga nela);
     // as próximas já vêm com o que falta.
     const primeiraParte = dividindo && !pagamentos.length;
     if (formaPagamento && !valorEditado) {
-      const sugerido = formaPagamento === 'vale' ? Math.min(falta, saldoValeLivre()) : falta;
+      const sugerido = formaPagamento === 'vale' ? Math.min(falta, saldoValeLivre()) : formaPagamento === 'pontos' ? Math.min(falta, saldoPontos) : falta;
       inputValor.value = !primeiraParte && sugerido > 0 ? App.formatarValorInput(sugerido) : '';
     }
     inputValor.placeholder = primeiraParte ? 'Quanto vai pagar nesta forma?' : '0,00';

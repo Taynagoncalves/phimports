@@ -1,5 +1,17 @@
 # Gestão de Loja de Roupas
 
+O sistema agora também pode ser instalado como aplicativo (PWA), publicar um catálogo online, calcular e resgatar pontos de fidelidade e sugerir reposição de estoque. A tela de Relatórios já contém o relatório de estoque parado.
+
+No celular, use **Adicionar à tela inicial** no navegador. No computador, use **Instalar aplicativo** na barra de endereço ou no menu do navegador. A instalação exige o site publicado em HTTPS.
+
+Em **Configurações → Usuários → Regras de venda**, o dono ativa a fidelidade, define pontos por real gasto e o valor de desconto de cada ponto. Clientes cadastrados acumulam pontos ao comprar; no PDV, seus pontos podem compor o pagamento. Cancelar a venda reverte o saldo.
+
+Em **Configurações → Sistema**, o dono pode publicar o catálogo. O link público mostra produtos ativos, preços, fotos e disponibilidade por tamanho/cor; o cliente monta uma lista e envia o pedido à loja por WhatsApp. O catálogo não expõe custos.
+
+Em **Estoque → Sugestão de compra**, a reposição usa as vendas dos últimos 60 dias e calcula quantidade para 30 dias de cobertura. O relatório é uma estimativa para apoiar o pedido, considerando conferência de pedidos em aberto e sazonalidade.
+
+Na nuvem, o login carrega primeiro os ajustes da loja; as coleções são abertas conforme a tela. Dashboard, caixa, PDV e sugestão de compra limitam vendas ao intervalo recente necessário. Histórico de vendas e relatórios consultam o período selecionado.
+
 Sistema de gestão para loja de roupas em HTML, CSS e JavaScript puro, com login e banco de dados no Firebase (veja "Banco de dados na nuvem"). Todo acesso a dados passa por `js/data.js`; sem configuração do Firebase, roda como protótipo com os dados de exemplo de `js/mock-data.js`.
 
 ## Como rodar
@@ -71,7 +83,7 @@ As regras de negócio continuam em `js/data.js`: as funções alteram os dados e
 
 ### Publicar o site
 **Render (Static Site, grátis):** New → Static Site → repositório `phimports`, branch `main`.
-- Build Command: `mkdir -p dist && cp -r index.html css js img pages dist/`
+- Build Command: `mkdir -p dist && cp -r index.html catalogo.html manifest.webmanifest service-worker.js css js img pages dist/`
 - Publish Directory: `dist`
 
 (O build copia só o sistema, sem a pasta `suporte/`.)

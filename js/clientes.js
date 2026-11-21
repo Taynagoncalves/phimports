@@ -26,6 +26,7 @@
     const vendas = (await Data.listarVendas()).filter((v) => v.clienteId === c.id);
     const ticket = r.compras ? r.total / r.compras : 0;
     const loja = await Data.obterLoja();
+    const regrasPontos = await Data.obterRegrasVenda();
     const { fechar } = App.abrirModal({
       titulo: 'Ficha do cliente',
       tamanho: 'lg',
@@ -42,6 +43,8 @@
             </div>
           </div>
         </div>
+
+        ${(c.pontosSaldo || 0) > 0 ? `<div class="alerta info mt-3"><i data-lucide="sparkles"></i><span>Fidelidade: <strong>${App.formatarNumero(c.pontosSaldo)} pontos</strong> · equivalente a ${r$(c.pontosSaldo * Number(regrasPontos.valorPorPonto || 0))} em descontos</span></div>` : ''}
 
         <div class="ficha-numeros">
           <div><span>Total comprado</span><strong>${r$(r.total)}</strong></div>

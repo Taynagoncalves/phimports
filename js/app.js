@@ -8,6 +8,11 @@
 (function () {
   'use strict';
 
+  // A tela continua sendo um site, mas pode ser instalada e abre sem a barra do navegador.
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js').catch((e) => console.warn('Service Worker:', e)));
+  }
+
   /* ---------- Itens do menu (grupo → links) ---------- */
   const MENU = [
     { grupo: 'Principal', itens: [
@@ -165,8 +170,8 @@
     return `<span class="badge ${tipo ? 'badge-' + tipo : ''}">${escapeHtml(texto)}</span>`;
   }
 
-  const FORMAS_PAGAMENTO = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Cartão de débito', credito: 'Cartão de crédito', vale: 'Vale-troca', crediario: 'Crediário', multiplo: 'Múltiplas formas' };
-  const FORMAS_CURTAS = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito', vale: 'Vale-troca', crediario: 'Crediário' };
+  const FORMAS_PAGAMENTO = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Cartão de débito', credito: 'Cartão de crédito', vale: 'Vale-troca', crediario: 'Crediário', pontos: 'Pontos de fidelidade', multiplo: 'Múltiplas formas' };
+  const FORMAS_CURTAS = { pix: 'Pix', dinheiro: 'Dinheiro', debito: 'Débito', credito: 'Crédito', vale: 'Vale-troca', crediario: 'Crediário', pontos: 'Pontos' };
 
   /**
    * Nome do pagamento. Aceita a venda (com pagamentos divididos) ou um pagamento.
@@ -1094,6 +1099,7 @@
         icones();
         return;
       }
+      await Data.prepararTela(pagina);
       for (const fn of inicializadores) await fn();
     } catch (erro) {
       console.error(erro);
