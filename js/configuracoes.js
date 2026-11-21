@@ -662,6 +662,43 @@ App.aoIniciar(async () => {
   }
 
   /* ==================================================================
+     CATÁLOGO ONLINE
+     ================================================================== */
+  {
+    const loja = await Data.obterLoja();
+    const c = { ativo: false, mostrarPrecos: true, whatsapp: '', mensagem: '', ...(loja.catalogo || {}) };
+    const el = (id) => document.getElementById(id);
+    el('ct-ativo').checked = !!c.ativo;
+    el('ct-precos').checked = c.mostrarPrecos !== false;
+    el('ct-whats').value = c.whatsapp || '';
+    el('ct-msg').value = c.mensagem || '';
+    const link = Data.linkCatalogo();
+    function mostrarLink(ativo) {
+      el('ct-link-bloco').hidden = !ativo;
+      el('ct-link').textContent = link;
+      el('ct-abrir').href = link;
+      el('ct-enviar').href = `https://wa.me/?text=${encodeURIComponent(`Conheça as peças da ${loja.nome}: ${link}`)}`;
+    }
+    mostrarLink(!!c.ativo);
+    el('ct-copiar').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(link); App.toast('Link copiado!', 'sucesso'); } catch (e) { App.toast(link); }
+    });
+    el('form-catalogo').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const novo = { ativo: el('ct-ativo').checked, mostrarPrecos: el('ct-precos').checked, whatsapp: el('ct-whats').value.trim(), mensagem: el('ct-msg').value.trim() };
+      const botao = ev.submitter || el('form-catalogo').querySelector('[type=submit]');
+      botao.disabled = true;
+      try {
+        await Data.salvarLoja({ catalogo: novo });
+        await Data.publicarCatalogo(true);
+        mostrarLink(novo.ativo);
+        App.toast(novo.ativo ? 'Catálogo publicado! Copie o link e mande para as clientes.' : 'Catálogo tirado do ar.', 'sucesso', 6000);
+      } catch (e) { App.toast(e.message, 'erro', 8000); }
+      botao.disabled = false;
+    });
+  }
+
+  /* ==================================================================
      SISTEMA
      ================================================================== */
   // Vendas e recibo: impressão automática e emissão de nota fiscal

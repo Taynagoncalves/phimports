@@ -1223,3 +1223,4 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 .pontos-cliente svg { width: 14px; height: 14px; color: #CA8A04; flex-shrink: 0; }
 .pontos-regra { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--esp-3); }
 .pontos-regra.desativado { opacity: .5; }
+.catalogo-link { padding: 12px; border-radius: 10px; background: var(--cor-fundo-2); border: 1px solid var(--cor-borda); word-break: break-all; }

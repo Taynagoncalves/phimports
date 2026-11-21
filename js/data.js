@@ -85,6 +85,7 @@
   });
 
   function persistir() {
+    agendarCatalogo();
     if (MODO === 'nuvem') { agendarSincronizacao(); return; }
     try { localStorage.setItem(CHAVE_DB, JSON.stringify(db)); } catch (e) { /* ignora */ }
   }
@@ -168,6 +169,7 @@
   function abrirLoja(id) {
     pararOuvintes();
     lojaId = id;
+    ultimoCatalogo = null;
     db = bancoBase();
     COLECOES.forEach((c) => { espelho[c] = new Map(); });
     espelho.ajustes = {};
@@ -2465,6 +2467,79 @@
   }
 
   /* ==================================================================
+     CATÁLOGO ONLINE (página pública pages/catalogo.html)
+     Uma CÓPIA separada, só com o que o cliente pode ver: nome, foto, preço e
+     tamanhos/cores com estoque. Nada de custo, vendas ou clientes.
+     Fica num documento só (catalogos/{lojaId}): cada visita = 1 leitura.
+     ================================================================== */
+  const CHAVE_CATALOGO = 'gestaoloja:catalogo';   // modo local: a "nuvem" do catálogo
+  const soDigitos = (t) => String(t || '').replace(/\D/g, '');
+  const fotoPublica = (f) => (f && !String(f).startsWith('data:') ? String(f) : '');
+
+  function montarCatalogo() {
+    const c = (db.loja && db.loja.catalogo) || {};
+    if (!c.ativo) return { publicado: false, atualizadoEm: new Date().toISOString() };
+    const precos = c.mostrarPrecos !== false;
+    const recente = Date.now() - 15 * 86400000;
+    const produtos = db.produtos
+      .filter((p) => p.ativo !== false)
+      .map(comTotais)
+      .filter((p) => p.estoqueTotal > 0)
+      .sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')))
+      .map((p) => ({
+        id: String(p.id), nome: p.nome || '', categoria: p.categoria || '', marca: p.marca || '',
+        foto: fotoPublica(p.foto),
+        preco: precos ? Number(p.preco || 0) : null,
+        promo: precos && p.precoPromocional ? Number(p.precoPromocional) : null,
+        novo: !!p.criadoEm && new Date(p.criadoEm).getTime() > recente,
+        variacoes: p.variacoes.filter((v) => Number(v.estoque || 0) > 0).map((v) => ({ t: v.tamanho || '', c: v.cor || '' }))
+      }));
+    const loja = db.loja || {};
+    let whatsapp = soDigitos(c.whatsapp || loja.telefone);
+    if (whatsapp && whatsapp.length <= 11) whatsapp = '55' + whatsapp;   // número brasileiro sem o 55
+    return {
+      publicado: true, nome: loja.nome || '', logo: fotoPublica(loja.logo), whatsapp,
+      instagram: String(loja.instagram || '').replace(/^@/, '').trim(), mensagem: c.mensagem || '',
+      mostrarPrecos: precos, produtos, atualizadoEm: new Date().toISOString()
+    };
+  }
+
+  var ultimoCatalogo = null;     // (var: persistir() pode rodar antes desta linha) última versão publicada (para só gravar quando muda)
+  var catalogoAgendado = null;
+  function agendarCatalogo() {
+    clearTimeout(catalogoAgendado);
+    catalogoAgendado = setTimeout(() => publicarCatalogo(), 1500);
+  }
+  /** Publica o catálogo se mudou. forcar = publica mesmo sem mudança (ex.: ao ligar/desligar). */
+  async function publicarCatalogo(forcar = false) {
+    if (MODO === 'nuvem' && !lojaId) return false;
+    const memoria = `${CHAVE_CATALOGO}:${lojaId || 'local'}`;
+    if (ultimoCatalogo === null) { try { ultimoCatalogo = localStorage.getItem(memoria) || ''; } catch (e) { ultimoCatalogo = ''; } }
+    const dados = montarCatalogo();
+    const chave = canon({ ...dados, atualizadoEm: '' });
+    if (!forcar && chave === ultimoCatalogo) return false;
+    if (!forcar && !dados.publicado && !ultimoCatalogo) return false;   // nunca publicado e desligado
+    const anterior = ultimoCatalogo;
+    ultimoCatalogo = chave;
+    try {
+      if (MODO === 'nuvem') await fb.fs.collection('catalogos').doc(lojaId).set(dados);
+      else localStorage.setItem(CHAVE_CATALOGO, JSON.stringify(dados));
+      try { localStorage.setItem(memoria, chave); } catch (e) { /* ignora */ }
+      return true;
+    } catch (e) {
+      ultimoCatalogo = anterior;
+      console.warn('Catálogo online não foi atualizado:', e);
+      if (forcar) throw new Error('Não foi possível publicar o catálogo. Confira se as regras do Firestore estão atualizadas.');
+      return false;
+    }
+  }
+  /** Endereço público do catálogo desta loja */
+  function linkCatalogo() {
+    const base = location.origin + location.pathname.replace(/\/pages\/[^/]*$|\/[^/]*$/, '');
+    return `${base}/pages/catalogo.html${lojaId ? '?l=' + encodeURIComponent(lojaId) : ''}`;
+  }
+
+  /* ==================================================================
      INDICADORES E RELATÓRIOS
      ================================================================== */
 
@@ -2714,7 +2789,7 @@
     // Vendas
     listarVendas, obterVenda, registrarVenda, registrarDevolucao, cancelarVenda,
     // Vale-troca (crédito do cliente)
-    listarCreditos, obterCreditoPorCodigo, resumoPontos,
+    listarCreditos, obterCreditoPorCodigo, resumoPontos, publicarCatalogo, linkCatalogo,
     // Caixa
     obterCaixaAberto, obterCaixa, listarCaixas, abrirCaixa, registrarMovimentoCaixa, fecharCaixa,
     // Regras de venda (limite de desconto) e autorização do dono

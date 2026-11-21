@@ -515,6 +515,35 @@
               </form>
             </div>
             <div class="card card-corpo">
+              <h2>Catálogo online</h2>
+              <p class="texto-sm mt-2">Uma vitrine com as peças <strong>que têm estoque</strong>, para mandar no WhatsApp e colocar na bio do Instagram. A cliente escolhe cor e tamanho e pede pelo WhatsApp. Atualiza sozinho a cada venda e cadastro.</p>
+              <form id="form-catalogo" class="mt-4" novalidate>
+                <div class="etq-opcoes">
+                  <label class="interruptor"><input type="checkbox" id="ct-ativo"><span>Publicar o catálogo</span></label>
+                  <label class="interruptor"><input type="checkbox" id="ct-precos" checked><span>Mostrar os preços</span></label>
+                </div>
+                <div class="campo mt-4">
+                  <label for="ct-whats">WhatsApp que recebe os pedidos</label>
+                  <input class="input" id="ct-whats" inputmode="tel" placeholder="(45) 99999-9999">
+                  <span class="ajuda">Vazio = usa o telefone da loja.</span>
+                </div>
+                <div class="campo mt-4">
+                  <label for="ct-msg">Recado no topo (opcional)</label>
+                  <input class="input" id="ct-msg" maxlength="120" placeholder="Ex.: Entregamos em Cascavel · Parcelamos em até 6x">
+                </div>
+                <div class="catalogo-link mt-4" id="ct-link-bloco" hidden>
+                  <span class="texto-xs texto-3">Link do catálogo</span>
+                  <div class="mono texto-sm" id="ct-link"></div>
+                  <div class="flex gap-2 mt-2" style="flex-wrap:wrap">
+                    <button type="button" class="btn btn-secundario btn-sm" id="ct-copiar"><i data-lucide="copy"></i>Copiar link</button>
+                    <a class="btn btn-secundario btn-sm" id="ct-abrir" target="_blank" rel="noopener"><i data-lucide="external-link"></i>Abrir</a>
+                    <a class="btn btn-secundario btn-sm" id="ct-enviar" target="_blank" rel="noopener"><i data-lucide="send"></i>Enviar no WhatsApp</a>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primario mt-4"><i data-lucide="check"></i>Salvar catálogo</button>
+              </form>
+            </div>
+            <div class="card card-corpo">
               <h2>Dados de exemplo</h2>
               <p class="texto-sm mt-2">Este protótipo guarda suas alterações no navegador. Restaure para voltar aos produtos, vendas e clientes de exemplo.</p>
               <button type="button" class="btn btn-perigo mt-4" id="btn-resetar"><i data-lucide="rotate-ccw"></i>Restaurar dados de exemplo</button>

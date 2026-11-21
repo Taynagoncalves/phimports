@@ -98,5 +98,12 @@ service cloud.firestore {
         allow delete: if superAdmin();
       }
     }
+
+    // Catálogo online: cópia PÚBLICA só com nome, foto, preço e tamanhos com estoque.
+    // Qualquer pessoa lê (é a vitrine); só quem trabalha na loja atualiza.
+    match /catalogos/{lojaId} {
+      allow read: if true;
+      allow write: if superAdmin() || ativo(lojaId);
+    }
   }
 }
