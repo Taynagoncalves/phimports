@@ -2736,6 +2736,7 @@
       .map((p) => ({
         id: String(p.id), nome: p.nome || '', categoria: p.categoria || '', marca: p.marca || '',
         foto: fotoPublica(p.foto),
+        recolor: p.recolorFoto !== false,
         preco: precos ? Number(p.preco || 0) : null,
         promo: precos && p.precoPromocional ? Number(p.precoPromocional) : null,
         novo: !!p.criadoEm && new Date(p.criadoEm).getTime() > recente,

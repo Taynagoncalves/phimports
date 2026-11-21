@@ -50,15 +50,18 @@
       { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' },
       { id: 'aparencia', texto: 'Aparência', icone: 'palette', href: 'aparencia.html' }
     ] },
+    { grupo: 'Cadastros', itens: [
+      { id: 'clientes', texto: 'Clientes', icone: 'users', href: 'clientes.html' },
+      { id: 'fornecedores', texto: 'Fornecedores', icone: 'truck', href: 'fornecedores.html' }
+    ] },
+    { grupo: 'Plataforma', itens: [
+      { id: 'mensalidade', texto: 'Mensalidade', icone: 'badge-dollar-sign', href: 'mensalidade.html' }
+    ] },
     { grupo: 'Ferramentas', itens: [
       { id: 'promocoes', texto: 'Promoções', icone: 'badge-percent', href: 'promocoes.html' },
       { id: 'pontos', texto: 'Programa de pontos', icone: 'star', href: 'pontos.html' },
       { id: 'inventario', texto: 'Inventário', icone: 'clipboard-check', href: 'inventario.html' },
       { id: 'reposicao', texto: 'Reposição', icone: 'shopping-cart', href: 'reposicao.html' }
-    ] },
-    { grupo: 'Cadastros', itens: [
-      { id: 'clientes', texto: 'Clientes', icone: 'users', href: 'clientes.html' },
-      { id: 'fornecedores', texto: 'Fornecedores', icone: 'truck', href: 'fornecedores.html' }
     ] },
     { grupo: 'Gestão', itens: [
       { id: 'vendas', texto: 'Vendas', icone: 'shopping-bag', href: 'vendas.html' },
@@ -66,9 +69,6 @@
       { id: 'relatorios', texto: 'Relatórios', icone: 'trending-up', href: 'relatorios.html' },
       { id: 'impressao', texto: 'Impressão', icone: 'printer', href: 'impressao.html' },
       { id: 'configuracoes', texto: 'Configurações', icone: 'settings', href: 'configuracoes.html' }
-    ] },
-    { grupo: 'Plataforma', itens: [
-      { id: 'mensalidade', texto: 'Mensalidade', icone: 'badge-dollar-sign', href: 'mensalidade.html' }
     ] }
   ];
 

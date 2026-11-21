@@ -291,6 +291,7 @@ App.aoIniciar(async () => {
       form.fornecedorId.value = p.fornecedorId || '';
       form.ncm.value = p.ncm || '';
       form.descricao.value = p.descricao || '';
+      document.getElementById('recolor-foto').checked = p.recolorFoto !== false;
       form.custo.value = App.formatarValorInput(p.custo);
       form.preco.value = App.formatarValorInput(p.preco);
       form.estoqueMinimo.value = p.estoqueMinimo ?? 5;
@@ -356,6 +357,7 @@ App.aoIniciar(async () => {
       preco: App.lerNumero(dados.preco),
       estoqueMinimo: parseInt(dados.estoqueMinimo, 10) || 0,
       foto,
+      recolorFoto: document.getElementById('recolor-foto').checked,
       variacoes
     };
     // Produto novo sem nenhuma peça: quase sempre é porque a quantidade não foi preenchida na grade

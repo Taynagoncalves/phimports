@@ -276,24 +276,38 @@
         for (let y = Math.floor(h * 0.32); y < h * 0.62; y += 3) for (let x = Math.floor(w * 0.38); x < w * 0.62; x += 3) { const j = (y * w + x) * 3; amostra.push([lab[j], lab[j + 1], lab[j + 2]]); }
         const mediana = (k) => amostra.map((c) => c[k]).sort((a, b) => a - b)[Math.floor(amostra.length / 2)];
         const origem = [mediana(0), mediana(1), mediana(2)];
-        // Peça = área encostada no miolo com cor parecida (não pinta pele nem fundo)
-        const limite = 22;
+        // Peça = área encostada no miolo com cor parecida (não pinta pele nem fundo).
+        // Cor escura ou neutra (preto, cinza, branco) quase não tem "tom": aí o claro/escuro
+        // pesa mais e o limite é mais rígido, para não confundir a peça com sombra.
+        const croma = Math.hypot(origem[1], origem[2]);
+        const neutra = croma < 12;
+        const pesoL = neutra ? 1 : 0.55;
+        const limite = neutra ? 15 : 22;
+        const dist = (k) => Math.sqrt(((lab[k * 3] - origem[0]) * pesoL) ** 2 + (lab[k * 3 + 1] - origem[1]) ** 2 + (lab[k * 3 + 2] - origem[2]) ** 2);
+        // Passo entre vizinhos: uma mudança brusca de cor é borda (fim da peça)
+        const passo = (k, n) => Math.sqrt((lab[k * 3] - lab[n * 3]) ** 2 + (lab[k * 3 + 1] - lab[n * 3 + 1]) ** 2 + (lab[k * 3 + 2] - lab[n * 3 + 2]) ** 2);
+        const limitePasso = neutra ? 7 : 10;
         const marca = new Uint8Array(w * h);
         const fila = new Int32Array(w * h);
         let ini = 0, fim = 0;
         for (let y = Math.floor(h * 0.38); y < h * 0.58; y += 4) for (let x = Math.floor(w * 0.42); x < w * 0.58; x += 4) {
           const k = y * w + x;
-          if (distancia([lab[k * 3], lab[k * 3 + 1], lab[k * 3 + 2]], origem) < limite && !marca[k]) { marca[k] = 1; fila[fim++] = k; }
+          if (dist(k) < limite && !marca[k]) { marca[k] = 1; fila[fim++] = k; }
         }
         while (ini < fim) {
           const k = fila[ini++]; const x = k % w, y = (k / w) | 0;
           const viz = [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, y > 0 ? k - w : -1, y < h - 1 ? k + w : -1];
           for (const n of viz) {
             if (n < 0 || marca[n]) continue;
-            if (distancia([lab[n * 3], lab[n * 3 + 1], lab[n * 3 + 2]], origem) < limite) { marca[n] = 1; fila[fim++] = n; }
+            if (dist(n) < limite && passo(k, n) < limitePasso) { marca[n] = 1; fila[fim++] = n; }
           }
         }
         if (fim < w * h * 0.03) throw new Error('peça não encontrada');
+        // Vazou para o fundo? (pegou quase a foto toda ou encosta em muito da borda) → não pinta
+        let naBorda = 0;
+        for (let x = 0; x < w; x++) { naBorda += marca[x] + marca[(h - 1) * w + x]; }
+        for (let y = 0; y < h; y++) { naBorda += marca[y * w] + marca[y * w + w - 1]; }
+        if (fim > w * h * 0.85 || naBorda > (2 * w + 2 * h) * 0.5) throw new Error('foto com fundo parecido com a peça');
         // Borda suave (duas passadas de desfoque)
         let alfa = Float32Array.from(marca);
         for (let passo = 0; passo < 2; passo++) {
@@ -355,7 +369,7 @@
   let pedidoFoto = 0;
   async function mostrarCorNaFoto() {
     const p = aberta;
-    if (!p || !p.foto) return;
+    if (!p || !p.foto || p.recolor === false) return;
     const img = $('p-foto').querySelector('img');
     const selo = $('p-cor-ilustrativa');
     if (!img) return;
@@ -397,7 +411,7 @@
     $('p-foto').classList.toggle('vazia', !p.foto);
     $('p-foto').innerHTML = p.foto ? `<img src="${esc(foto(p.foto, 1100))}" alt="${esc(p.nome)}"><span class="cor-ilustrativa" id="p-cor-ilustrativa" hidden>Cor ilustrativa</span>` : ICONE_CABIDE;
     pedidoFoto++;
-    if (p.foto && coresDe(p).filter(([, h]) => h).length > 1) Recolor.preparar(foto(p.foto, 900)).catch(() => {});
+    if (p.foto && p.recolor !== false && coresDe(p).filter(([, h]) => h).length > 1) Recolor.preparar(foto(p.foto, 900)).catch(() => {});
     $('p-cat').textContent = [p.categoria, p.marca].filter(Boolean).join(' · ');
     $('p-nome').textContent = p.nome;
     $('p-preco').innerHTML = precoHtml(p);
