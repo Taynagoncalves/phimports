@@ -23,6 +23,9 @@
   <link rel="stylesheet" href="../css/catalogo.css">
 </head>
 <body>
+  <!-- Faixa de anúncio -->
+  <div class="anuncio" id="anuncio" hidden></div>
+
   <!-- Barra do topo -->
   <header class="topo" id="topo">
     <div class="topo-dentro">
@@ -33,6 +36,7 @@
         <span class="contador" id="contador" hidden>0</span>
       </button>
     </div>
+    <nav class="topo-nav" id="topo-nav" aria-label="Categorias"></nav>
     <div class="topo-busca" id="topo-busca" hidden>
       <label for="q" class="sr-only">Buscar peças</label>
       <input id="q" type="search" placeholder="O que você procura?" autocomplete="off">
@@ -46,24 +50,32 @@
       <div class="hero-texto">
         <span class="sobretitulo" id="hero-sobre">Coleção</span>
         <h1 id="hero-titulo">Sua presença fala,<br><em>seu estilo confirma</em></h1>
-        <p id="hero-msg"></p>
+        <p id="hero-msg">Peças escolhidas a dedo. Monte sua sacola e finalize o pedido pelo WhatsApp.</p>
         <a href="#colecao" class="btn-linha">Ver a coleção</a>
       </div>
     </section>
 
+    <!-- Benefícios -->
+    <section class="beneficios" aria-label="Como funciona">
+      <div><svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg><strong>Monte sua sacola</strong><span>Escolha cor e tamanho</span></div>
+      <div><svg viewBox="0 0 24 24" class="cheio"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.3.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.3Z"/></svg><strong>Pedido pelo WhatsApp</strong><span>Rápido e sem cadastro</span></div>
+      <div id="beneficio-entrega"><svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg><strong>Retire ou receba</strong><span>Na loja ou em casa</span></div>
+      <div><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.3-9A5.4 5.4 0 0 1 12 6a5.4 5.4 0 0 1 9.3 6c-2.3 4.6-9.3 9-9.3 9Z"/></svg><strong>Atendimento próximo</strong><span>Tire dúvidas com a gente</span></div>
+    </section>
+
     <!-- Vitrines -->
     <section class="vitrine" id="vitrine-novidades" hidden>
-      <div class="secao-cabeca"><h2>Novidades</h2><span class="secao-sub">acabaram de chegar</span></div>
+      <div class="secao-cabeca"><span class="sobretitulo">Acabaram de chegar</span><h2>Novidades</h2></div>
       <div class="trilho" id="trilho-novidades"></div>
     </section>
     <section class="vitrine" id="vitrine-promo" hidden>
-      <div class="secao-cabeca"><h2>Promoções</h2><span class="secao-sub">por tempo limitado</span></div>
+      <div class="secao-cabeca"><span class="sobretitulo">Por tempo limitado</span><h2>Promoções</h2></div>
       <div class="trilho" id="trilho-promo"></div>
     </section>
 
     <!-- Coleção completa -->
     <section class="colecao" id="colecao">
-      <div class="secao-cabeca"><h2>A coleção</h2><span class="secao-sub" id="contagem"></span></div>
+      <div class="secao-cabeca"><span class="sobretitulo" id="contagem">Todas as peças</span><h2>A coleção</h2></div>
       <div class="filtros">
         <nav class="categorias" id="categorias" aria-label="Categorias"></nav>
         <label class="ordem"><span class="sr-only">Ordenar</span>
@@ -80,6 +92,9 @@
   </main>
 
   <footer class="rodape" id="rodape"></footer>
+
+  <!-- WhatsApp flutuante (dúvidas) -->
+  <a class="whats-flutuante" id="whats-flutuante" target="_blank" rel="noopener" aria-label="Falar no WhatsApp" hidden><svg viewBox="0 0 24 24" class="cheio"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.3.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.3Z"/></svg></a>
 
   <!-- Barra fixa da sacola (celular) -->
   <button type="button" class="barra-sacola" id="barra-sacola" hidden>

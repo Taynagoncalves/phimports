@@ -58,8 +58,9 @@
     if (cat.logo) $('logo-topo').src = cat.logo;
     $('logo-topo').alt = cat.nome;
     $('hero-sobre').textContent = cat.nome;
-    if (cat.mensagem) $('hero-msg').textContent = cat.mensagem;
-    else $('hero-msg').textContent = 'Escolha suas peças, monte a sacola e finalize o pedido pelo WhatsApp.';
+    if (cat.mensagem) { $('anuncio').textContent = cat.mensagem; $('anuncio').hidden = false; }
+    if (cat.entrega === false) $('beneficio-entrega').innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 10 12 4l8 6v10H4z"/><path d="M10 20v-6h4v6"/></svg><strong>Retire na loja</strong><span>Separamos para você</span>';
+    if (cat.whatsapp) { $('whats-flutuante').href = linkWhats(`Olá! Vim pelo catálogo da ${cat.nome} e tenho uma dúvida.`); }
     // Foto de abertura: a peça mais nova que tem foto
     const capa = cat.produtos.find((p) => p.foto);
     if (capa) { $('hero').classList.add('com-foto'); $('hero-foto').style.backgroundImage = `url("${foto(capa.foto, 1600)}")`; }
@@ -67,11 +68,24 @@
     if (cat.whatsapp) links.push(`<a href="${linkWhats(`Olá! Vim pelo catálogo da ${cat.nome}.`)}" target="_blank" rel="noopener">${ICONE_WHATS}WhatsApp</a>`);
     if (cat.instagram) links.push(`<a href="https://instagram.com/${encodeURIComponent(cat.instagram)}" target="_blank" rel="noopener">${ICONE_INSTA}@${esc(cat.instagram)}</a>`);
     $('rodape').innerHTML = `
-      <img src="${esc(cat.logo || '../img/logo-phimports.png')}" alt="${esc(cat.nome)}">
-      ${cat.endereco ? `<p>${esc(cat.endereco)}</p>` : ''}
-      <p>Pedidos pelo WhatsApp · a loja confirma a disponibilidade e combina pagamento e entrega.</p>
-      <div class="rodape-links">${links.join('')}</div>
-      <small>Atualizado em ${new Date(cat.atualizadoEm).toLocaleDateString('pt-BR')}</small>`;
+      <div class="rodape-dentro">
+        <div class="rodape-marca">
+          <img src="${esc(cat.logo || '../img/logo-phimports.png')}" alt="${esc(cat.nome)}">
+          <p class="rodape-frase">Sua presença fala, <em>seu estilo confirma</em>.</p>
+        </div>
+        <div class="rodape-col">
+          <h3>Como comprar</h3>
+          <p>1. Escolha as peças e o tamanho</p>
+          <p>2. Finalize a sacola pelo WhatsApp</p>
+          <p>3. A loja confirma e combina pagamento e ${cat.entrega === false ? 'retirada' : 'entrega'}</p>
+        </div>
+        <div class="rodape-col">
+          <h3>Fale com a gente</h3>
+          ${cat.endereco ? `<p>${esc(cat.endereco)}</p>` : ''}
+          <div class="rodape-links">${links.join('')}</div>
+        </div>
+      </div>
+      <small>© ${new Date().getFullYear()} ${esc(cat.nome)} · peças atualizadas em ${new Date(cat.atualizadoEm).toLocaleDateString('pt-BR')}</small>`;
   }
 
   /* ---------- Cards ---------- */
@@ -85,7 +99,7 @@
       <button type="button" class="card" data-peca="${esc(p.id)}" aria-label="${esc(p.nome)}">
         <div class="card-foto">
           ${p.foto ? `<img src="${esc(foto(p.foto, 600))}" alt="" loading="lazy">` : ICONE_CABIDE}
-          ${temPromo(p) ? `<span class="selo promo">−${Math.round((1 - p.promo / p.preco) * 100)}%</span>` : p.novo ? '<span class="selo">Novo</span>' : ''}
+          ${temPromo(p) ? `<span class="selo promo">−${Math.round((1 - p.promo / p.preco) * 100)}%</span>` : p.novo ? '<span class="selo">Novo</span>' : p.variacoes.reduce((s, v) => s + (v.q || 0), 0) <= 2 ? '<span class="selo">Últimas peças</span>' : ''}
           <span class="card-mais" aria-hidden="true">${ICONE_MAIS}</span>
         </div>
         <div class="card-nome">${esc(p.nome)}</div>
@@ -111,6 +125,11 @@
     $('categorias').innerHTML = cats.length > 1
       ? ['', ...cats].map((c) => `<button type="button" data-cat="${esc(c)}" aria-pressed="${c === categoria}">${c ? esc(c) : 'Tudo'}</button>`).join('') : '';
     $('categorias').querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { categoria = b.dataset.cat; desenharCategorias(); desenharGrade(); }));
+    $('topo-nav').innerHTML = cats.length > 1 ? ['', ...cats].map((c) => `<button type="button" data-nav="${esc(c)}" aria-current="${c === categoria}">${c ? esc(c) : 'Tudo'}</button>`).join('') : '';
+    $('topo-nav').querySelectorAll('[data-nav]').forEach((b) => b.addEventListener('click', () => {
+      categoria = b.dataset.nav; desenharCategorias(); desenharGrade();
+      $('colecao').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
   }
 
   function desenharGrade() {
@@ -119,7 +138,7 @@
       && (!q || normalizar(`${p.nome} ${p.categoria} ${p.marca} ${p.variacoes.map((v) => v.c).join(' ')}`).includes(q)));
     const ordem = $('ordem').value;
     if (ordem !== 'novos') lista = [...lista].sort((a, b) => ((precoDe(a) ?? 0) - (precoDe(b) ?? 0)) * (ordem === 'menor' ? 1 : -1));
-    $('contagem').textContent = `${lista.length} peça${lista.length === 1 ? '' : 's'}`;
+    $('contagem').textContent = `${categoria || 'Todas as peças'} · ${lista.length} peça${lista.length === 1 ? '' : 's'}`;
     $('grade').innerHTML = lista.map(cardHtml).join('');
     ligarCards($('grade'));
     $('estado').hidden = !!lista.length;
@@ -209,6 +228,7 @@
     const n = pecasSacola();
     $('contador').hidden = !n; $('contador').textContent = n;
     $('barra-sacola').hidden = !n || !$('camada-sacola').hidden || !$('camada-peca').hidden;
+    $('whats-flutuante').hidden = !cat || !cat.whatsapp || !!n || !$('camada-sacola').hidden || !$('camada-peca').hidden;
     $('barra-qtd').textContent = `${n} peça${n === 1 ? '' : 's'}`;
     $('barra-total').textContent = moeda(totalSacola());
   }
