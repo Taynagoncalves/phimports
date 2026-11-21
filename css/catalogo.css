@@ -412,3 +412,7 @@ svg.cheio { fill: currentColor; stroke: none; }
 .vitrine, .colecao { padding-top: 34px; }
 .secao-cabeca { margin-bottom: 18px; gap: 4px; }
 .secao-cabeca h2 { font-size: clamp(24px, 3vw, 32px); }
+/* Frase colada no topo */
+.hero { margin-top: 0; }
+.hero:not(.com-foto) .hero-texto { padding-top: 2px; }
+@media (min-width: 900px) { .hero:not(.com-foto) .hero-texto { padding-top: 6px; } }
