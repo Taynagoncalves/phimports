@@ -48,10 +48,13 @@
     { grupo: 'Catálogo', itens: [
       { id: 'produtos', texto: 'Produtos', icone: 'shirt', href: 'produtos.html' },
       { id: 'estoque', texto: 'Estoque', icone: 'package', href: 'estoque.html' },
-      { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' },
-      { id: 'reposicao', texto: 'Reposição', icone: 'shopping-cart', href: 'reposicao.html' },
+      { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' }
+    ] },
+    { grupo: 'Ferramentas', itens: [
+      { id: 'promocoes', texto: 'Promoções', icone: 'badge-percent', href: 'promocoes.html' },
+      { id: 'pontos', texto: 'Programa de pontos', icone: 'star', href: 'pontos.html' },
       { id: 'inventario', texto: 'Inventário', icone: 'clipboard-check', href: 'inventario.html' },
-      { id: 'promocoes', texto: 'Promoções', icone: 'badge-percent', href: 'promocoes.html' }
+      { id: 'reposicao', texto: 'Reposição', icone: 'shopping-cart', href: 'reposicao.html' }
     ] },
     { grupo: 'Cadastros', itens: [
       { id: 'clientes', texto: 'Clientes', icone: 'users', href: 'clientes.html' },
@@ -948,7 +951,7 @@
       ${linhaPag}
       ${venda.pagamento.troco ? `<div class="c-linha"><span>Troco R$</span><span>${m(venda.pagamento.troco)}</span></div>` : ''}
       ${!nota && venda.subtotal - venda.total > 0.004 ? `<div class="c-economia">Você economizou R$ ${m(venda.subtotal - venda.total)}</div>` : ''}
-      ${venda.pontosSaldo !== null && venda.pontosSaldo !== undefined ? `<div class="c-pontos"><div class="c-negrito">★ Programa de pontos</div>${venda.pontosUsados ? `<div>Usou ${venda.pontosUsados} pontos nesta compra</div>` : ''}<div>Ganhou ${venda.pontosGanhos} pontos nesta compra</div><div class="c-negrito">Seu saldo: ${venda.pontosSaldo} pontos (R$ ${m(venda.pontosValorSaldo)})</div></div>` : ''}
+      ${venda.pontosSaldo !== null && venda.pontosSaldo !== undefined ? `<div class="c-pontos"><div class="c-negrito">★ Programa de pontos</div>${venda.pontosUsados ? `<div>Usou ${venda.pontosUsados} pontos nesta compra</div>` : ''}<div>Ganhou ${venda.pontosGanhos} pontos nesta compra${venda.pontos && venda.pontos.mult > 1 ? ` (${venda.pontos.mult}× pontos!)` : ''}</div><div class="c-negrito">Seu saldo: ${venda.pontosSaldo} pontos (R$ ${m(venda.pontosValorSaldo)})</div></div>` : ''}
       <div class="c-sep"></div>
       ${nota ? `
         <div class="c-centro c-negrito">Consulte pela Chave de Acesso em</div>

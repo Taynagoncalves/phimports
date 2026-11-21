@@ -30,7 +30,7 @@
 
   // No Firestore: um documento por registro nestas coleções…
   const COLECOES = ['usuarios', 'produtos', 'clientes', 'fornecedores', 'vendas', 'notas', 'movimentacoes',
-    'creditos', 'caixas', 'entradas', 'promocoes', 'contasReceber', 'contasPagar', 'inventarios'];
+    'creditos', 'caixas', 'entradas', 'promocoes', 'contasReceber', 'contasPagar', 'inventarios', 'ajustesPontos'];
   // …e um documento cada para estes ajustes (objetos ou listas simples)
   const AJUSTES = ['loja', 'fiscal', 'config', 'cores', 'tamanhos', 'categorias'];
 
@@ -50,10 +50,13 @@
         // Migração: coleções novas do mock que ainda não existem no banco salvo
         const banco = JSON.parse(salvo);
         Object.keys(window.MOCK_DATA).forEach((k) => { if (!(k in banco)) banco[k] = clonar(window.MOCK_DATA[k]); });
+        COLECOES.forEach((c) => { if (!Array.isArray(banco[c])) banco[c] = []; });
         return banco;
       }
     } catch (e) { /* localStorage indisponível: segue com o mock */ }
-    return clonar(window.MOCK_DATA);
+    const banco = clonar(window.MOCK_DATA);
+    COLECOES.forEach((c) => { if (!Array.isArray(banco[c])) banco[c] = []; });
+    return banco;
   }
 
   /** Loja nova: sem produtos nem vendas, com tamanhos, categorias, cores e padrões prontos */
@@ -493,39 +496,191 @@
   const vendaValida = (v) => v.status !== 'cancelada' && valorLiquido(v) > 0;
 
   /* ---------- Programa de pontos (fidelidade) ----------
-     Regra em loja.fidelidade = { ativo, reaisPorPonto, valorPonto, minimoResgate }.
-     O saldo NÃO fica guardado: é a soma das vendas do cliente (ganhos − usados).
-     Assim trocas, devoluções e cancelamentos acertam os pontos sozinhos. */
+     Regra em loja.fidelidade = { ativo, reaisPorPonto, valorPonto, minimoResgate,
+       validadeMeses (0 = não vence), bonusPrimeiraCompra, campanha: { multiplicador, inicio, fim } }.
+     O saldo NÃO fica guardado: é calculado pelo extrato do cliente
+     (compras − pontos usados ± ajustes − pontos vencidos). Assim trocas,
+     devoluções e cancelamentos acertam os pontos sozinhos. */
   function regraPontos() {
     const f = (db.loja && db.loja.fidelidade) || {};
     if (!f.ativo) return null;
+    const camp = f.campanha || {};
     return {
       reaisPorPonto: Math.max(0.01, Number(f.reaisPorPonto) || 1),
       valorPonto: Math.max(0.001, Number(f.valorPonto) || 0.05),
-      minimoResgate: Math.max(0, Math.floor(Number(f.minimoResgate ?? 100) || 0))
+      minimoResgate: Math.max(0, Math.floor(Number(f.minimoResgate ?? 100) || 0)),
+      validadeMeses: Math.max(0, Math.floor(Number(f.validadeMeses) || 0)),
+      bonusPrimeiraCompra: Math.max(0, Math.floor(Number(f.bonusPrimeiraCompra) || 0)),
+      campanha: Number(camp.multiplicador) > 1 && camp.inicio && camp.fim
+        ? { multiplicador: Math.min(5, Math.floor(Number(camp.multiplicador))), inicio: camp.inicio, fim: camp.fim, nome: camp.nome || '' }
+        : null
     };
+  }
+  /** Campanha de pontos em dobro (ou triplo) valendo hoje? */
+  function campanhaPontosHoje(regra = regraPontos()) {
+    if (!regra || !regra.campanha) return null;
+    const hoje = diaLocal(new Date().toISOString());
+    return hoje >= regra.campanha.inicio && hoje <= regra.campanha.fim ? regra.campanha : null;
   }
   /** Pontos que a venda deu (sobre o que foi pago sem pontos e sem o que voltou em troca) */
   function pontosGanhosDa(v) {
     if (!v.pontos || !v.clienteId || v.status === 'cancelada') return 0;
-    const base = Math.max(0, valorLiquido(v) - (v.pontos.valorUsado || 0));
-    return Math.floor(base / (v.pontos.reaisPorPonto || 1) + 1e-9);
+    const liquido = valorLiquido(v);
+    if (liquido <= 0) return 0;                       // devolvida inteira: perde também o bônus
+    const base = Math.max(0, liquido - (v.pontos.valorUsado || 0));
+    return Math.floor(base / (v.pontos.reaisPorPonto || 1) + 1e-9) * (v.pontos.mult || 1) + (v.pontos.bonus || 0);
   }
   const pontosUsadosDa = (v) => (v.pontos && v.status !== 'cancelada' ? (v.pontos.usados || 0) : 0);
+
+  /** Movimentos de pontos (compras, usos e ajustes), agrupados por cliente */
+  function movimentosPontos(clienteId = null) {
+    const porCliente = new Map();
+    const de = (id) => { if (!porCliente.has(id)) porCliente.set(id, []); return porCliente.get(id); };
+    db.vendas.forEach((v) => {
+      if (!v.pontos || !v.clienteId || (clienteId && v.clienteId !== clienteId)) return;
+      const usados = pontosUsadosDa(v);
+      const ganhos = pontosGanhosDa(v);
+      // Na mesma compra: primeiro usa os pontos que tinha, depois ganha os novos
+      if (usados) de(v.clienteId).push({ data: v.data, ordem: 0, tipo: 'uso', pontos: -usados, vendaId: v.id, numero: v.numero });
+      if (ganhos) de(v.clienteId).push({ data: v.data, ordem: 1, tipo: 'compra', pontos: ganhos, vendaId: v.id, numero: v.numero, mult: v.pontos.mult || 1, bonus: v.pontos.bonus || 0 });
+    });
+    (db.ajustesPontos || []).forEach((a) => {
+      if (!a.clienteId || (clienteId && a.clienteId !== clienteId)) return;
+      de(a.clienteId).push({ data: a.data, ordem: 1, tipo: 'ajuste', pontos: Number(a.pontos) || 0, motivo: a.motivo || '', id: a.id });
+    });
+    porCliente.forEach((lista) => lista.sort((a, b) => a.data.localeCompare(b.data) || a.ordem - b.ordem));
+    return porCliente;
+  }
+
+  /**
+   * Saldo do cliente com validade: os pontos mais antigos são usados primeiro;
+   * o que passa da validade sem ser usado vence.
+   */
+  function calcularPontos(movimentos, regra = regraPontos()) {
+    const meses = regra ? regra.validadeMeses : 0;
+    const agora = new Date().toISOString();
+    const lotes = [];                     // { qtd, vence }
+    const extrato = [];
+    let ganhos = 0, usados = 0, vencidos = 0;
+    let divida = 0;                       // usou pontos que depois voltaram (troca/devolução): as próximas compras cobrem
+    const venceEm = (data) => { if (!meses) return null; const d = new Date(data); d.setMonth(d.getMonth() + meses); return d.toISOString(); };
+    const vencerAte = (quando) => {
+      while (lotes.length && lotes[0].vence && lotes[0].vence <= quando) {
+        const l = lotes.shift();
+        if (l.qtd > 0) { vencidos += l.qtd; extrato.push({ data: l.vence, tipo: 'vencidos', pontos: -l.qtd }); }
+      }
+    };
+    const consumir = (qtd) => {
+      let falta = qtd;
+      while (falta > 0 && lotes.length) {
+        const usa = Math.min(falta, lotes[0].qtd);
+        lotes[0].qtd -= usa; falta -= usa;
+        if (lotes[0].qtd <= 0) lotes.shift();
+      }
+      divida += falta;
+    };
+    movimentos.forEach((m) => {
+      vencerAte(m.data);
+      extrato.push(m);
+      if (m.pontos > 0) {
+        if (m.tipo === 'compra') ganhos += m.pontos;
+        const paga = Math.min(divida, m.pontos);
+        divida -= paga;
+        if (m.pontos - paga <= 0) return;
+        const vence = venceEm(m.data);
+        // mantém a fila em ordem de vencimento (ajustes e compras no mesmo dia)
+        const i = lotes.findIndex((l) => l.vence && vence && l.vence > vence);
+        const lote = { qtd: m.pontos - paga, vence };
+        if (i < 0) lotes.push(lote); else lotes.splice(i, 0, lote);
+      } else if (m.pontos < 0) {
+        if (m.tipo === 'uso') usados += -m.pontos;
+        consumir(-m.pontos);
+      }
+    });
+    vencerAte(agora);
+    const saldo = lotes.reduce((s, l) => s + l.qtd, 0) - divida;
+    const em30 = new Date(Date.now() + 30 * 86400000).toISOString();
+    const vencendo = lotes.filter((l) => l.vence && l.vence <= em30).reduce((s, l) => s + l.qtd, 0);
+    const proximo = lotes.find((l) => l.vence && l.qtd > 0);
+    return { saldo, ganhos, usados, vencidos, vencendo, proximoVencimento: proximo ? proximo.vence : null, extrato };
+  }
+
   function saldoPontosCliente(clienteId) {
     if (!clienteId) return 0;
-    return db.vendas.filter((v) => v.clienteId === clienteId).reduce((s, v) => s + pontosGanhosDa(v) - pontosUsadosDa(v), 0);
+    return calcularPontos(movimentosPontos(clienteId).get(clienteId) || []).saldo;
   }
   /** Saldo de pontos do cliente e quanto vale em R$ */
   function resumoPontos(clienteId) {
     const regra = regraPontos();
-    const saldo = Math.max(0, saldoPontosCliente(clienteId));
+    const r = clienteId ? calcularPontos(movimentosPontos(clienteId).get(clienteId) || [], regra) : { saldo: 0, vencendo: 0, proximoVencimento: null };
+    const saldo = Math.max(0, r.saldo);
+    const campanha = campanhaPontosHoje(regra);
     return responder({
-      ativo: !!regra, saldo, regra,
+      ativo: !!regra, saldo, regra, campanha,
       valor: regra ? arred(saldo * regra.valorPonto) : 0,
       minimo: regra ? regra.minimoResgate : 0,
-      podeUsar: !!regra && saldo > 0 && saldo >= regra.minimoResgate
+      podeUsar: !!regra && saldo > 0 && saldo >= regra.minimoResgate,
+      vencendo: r.vencendo, proximoVencimento: r.proximoVencimento
     });
+  }
+
+  /** Tela do programa de pontos: clientes, extrato e números do mês */
+  function painelPontos() {
+    const regra = regraPontos();
+    const fRegra = regra || { valorPonto: Number(((db.loja || {}).fidelidade || {}).valorPonto) || 0.05, minimoResgate: 0 };
+    const movs = movimentosPontos();
+    const mes = diaLocal(new Date().toISOString()).slice(0, 7);
+    const clientes = [];
+    const extrato = [];
+    let dadosMes = 0, usadosMes = 0, vencidosMes = 0;
+    movs.forEach((lista, clienteId) => {
+      const cli = db.clientes.find((c) => c.id === clienteId);
+      const r = calcularPontos(lista, regra);
+      const ultima = lista.filter((m) => m.tipo === 'compra').map((m) => m.data).pop() || null;
+      clientes.push({
+        clienteId, nome: cli ? cli.nome : 'Cliente removido', telefone: cli ? cli.telefone || '' : '',
+        saldo: Math.max(0, r.saldo), valor: arred(Math.max(0, r.saldo) * fRegra.valorPonto),
+        ganhos: r.ganhos, usados: r.usados, vencidos: r.vencidos, vencendo: r.vencendo,
+        proximoVencimento: r.proximoVencimento, ultimaCompra: ultima,
+        podeUsar: !!regra && r.saldo > 0 && r.saldo >= fRegra.minimoResgate
+      });
+      r.extrato.forEach((m) => {
+        extrato.push({ ...m, clienteId, clienteNome: cli ? cli.nome : '—' });
+        if (m.data.slice(0, 7) !== mes) return;
+        if (m.tipo === 'compra' || (m.tipo === 'ajuste' && m.pontos > 0)) dadosMes += m.pontos;
+        if (m.tipo === 'uso') usadosMes += -m.pontos;
+        if (m.tipo === 'vencidos') vencidosMes += -m.pontos;
+      });
+    });
+    clientes.sort((a, b) => b.saldo - a.saldo || a.nome.localeCompare(b.nome, 'pt-BR'));
+    extrato.sort((a, b) => b.data.localeCompare(a.data));
+    const saldoTotal = clientes.reduce((s, c) => s + c.saldo, 0);
+    return responder({
+      ativo: !!regra, regra: regra || null, campanha: campanhaPontosHoje(regra),
+      clientes, extrato,
+      totais: {
+        clientes: clientes.filter((c) => c.saldo > 0).length,
+        saldo: saldoTotal, saldoValor: arred(saldoTotal * fRegra.valorPonto),
+        dadosMes, usadosMes, usadosMesValor: arred(usadosMes * fRegra.valorPonto), vencidosMes,
+        vencendo: clientes.reduce((s, c) => s + c.vencendo, 0),
+        clientesVencendo: clientes.filter((c) => c.vencendo > 0).length
+      }
+    });
+  }
+
+  /** Bônus ou correção manual de pontos (só o dono) */
+  function ajustarPontos({ clienteId, pontos, motivo }) {
+    const negado = exigirDono('ajustar pontos'); if (negado) return negado;
+    const qtd = Math.trunc(Number(pontos) || 0);
+    if (!clienteId || !db.clientes.some((c) => c.id === clienteId)) return falhar('Escolha o cliente.');
+    if (!qtd) return falhar('Informe quantos pontos dar ou tirar.');
+    if (!String(motivo || '').trim()) return falhar('Escreva o motivo (aparece no extrato).');
+    if (qtd < 0 && -qtd > Math.max(0, saldoPontosCliente(clienteId))) return falhar('O cliente não tem tudo isso de pontos para tirar.');
+    db.ajustesPontos = db.ajustesPontos || [];
+    const ajuste = { id: gerarId('ap'), clienteId, pontos: qtd, motivo: String(motivo).trim().slice(0, 80), data: new Date().toISOString(), usuarioId: usuarioLogadoId() };
+    db.ajustesPontos.push(ajuste);
+    persistir();
+    return responder(ajuste);
   }
 
   function usuarioLogadoId() {
@@ -1380,7 +1535,11 @@
       total,
       pagamentos,
       // Fidelidade: regra do dia da venda (os pontos ganhos são recalculados se houver troca)
-      pontos: dados.clienteId && regraP ? { reaisPorPonto: regraP.reaisPorPonto, valorPonto: regraP.valorPonto, usados: pontosUsados, valorUsado: valorPontos } : null,
+      pontos: dados.clienteId && regraP ? {
+        reaisPorPonto: regraP.reaisPorPonto, valorPonto: regraP.valorPonto, usados: pontosUsados, valorUsado: valorPontos,
+        mult: (campanhaPontosHoje(regraP) || {}).multiplicador || 1,
+        bonus: regraP.bonusPrimeiraCompra && !db.vendas.some((x) => x.clienteId === dados.clienteId && x.status !== 'cancelada') ? regraP.bonusPrimeiraCompra : 0
+      } : null,
       // Resumo (compatível com relatórios antigos): forma principal, recebido e troco
       pagamento: {
         forma: pagamentos.length === 1 ? pagamentos[0].forma : 'multiplo',
@@ -2878,7 +3037,7 @@
     // Vendas
     listarVendas, obterVenda, registrarVenda, registrarDevolucao, cancelarVenda,
     // Vale-troca (crédito do cliente)
-    listarCreditos, obterCreditoPorCodigo, resumoPontos, publicarCatalogo, linkCatalogo,
+    listarCreditos, obterCreditoPorCodigo, resumoPontos, painelPontos, ajustarPontos, publicarCatalogo, linkCatalogo,
     // Caixa
     obterCaixaAberto, obterCaixa, listarCaixas, abrirCaixa, registrarMovimentoCaixa, fecharCaixa,
     // Regras de venda (limite de desconto) e autorização do dono

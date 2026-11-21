@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="../img/favicon.png">
+  <link rel="manifest" href="app.webmanifest">
+  <link rel="apple-touch-icon" href="../img/app-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PH Imports">
+  <meta name="theme-color" content="#18181B">
+  <title>Programa de pontos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tema claro/escuro antes de desenhar a página (evita piscar) -->
+  <script>try{var t=localStorage.getItem("gestaoloja:tema");document.documentElement.dataset.tema=t||(matchMedia("(prefers-color-scheme: dark)").matches?"escuro":"claro");}catch(e){}try{if(localStorage.getItem("gestaoloja:menu")==="recolhido")document.documentElement.classList.add("menu-recolhido");}catch(e){}try{var c=localStorage.getItem("gestaoloja:corcss");if(c){var s=document.createElement("style");s.id="cor-marca";s.textContent=c;document.head.appendChild(s);}}catch(e){}</script>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body data-pagina="pontos" data-titulo="Programa de pontos">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+
+      <main class="conteudo" id="conteudo" tabindex="-1">
+        <div class="pagina-cabecalho">
+          <div>
+            <h1>Programa de pontos <span id="pt-status"></span></h1>
+            <p>A cliente ganha pontos em cada compra e usa como desconto na Frente de caixa. Fideliza e faz voltar.</p>
+          </div>
+        </div>
+
+        <div id="pt-aviso"></div>
+
+        <section class="grid-stats" id="indicadores" aria-label="Resumo do programa"></section>
+
+        <div class="abas mt-6" role="tablist" aria-label="Programa de pontos" id="abas" style="margin-bottom:var(--esp-4)">
+          <button type="button" role="tab" class="aba" data-aba="clientes" aria-selected="true">Clientes <span class="aba-contagem" id="cont-clientes">0</span></button>
+          <button type="button" role="tab" class="aba" data-aba="extrato" aria-selected="false">Extrato</button>
+          <button type="button" role="tab" class="aba" data-aba="regras" aria-selected="false">Regras</button>
+        </div>
+
+        <!-- Clientes -->
+        <section id="painel-clientes">
+          <div class="vendas-busca">
+            <div class="busca">
+              <i data-lucide="search"></i>
+              <label for="busca" class="sr-only">Buscar cliente</label>
+              <input class="input" type="search" id="busca" placeholder="Buscar cliente">
+            </div>
+            <div class="chips" role="radiogroup" aria-label="Filtro" id="filtros">
+              <button type="button" class="chip" role="radio" data-filtro="todos" aria-checked="true">Todos</button>
+              <button type="button" class="chip" role="radio" data-filtro="usar" aria-checked="false">Já podem usar</button>
+              <button type="button" class="chip" role="radio" data-filtro="vencendo" aria-checked="false">Vencendo em 30 dias</button>
+            </div>
+            <button type="button" class="btn btn-secundario" id="btn-ajuste" style="margin-left:auto"><i data-lucide="plus"></i>Dar ou tirar pontos</button>
+          </div>
+          <div class="card mt-4" id="lista-clientes" style="overflow:hidden"></div>
+        </section>
+
+        <!-- Extrato -->
+        <section id="painel-extrato" hidden>
+          <div class="card" id="lista-extrato" style="overflow:hidden"></div>
+        </section>
+
+        <!-- Regras -->
+        <section id="painel-regras" hidden>
+          <form id="form-regras" class="grid-2" novalidate>
+            <div class="card card-corpo">
+              <h2>Como ganha e como usa</h2>
+              <label class="interruptor mt-4"><input type="checkbox" id="r-ativo"><span>Programa de pontos ligado</span></label>
+              <div class="pontos-regra mt-4" id="r-campos">
+                <div class="campo">
+                  <label for="r-reais">A cada (R$) em compras</label>
+                  <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="r-reais" inputmode="decimal" placeholder="1,00"></div>
+                  <span class="ajuda">ganha 1 ponto</span>
+                </div>
+                <div class="campo">
+                  <label for="r-valor">Cada ponto vale</label>
+                  <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="r-valor" inputmode="decimal" placeholder="0,05"></div>
+                  <span class="ajuda">de desconto</span>
+                </div>
+                <div class="campo">
+                  <label for="r-minimo">Mínimo para usar</label>
+                  <input class="input" id="r-minimo" type="number" min="0" step="1" placeholder="100">
+                  <span class="ajuda">pontos</span>
+                </div>
+                <div class="campo">
+                  <label for="r-validade">Os pontos vencem em</label>
+                  <select class="select" id="r-validade">
+                    <option value="0">Não vencem</option>
+                    <option value="3">3 meses</option>
+                    <option value="6">6 meses</option>
+                    <option value="12">12 meses</option>
+                    <option value="24">24 meses</option>
+                  </select>
+                  <span class="ajuda">contados da compra que deu os pontos</span>
+                </div>
+              </div>
+              <div class="alerta info mt-4"><i data-lucide="star"></i><span id="r-exemplo"></span></div>
+            </div>
+
+            <div class="card card-corpo">
+              <h2>Extras para vender mais</h2>
+              <div class="campo mt-4">
+                <label for="r-bonus">Bônus na 1ª compra</label>
+                <input class="input" id="r-bonus" type="number" min="0" step="10" placeholder="0">
+                <span class="ajuda">Pontos que ganha a mais quando a cliente cadastrada compra pela primeira vez. 0 = sem bônus.</span>
+              </div>
+              <h3 class="mt-6" style="font-size:var(--fs-sm)">Campanha de pontos em dobro</h3>
+              <p class="texto-xs texto-3 mt-1">Ex.: Black Friday, Dia das Mães, aniversário da loja. Aparece na Frente de caixa e no recibo.</p>
+              <div class="pontos-regra mt-2">
+                <div class="campo">
+                  <label for="r-mult">Multiplicar por</label>
+                  <select class="select" id="r-mult">
+                    <option value="1">Sem campanha</option>
+                    <option value="2">2× (em dobro)</option>
+                    <option value="3">3× (em triplo)</option>
+                  </select>
+                </div>
+                <div class="campo">
+                  <label for="r-inicio">De</label>
+                  <input class="input" type="date" id="r-inicio">
+                </div>
+                <div class="campo">
+                  <label for="r-fim">Até</label>
+                  <input class="input" type="date" id="r-fim">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primario mt-6"><i data-lucide="check"></i>Salvar regras</button>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <!-- Firebase (login e banco de dados na nuvem) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/cloudinary-config.js"></script>
+  <script src="../js/mock-data.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/app.js"></script>
+  <script src="../js/pontos.js"></script>
+</body>
+</html>

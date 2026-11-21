@@ -623,45 +623,6 @@ App.aoIniciar(async () => {
   escolherCor(corSalva);
 
   /* ==================================================================
-     PROGRAMA DE PONTOS (fidelidade)
-     ================================================================== */
-  {
-    const loja = await Data.obterLoja();
-    const f = { ativo: false, reaisPorPonto: 1, valorPonto: 0.05, minimoResgate: 100, ...(loja.fidelidade || {}) };
-    const el = (id) => document.getElementById(id);
-    const num = (v) => Number(String(v).replace(/\./g, '').replace(',', '.')) || 0;
-    const fmt = (v, casas = 2) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: 3 });
-    el('pt-ativo').checked = !!f.ativo;
-    el('pt-reais').value = fmt(f.reaisPorPonto);
-    el('pt-valor').value = fmt(f.valorPonto);
-    el('pt-minimo').value = f.minimoResgate;
-    function lerRegra() {
-      return { ativo: el('pt-ativo').checked, reaisPorPonto: num(el('pt-reais').value), valorPonto: num(el('pt-valor').value), minimoResgate: Math.max(0, Math.floor(Number(el('pt-minimo').value) || 0)) };
-    }
-    function exemplo() {
-      const r = lerRegra();
-      el('pt-campos').classList.toggle('desativado', !r.ativo);
-      if (!r.reaisPorPonto || !r.valorPonto) { el('pt-exemplo').textContent = 'Preencha os valores.'; return; }
-      const pontos = Math.floor(200 / r.reaisPorPonto);
-      const volta = (r.valorPonto / r.reaisPorPonto) * 100;
-      el('pt-exemplo').innerHTML = `Compra de <strong>R$ 200,00</strong> → ganha <strong>${pontos} pontos</strong> = ${App.formatarMoeda(pontos * r.valorPonto)} de desconto na próxima compra (<strong>${fmt(volta, 1)}% de volta</strong>). Usa a partir de ${r.minimoResgate} pontos (${App.formatarMoeda(r.minimoResgate * r.valorPonto)}).`;
-    }
-    ['pt-ativo', 'pt-reais', 'pt-valor', 'pt-minimo'].forEach((id) => el(id).addEventListener('input', exemplo));
-    el('pt-ativo').addEventListener('change', exemplo);
-    exemplo();
-    el('form-pontos').addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      const r = lerRegra();
-      if (r.ativo && (r.reaisPorPonto <= 0 || r.valorPonto <= 0)) return App.toast('Preencha quanto vale cada ponto e a cada quantos reais o cliente ganha 1 ponto.', 'erro');
-      if (r.ativo && r.valorPonto / r.reaisPorPonto > 0.3) return App.toast('Mais de 30% de volta? Confira os valores.', 'erro');
-      try {
-        await Data.salvarLoja({ fidelidade: r });
-        App.toast(r.ativo ? 'Programa de pontos salvo. Na Frente de caixa aparece a forma "Pontos".' : 'Programa de pontos desligado. Os pontos dos clientes ficam guardados.', 'sucesso');
-      } catch (e) { App.toast(e.message, 'erro'); }
-    });
-  }
-
-  /* ==================================================================
      CATÁLOGO ONLINE
      ================================================================== */
   {

@@ -132,7 +132,7 @@ App.aoIniciar(async () => {
 
   /* ---------- Zerar dados (antes de entregar a loja) ---------- */
   const GRUPOS_ZERAR = [
-    ['vendas', 'Vendas e trocas', 'Vendas, trocas, vales-troca, crediário, caixas e notas. Dashboard e relatórios voltam a zero e as vendas recomeçam no nº 1001.', ['vendas', 'notas', 'creditos', 'caixas', 'contasReceber']],
+    ['vendas', 'Vendas e trocas', 'Vendas, trocas, vales-troca, crediário, caixas e notas. Dashboard e relatórios voltam a zero e as vendas recomeçam no nº 1001.', ['vendas', 'notas', 'creditos', 'caixas', 'contasReceber', 'ajustesPontos']],
     ['produtos', 'Produtos e estoque', 'Produtos, estoque, entradas, movimentações, inventários e promoções.', ['produtos', 'movimentacoes', 'entradas', 'inventarios', 'promocoes']],
     ['clientes', 'Clientes e fornecedores', 'Todos os clientes e fornecedores cadastrados.', ['clientes', 'fornecedores']],
     ['financeiro', 'Contas a pagar', 'Contas a pagar lançadas no Financeiro.', ['contasPagar']]

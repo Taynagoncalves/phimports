@@ -443,7 +443,7 @@ App.aoIniciar(async () => {
     const el = $('pontos-cliente');
     el.classList.toggle('oculto', !pontosInfo);
     if (pontosInfo) {
-      el.innerHTML = `<i data-lucide="star"></i><span><strong>${App.formatarNumero(pontosInfo.saldo)} pontos</strong> = ${App.formatarMoeda(pontosInfo.valor)}${pontosInfo.podeUsar ? ' para usar' : ` · usa a partir de ${pontosInfo.minimo}`}</span>`;
+      el.innerHTML = `<i data-lucide="star"></i><span><strong>${App.formatarNumero(pontosInfo.saldo)} pontos</strong> = ${App.formatarMoeda(pontosInfo.valor)}${pontosInfo.podeUsar ? ' para usar' : ` · usa a partir de ${pontosInfo.minimo}`}${pontosInfo.campanha ? ` · <strong>✨ ${pontosInfo.campanha.multiplicador}× pontos hoje</strong>` : ''}</span>`;
       App.icones();
     }
     atualizarPagamento();
