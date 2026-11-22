@@ -254,6 +254,10 @@ App.aoIniciar(async () => {
   const CHAVE_REC = 'gestaoloja:etq-recibo-colunas';
   let colunasRecibo = 2;
   try { colunasRecibo = Number(localStorage.getItem(CHAVE_REC)) === 1 ? 1 : 2; } catch (e) { /* padrão */ }
+  // Tamanho de cada etiqueta na bobina (% da largura da coluna)
+  const CHAVE_REC_TAM = 'gestaoloja:etq-recibo-tam';
+  let tamRecibo = 100;
+  try { const t = Number(localStorage.getItem(CHAVE_REC_TAM)); if (t >= 40 && t <= 100) tamRecibo = t; } catch (e) { /* padrão */ }
   const AJ_FIXO = { largura: 40, altura: 25, girar: 0, escala: 100, x: 0, y: 0 };
   function imagensRecibo(lista, op) {
     const cache = new Map();
@@ -267,7 +271,7 @@ App.aoIniciar(async () => {
     const imgs = imagensRecibo(lista, op);
     const linhas = [];
     for (let i = 0; i < imgs.length; i += colunasRecibo) linhas.push(imgs.slice(i, i + colunasRecibo));
-    return `<div class="rec-folha" style="width:${larguraMm}mm;margin-left:${esquerdaMm}mm;--n:${colunasRecibo}">${linhas.map((l) => `<div class="rec-linha">${l.map((src) => `<img src="${src}" alt="">`).join('')}</div>`).join('')}</div>`;
+    return `<div class="rec-folha" style="width:${larguraMm}mm;margin-left:${esquerdaMm}mm;--n:${colunasRecibo};--tam:${tamRecibo}%">${linhas.map((l) => `<div class="rec-linha">${l.map((src) => `<img src="${src}" alt="">`).join('')}</div>`).join('')}</div>`;
   }
 
   function montar(lista, op) {
@@ -286,6 +290,8 @@ App.aoIniciar(async () => {
     $('etq-ajustes').classList.toggle('oculto', op.modelo !== 'termica');
     $('campo-colunas').classList.toggle('oculto', op.modelo !== 'recibo');
     document.querySelectorAll('[data-colunas-rec]').forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.colunasRec) === colunasRecibo)));
+    $('rec-tam').value = tamRecibo;
+    { const larg = ((70 - (colunasRecibo - 1) * 2) / colunasRecibo) * tamRecibo / 100; $('rec-tam-valor').textContent = `${String(Math.round(larg)).replace('.', ',')} × ${String(Math.round(larg * 25 / 40)).replace('.', ',')} mm`; }
     const lista = listaEtiquetas();
     const previa = $('previa');
     if (!lista.length) { previa.innerHTML = '<p class="texto-sm texto-3 texto-centro">Adicione peças para ver a etiqueta.</p>'; $('info-previa').textContent = ''; return; }
@@ -476,6 +482,11 @@ App.aoIniciar(async () => {
     const n = Number(String(e.target.value).replace(',', '.'));
     mudarAjuste(campo, n >= 15 && n <= 150 ? n : padrao);
   }));
+  $('rec-tam').addEventListener('input', (e) => {
+    tamRecibo = Math.max(40, Math.min(100, Number(e.target.value) || 100));
+    try { localStorage.setItem(CHAVE_REC_TAM, String(tamRecibo)); } catch (er) { /* ignora */ }
+    desenharPrevia();
+  });
   document.querySelectorAll('[data-colunas-rec]').forEach((b) => b.addEventListener('click', () => {
     colunasRecibo = Number(b.dataset.colunasRec) === 1 ? 1 : 2;
     try { localStorage.setItem(CHAVE_REC, String(colunasRecibo)); } catch (e) { /* ignora */ }

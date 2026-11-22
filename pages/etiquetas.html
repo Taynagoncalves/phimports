@@ -58,7 +58,7 @@
     /* Etiquetas na bobina de recibo (recortar na linha tracejada) */
     .rec-folha { display: flex; flex-direction: column; gap: 2mm; padding: 2mm 0 8mm; box-sizing: border-box; }
     .rec-linha { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 2mm; break-inside: avoid; page-break-inside: avoid; }
-    .rec-linha img { display: block; width: 100%; height: auto; outline: 0.3mm dashed #000; outline-offset: -0.15mm; image-rendering: pixelated; }
+    .rec-linha img { display: block; justify-self: center; width: var(--tam, 100%); height: auto; outline: 0.3mm dashed #000; outline-offset: -0.15mm; image-rendering: pixelated; }
     .rec-papel { width: 240px; max-width: 100%; background: #fff; padding: 6px 6px 0; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 8px 24px -8px rgba(16,24,40,.18); }
     .rec-papel .rec-folha { width: 100% !important; margin: 0 !important; padding: 0 0 10px; gap: 6px; }
     .rec-papel .rec-linha { gap: 6px; }
@@ -244,6 +244,7 @@
                     <button type="button" data-colunas-rec="1" role="radio">1 por linha</button>
                     <button type="button" data-colunas-rec="2" role="radio">2 por linha</button>
                   </div>
+                  <label class="aj-faixa"><span>Tamanho da etiqueta <b id="rec-tam-valor"></b></span><input type="range" id="rec-tam" min="40" max="100" step="5"></label>
                 </div>
                 <div class="campo oculto" id="campo-inicio">
                   <label for="posicao-inicial">Começar na etiqueta nº</label>
