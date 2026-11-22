@@ -915,8 +915,8 @@
   }
 
   /* Ajustes da impressora de recibo (ficam neste computador) */
-  const CHAVE_IMPRESSORA = 'gestaoloja:impressora';
-  const IMPRESSORA_PADRAO = { area80: 72, area58: 48, mover: 0, parte: 80 };
+  const CHAVE_IMPRESSORA = 'gestaoloja:impressora:v2';
+  const IMPRESSORA_PADRAO = { area80: 72, area58: 48, mover: 0, parte: 120 };
   function ajustesImpressora() {
     try { return { ...IMPRESSORA_PADRAO, ...JSON.parse(localStorage.getItem(CHAVE_IMPRESSORA) || '{}') }; } catch (e) { return { ...IMPRESSORA_PADRAO }; }
   }
@@ -970,7 +970,7 @@
           let fim = Math.min(canvas.height, ini + cabe);
           if (fim < canvas.height) {
             let y = fim;
-            const limite = ini + Math.floor(cabe * 0.6);
+            const limite = fim - Math.floor(Math.min(4 * pxPorMm, cabe * 0.3)); // procura um vão só nos últimos 4 mm
             while (y > limite && !linhaBranca(dados, canvas.width, y)) y--;
             if (y > limite) fim = y;
           }
@@ -986,11 +986,15 @@
         pedaco.getContext('2d').drawImage(canvas, 0, ini, canvas.width, fim - ini, 0, 0, canvas.width, fim - ini);
         const alturaPedaco = (fim - ini) / pxPorMm;
         const ultima = i === fatias.length - 1;
-        const altura = parte > 0 && fatias.length > 1 ? parte : Math.max(30, alturaPedaco + margemTopo + margemBase);
+        // Cada parte só com a altura do próprio conteúdo: as partes saem coladas, sem espaço em branco
+        const topo = i === 0 ? margemTopo : 0;
+        let altura = alturaPedaco + topo + (ultima ? margemBase : 0);
+        if (parte > 0 && fatias.length > 1 && !ultima) altura = Math.min(parte, altura);
+        altura = Math.max(pagina + 1, altura);   // sempre em pé (o leitor de PDF gira páginas deitadas)
         const orient = altura >= pagina ? 'portrait' : 'landscape';
         if (!doc) doc = new jsPDF({ unit: 'mm', format: [pagina, altura], orientation: orient, compress: true });
         else doc.addPage([pagina, altura], orient);
-        doc.addImage(pedaco.toDataURL('image/png'), 'PNG', x, margemTopo, util, alturaPedaco, undefined, 'FAST');
+        doc.addImage(pedaco.toDataURL('image/png'), 'PNG', x, topo, util, alturaPedaco, undefined, 'FAST');
         if (ultima) doc.setProperties({ title: 'Recibo' });
       });
       return doc.output('blob');
