@@ -838,3 +838,46 @@
 /* Tabela larga: rola dentro do próprio cartão, sem empurrar a página */
 .card:has(> .tabela-wrap) { min-width: 0; overflow: hidden; }
 .tabela-wrap { max-width: 100%; overflow-x: auto; }
+
+/* ==========================================================================
+   MENU LATERAL: sempre recolhido (só ícones + logo pequeno no topo)
+   e abre por cima da tela ao passar o mouse. Computador e notebook.
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .app, .menu-recolhido .app { grid-template-columns: var(--sidebar-recolhida) minmax(0, 1fr); }
+  .sidebar, .menu-recolhido .sidebar {
+    width: var(--sidebar-recolhida); overflow: hidden;
+    transition: width .22s cubic-bezier(.2, .8, .2, 1), box-shadow .22s;
+  }
+  .btn-recolher { display: none !important; }
+
+  /* Fechado: só ícones */
+  .sidebar:not(:hover):not(:focus-within) .nav-texto,
+  .sidebar:not(:hover):not(:focus-within) .nav-grupo-titulo,
+  .sidebar:not(:hover):not(:focus-within) .nav-contador,
+  .sidebar:not(:hover):not(:focus-within) .sidebar-usuario .info,
+  .sidebar:not(:hover):not(:focus-within) .sidebar-usuario .btn-sair,
+  .sidebar:not(:hover):not(:focus-within) .sidebar-usuario .btn-senha { display: none !important; }
+  .sidebar:not(:hover):not(:focus-within) .nav-link { justify-content: center; padding: 0; min-height: 40px; }
+  .sidebar:not(:hover):not(:focus-within) .nav-grupo { margin-bottom: var(--esp-2); padding-bottom: var(--esp-2); border-bottom: 1px solid var(--cor-borda); }
+  .sidebar:not(:hover):not(:focus-within) .nav-grupo:last-child { border-bottom: none; }
+  .sidebar:not(:hover):not(:focus-within) .nav-grupo.fechado .nav-grupo-itens { display: block; }
+  .sidebar:not(:hover):not(:focus-within) .sidebar-usuario { justify-content: center; padding: var(--esp-3) 0; }
+  .sidebar:not(:hover):not(:focus-within) .sidebar-nav { padding: var(--esp-2) 10px; }
+  /* Logo pequeno no topo */
+  .sidebar .sidebar-logo, .menu-recolhido .sidebar .sidebar-logo { display: flex; justify-content: center; padding: 0 8px; }
+  .sidebar .sidebar-logo .sidebar-logo-img, .menu-recolhido .sidebar-logo .sidebar-logo-img { display: flex !important; justify-content: center; padding: 6px 0; }
+  .sidebar:not(:hover):not(:focus-within) .sidebar-logo-img img { max-width: 54px; }
+
+  /* Aberto (mouse em cima): menu completo por cima do conteúdo */
+  .sidebar:hover, .sidebar:focus-within { width: 236px; box-shadow: 0 0 0 1px var(--cor-borda), 0 24px 48px -12px rgba(16, 24, 40, .25); }
+  .sidebar:hover .nav-link, .sidebar:focus-within .nav-link { justify-content: flex-start; padding: 0 var(--esp-3); }
+  .sidebar:hover .sidebar-logo, .sidebar:focus-within .sidebar-logo { justify-content: flex-start; padding: 0 var(--esp-4); }
+  .sidebar:hover .sidebar-logo-img img, .sidebar:focus-within .sidebar-logo-img img { max-width: 150px; }
+  .sidebar:hover .nav-texto, .sidebar:hover .nav-grupo-titulo, .sidebar:hover .sidebar-usuario .info,
+  .sidebar:focus-within .nav-texto, .sidebar:focus-within .nav-grupo-titulo, .sidebar:focus-within .sidebar-usuario .info { display: block; }
+  .sidebar:hover .sidebar-usuario .btn-sair, .sidebar:hover .sidebar-usuario .btn-senha,
+  .sidebar:focus-within .sidebar-usuario .btn-sair, .sidebar:focus-within .sidebar-usuario .btn-senha { display: inline-grid; }
+  .sidebar:hover .sidebar-usuario, .sidebar:focus-within .sidebar-usuario { justify-content: flex-start; padding: var(--esp-3) var(--esp-4); }
+  .sidebar .nav-texto, .sidebar .nav-grupo-titulo { white-space: nowrap; }
+}
