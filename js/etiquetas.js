@@ -258,12 +258,20 @@ App.aoIniciar(async () => {
   function desenharPrevia() {
     const op = opcoes();
     $('campo-inicio').classList.toggle('oculto', op.modelo !== 'pimaco');
+    $('etq-ajustes').classList.toggle('oculto', op.modelo !== 'termica');
     const lista = listaEtiquetas();
     const previa = $('previa');
     if (!lista.length) { previa.innerHTML = '<p class="texto-sm texto-3 texto-centro">A prévia aparece aqui.</p>'; $('info-previa').textContent = ''; return; }
     if (op.modelo === 'termica') {
-      previa.innerHTML = montar(lista.slice(0, 6), op);
-      $('info-previa').textContent = lista.length > 6 ? `mostrando 6 de ${lista.length}` : '';
+      previa.innerHTML = '<div class="previa-rolo"></div>';
+      lista.slice(0, 4).forEach((item) => {
+        const cv = canvasEtiqueta(item, op);
+        cv.className = 'etq-canvas';
+        cv.style.aspectRatio = `${ajustes.largura} / ${ajustes.altura}`;
+        previa.firstChild.appendChild(cv);
+      });
+      const mm = (n) => String(n).replace('.', ',');
+      $('info-previa').textContent = `${mm(ajustes.largura)} × ${mm(ajustes.altura)} mm` + (lista.length > 4 ? ` · 4 de ${lista.length}` : '');
     } else {
       // Só a primeira folha, reduzida para caber na lateral
       const folhas = folhasA4(lista.slice(0, POR_FOLHA), op);
@@ -271,6 +279,170 @@ App.aoIniciar(async () => {
       $('info-previa').textContent = `${Math.ceil((lista.length + op.inicio - 1) / POR_FOLHA)} folha(s) A4`;
     }
   }
+
+  /* ---------- Etiqueta térmica: desenho em canvas + ajustes ---------- */
+  const CHAVE_AJUSTES = 'gestaoloja:etq-ajustes';
+  const AJUSTES_PADRAO = { largura: 40, altura: 25, girar: 0, escala: 100, x: 0, y: 0 };
+  const PX_MM = 12;                    // resolução do desenho (~305 dpi)
+  const PT = 0.3528;                   // 1 ponto em mm
+  let ajustes = { ...AJUSTES_PADRAO };
+  try { ajustes = { ...AJUSTES_PADRAO, ...JSON.parse(localStorage.getItem(CHAVE_AJUSTES) || '{}') }; } catch (e) { /* padrão */ }
+  function salvarAjustes() { try { localStorage.setItem(CHAVE_AJUSTES, JSON.stringify(ajustes)); } catch (e) { /* ignora */ } }
+
+  /** Código de barras só com as barras (os números são escritos à parte, sem distorcer) */
+  function barrasCanvas(codigo) {
+    const c = document.createElement('canvas');
+    try {
+      JsBarcode(c, codigo, { format: ean13Valido(codigo) ? 'EAN13' : 'CODE128', displayValue: false, margin: 0, height: 80, width: 3, flat: true });
+      return c;
+    } catch (e) { return null; }
+  }
+
+  /** Corta o texto com "…" para caber na largura */
+  function caber(ctx, texto, largura) {
+    if (ctx.measureText(texto).width <= largura) return texto;
+    let t = texto;
+    while (t.length > 1 && ctx.measureText(t + '…').width > largura) t = t.slice(0, -1);
+    return t.trimEnd() + '…';
+  }
+
+  /**
+   * Desenha uma etiqueta no tamanho do papel (mm × PX_MM).
+   * O conteúdo é montado na área "de pé" (40×25) e depois girado, ampliado e deslocado.
+   */
+  function canvasEtiqueta(item, op, aj = ajustes) {
+    const v = item.variacao, p = item.produto;
+    const giro = ((Number(aj.girar) || 0) % 360 + 360) % 360;
+    const deitado = giro === 90 || giro === 270;
+    const W = deitado ? aj.altura : aj.largura;      // área do conteúdo (mm)
+    const H = deitado ? aj.largura : aj.altura;
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(aj.largura * PX_MM); cv.height = Math.round(aj.altura * PX_MM);
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.scale(PX_MM, PX_MM);                          // daqui em diante, tudo em mm
+    ctx.translate(aj.largura / 2 + (Number(aj.x) || 0), aj.altura / 2 + (Number(aj.y) || 0));
+    ctx.rotate(giro * Math.PI / 180);
+    const s = (Number(aj.escala) || 100) / 100;
+    ctx.scale(s, s);
+    ctx.translate(-W / 2, -H / 2);
+
+    // Linhas (altura em mm) — distribuídas de cima a baixo
+    const margem = 1, util = W - margem * 2;
+    const linhas = [];
+    if (op.loja) linhas.push({ tipo: 'texto', txt: String(loja.nome || '').toUpperCase(), fonte: `${6.5 * PT}px Arial, Helvetica, sans-serif`, alt: 6.5 * PT });
+    linhas.push({ tipo: 'texto', txt: p.nome, fonte: `bold ${8.5 * PT}px Arial, Helvetica, sans-serif`, alt: 8.5 * PT });
+    linhas.push({ tipo: 'var', alt: 8 * PT });
+    const barras = barrasCanvas(v.codigoBarras || v.sku);
+    linhas.push({ tipo: 'barras', alt: op.numero ? 6.8 : 8.5 });
+    if (op.numero) linhas.push({ tipo: 'texto', txt: v.codigoBarras || v.sku, fonte: `${7 * PT}px "Courier New", monospace`, alt: 7 * PT });
+    if (op.preco) linhas.push({ tipo: 'texto', txt: App.formatarMoeda(p.preco), fonte: `bold ${14 * PT}px Arial, Helvetica, sans-serif`, alt: 14 * PT });
+    const soma = linhas.reduce((t, l) => t + l.alt, 0);
+    const folga = Math.max(0, (H - margem * 2 - soma) / Math.max(1, linhas.length - 1));
+    let y = margem;
+    ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    linhas.forEach((l) => {
+      if (l.tipo === 'texto') {
+        ctx.font = l.fonte;
+        ctx.fillText(caber(ctx, l.txt, util), W / 2, y);
+      } else if (l.tipo === 'var') {
+        // "Tam. 38 · Preto" com o tamanho em negrito
+        const a = 'Tam. ', b = String(v.tamanho), c = ` · ${v.cor}`;
+        const normal = `${8 * PT}px Arial, Helvetica, sans-serif`, negrito = `bold ${8 * PT}px Arial, Helvetica, sans-serif`;
+        ctx.font = normal; const wa = ctx.measureText(a).width; let cc = c;
+        ctx.font = negrito; const wb = ctx.measureText(b).width;
+        ctx.font = normal; cc = caber(ctx, c, Math.max(2, util - wa - wb)); const wc = ctx.measureText(cc).width;
+        let x0 = W / 2 - (wa + wb + wc) / 2;
+        ctx.textAlign = 'left';
+        ctx.fillText(a, x0, y); x0 += wa;
+        ctx.font = negrito; ctx.fillText(b, x0, y); x0 += wb;
+        ctx.font = normal; ctx.fillText(cc, x0, y);
+        ctx.textAlign = 'center';
+      } else if (l.tipo === 'barras') {
+        if (barras) {
+          ctx.imageSmoothingEnabled = false;
+          const larg = Math.min(util, W - 2);
+          ctx.drawImage(barras, (W - larg) / 2, y, larg, l.alt);
+        } else {
+          ctx.font = `${7 * PT}px Arial, sans-serif`;
+          ctx.fillText('Código inválido', W / 2, y + l.alt / 2 - 1);
+        }
+      }
+      y += l.alt + folga;
+    });
+    return cv;
+  }
+
+  /** Carrega o jsPDF só quando for imprimir */
+  let jspdfCarregando = null;
+  function carregarJsPdf() {
+    if (window.jspdf) return Promise.resolve();
+    if (!jspdfCarregando) {
+      jspdfCarregando = new Promise((ok, erro) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        s.onload = ok; s.onerror = () => { jspdfCarregando = null; erro(new Error('jsPDF')); };
+        document.head.appendChild(s);
+      });
+    }
+    return jspdfCarregando;
+  }
+
+  /** PDF com uma página do tamanho exato da etiqueta para cada peça */
+  async function pdfTermico(lista, op) {
+    await carregarJsPdf();
+    const { jsPDF } = window.jspdf;
+    const w = Number(ajustes.largura), h = Number(ajustes.altura);
+    const orient = w > h ? 'landscape' : 'portrait';
+    const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: orient, compress: true });
+    const cache = new Map();          // mesma peça = mesma imagem
+    lista.forEach((item, i) => {
+      if (i) doc.addPage([w, h], orient);
+      let img = cache.get(item.sku);
+      if (!img) { img = canvasEtiqueta(item, op).toDataURL('image/png'); cache.set(item.sku, img); }
+      doc.addImage(img, 'PNG', 0, 0, w, h, item.sku, 'FAST');
+    });
+    doc.setProperties({ title: 'Etiquetas' });
+    return doc.output('blob');
+  }
+
+  /** Abre a impressão do PDF (o leitor de PDF não põe data, título nem endereço) */
+  function imprimirPdf(blob) {
+    const url = URL.createObjectURL(blob);
+    const antigo = document.getElementById('quadro-etiquetas');
+    if (antigo) antigo.remove();
+    const quadro = document.createElement('iframe');
+    quadro.id = 'quadro-etiquetas';
+    quadro.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+    quadro.onload = () => setTimeout(() => {
+      try { quadro.contentWindow.focus(); quadro.contentWindow.print(); }
+      catch (e) { window.open(url, '_blank'); }
+    }, 300);
+    quadro.src = url;
+    document.body.appendChild(quadro);
+    setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
+  }
+
+  /* ---------- Painel de ajustes ---------- */
+  function desenharAjustes() {
+    document.querySelectorAll('[data-girar]').forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.girar) === Number(ajustes.girar))));
+    $('aj-escala').value = ajustes.escala; $('aj-escala-valor').textContent = `${ajustes.escala}%`;
+    $('aj-x').value = ajustes.x; $('aj-x-valor').textContent = `${Number(ajustes.x).toLocaleString('pt-BR')} mm`;
+    $('aj-y').value = ajustes.y; $('aj-y-valor').textContent = `${Number(ajustes.y).toLocaleString('pt-BR')} mm`;
+    $('aj-largura').value = ajustes.largura; $('aj-altura').value = ajustes.altura;
+  }
+  function mudarAjuste(campo, valor) {
+    ajustes[campo] = valor;
+    salvarAjustes(); desenharAjustes(); desenharPrevia();
+  }
+  document.querySelectorAll('[data-girar]').forEach((b) => b.addEventListener('click', () => mudarAjuste('girar', Number(b.dataset.girar))));
+  [['aj-escala', 'escala'], ['aj-x', 'x'], ['aj-y', 'y']].forEach(([id, campo]) => $(id).addEventListener('input', (e) => mudarAjuste(campo, Number(e.target.value))));
+  [['aj-largura', 'largura', 40], ['aj-altura', 'altura', 25]].forEach(([id, campo, padrao]) => $(id).addEventListener('change', (e) => {
+    const n = Number(String(e.target.value).replace(',', '.'));
+    mudarAjuste(campo, n >= 15 && n <= 150 ? n : padrao);
+  }));
+  $('aj-restaurar').addEventListener('click', () => { ajustes = { ...AJUSTES_PADRAO }; salvarAjustes(); desenharAjustes(); desenharPrevia(); });
+  desenharAjustes();
 
   /* ---------- Eventos ---------- */
   document.querySelectorAll('[data-qtd-modo]').forEach((b) => b.addEventListener('click', () => {
@@ -306,8 +478,15 @@ App.aoIniciar(async () => {
     if (!lista.length) return;
     const total = itensDaFila().reduce((s, i) => s + i.qtd, 0);
     if (total > LIMITE) App.toast(`Limite de ${LIMITE} etiquetas por impressão. Imprima o restante em seguida.`, 'aviso', 6000);
-    const pagina = op.modelo === 'termica' ? '@page { size: 40mm 25mm; margin: 0; }' : '@page { size: A4; margin: 0; }';
-    App.imprimir(montar(lista, op), pagina);
+    if (op.modelo === 'termica') {
+      const botao = $('btn-imprimir');
+      botao.disabled = true;
+      pdfTermico(lista, op).then(imprimirPdf)
+        .catch(() => App.toast('Não foi possível gerar as etiquetas. Verifique a internet e tente de novo.', 'erro'))
+        .finally(() => { botao.disabled = false; });
+      return;
+    }
+    App.imprimir(montar(lista, op), '@page { size: A4; margin: 0; }');
   });
 
   /* ---------- Fila inicial: vinda da entrada de mercadoria ou ?produto= ---------- */

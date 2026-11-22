@@ -53,6 +53,16 @@
     /* Prévia na tela */
     .previa { background: var(--cor-superficie-2); border-radius: var(--raio); padding: 16px; overflow: auto; max-height: 70vh; }
     .previa .etq-termica, .previa .etq-pimaco { outline: 1px dashed #c8ccd6; }
+    .previa-rolo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .etq-canvas { width: 100%; max-width: 230px; height: auto; background: #fff; border-radius: 3px; box-shadow: 0 0 0 1px #d5d9e2, 0 2px 8px rgba(0,0,0,.08); }
+    .aj-topo { display: flex; align-items: center; justify-content: space-between; }
+    .aj-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); }
+    .aj-faixa { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
+    .aj-faixa > span { display: flex; justify-content: space-between; }
+    .aj-faixa b { font-weight: 600; color: var(--cor-texto-2); font-variant-numeric: tabular-nums; }
+    .aj-faixa input { width: 100%; accent-color: var(--cor-destaque); }
+    .aj-papel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .aj-papel label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-xs); color: var(--cor-texto-3); }
     .previa .folha-a4 { box-shadow: var(--sombra); transform-origin: top left; }
 
     /* Impressão: cada etiqueta térmica em uma página do rolo; A4 em folhas */
@@ -148,10 +158,30 @@
                   <label class="interruptor"><input type="checkbox" id="mostrar-preco" checked><span>Preço</span></label>
                   <label class="interruptor"><input type="checkbox" id="mostrar-numero" checked><span>Números do código</span></label>
                 </div>
+                <div class="etq-opcoes" id="etq-ajustes">
+                  <div class="aj-topo"><span class="rotulo">Ajustar na etiqueta</span><button type="button" class="btn btn-fantasma" style="min-height:28px;font-size:var(--fs-xs)" id="aj-restaurar"><i data-lucide="rotate-ccw"></i>Restaurar</button></div>
+                  <div class="aj-linha">
+                    <span>Girar</span>
+                    <div class="chips chips-compactos" role="radiogroup" aria-label="Girar etiqueta">
+                      <button type="button" class="chip" data-girar="0" role="radio">0°</button>
+                      <button type="button" class="chip" data-girar="90" role="radio">90°</button>
+                      <button type="button" class="chip" data-girar="180" role="radio">180°</button>
+                      <button type="button" class="chip" data-girar="270" role="radio">270°</button>
+                    </div>
+                  </div>
+                  <label class="aj-faixa"><span>Tamanho <b id="aj-escala-valor"></b></span><input type="range" id="aj-escala" min="60" max="160" step="5"></label>
+                  <label class="aj-faixa"><span>Mover para os lados <b id="aj-x-valor"></b></span><input type="range" id="aj-x" min="-8" max="8" step="0.5"></label>
+                  <label class="aj-faixa"><span>Mover para cima/baixo <b id="aj-y-valor"></b></span><input type="range" id="aj-y" min="-8" max="8" step="0.5"></label>
+                  <div class="aj-papel">
+                    <label><span>Largura (mm)</span><input class="input" type="number" id="aj-largura" min="15" max="150" step="0.5"></label>
+                    <label><span>Altura (mm)</span><input class="input" type="number" id="aj-altura" min="15" max="150" step="0.5"></label>
+                  </div>
+                  <span class="ajuda">Os ajustes ficam salvos neste computador.</span>
+                </div>
               </div>
               <div class="etq-imprimir">
                 <button type="button" class="btn btn-primario btn-grande btn-bloco" id="btn-imprimir" disabled><i data-lucide="printer"></i>Imprimir <span id="qtd-botao"></span></button>
-                <p class="texto-xs texto-3" style="margin-top:8px">Na janela de impressão, abra <strong>Mais definições</strong>, desmarque <strong>Cabeçalhos e rodapés</strong> e use margens <strong>Nenhuma</strong>.</p>
+                <p class="texto-xs texto-3" style="margin-top:8px">A etiqueta térmica sai como PDF do tamanho exato, sem data nem endereço do site. Na impressora, o papel deve estar em <strong>40 × 25 mm</strong>.</p>
               </div>
             </section>
             <section class="card">
