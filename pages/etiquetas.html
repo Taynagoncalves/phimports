@@ -50,22 +50,102 @@
     }
     .rolo { display: flex; flex-wrap: wrap; gap: 3mm; }
 
-    /* Prévia na tela */
-    .previa { background: var(--cor-superficie-2); border-radius: var(--raio); padding: 16px; overflow: auto; max-height: 70vh; }
+    /* ---------- Prévia na tela ---------- */
+    .previa { overflow: auto; max-height: 60vh; display: flex; justify-content: center; }
     .previa .etq-termica, .previa .etq-pimaco { outline: 1px dashed #c8ccd6; }
-    body[data-pagina="etiquetas"] .form-lateral { position: static; }
-    .etq-previa .previa { padding: 12px; }
-    .previa-rolo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .etq-canvas { width: 100%; max-width: 220px; height: auto; background: #fff; border-radius: 3px; box-shadow: 0 0 0 1px #d5d9e2, 0 2px 8px rgba(0,0,0,.08); }
-    .aj-topo { display: flex; align-items: center; justify-content: space-between; }
+    .previa-rolo { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+    .etq-canvas { width: 100%; max-width: 250px; height: auto; background: #fff; border-radius: 4px; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 8px 24px -8px rgba(16,24,40,.18); }
+    .previa .folha-a4 { box-shadow: var(--sombra); transform-origin: top left; }
+
+    /* ---------- Layout ---------- */
+    .etq-colunas { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--esp-5); align-items: start; }
+    .etq-colunas .card { min-width: 0; }
+    #fila { overflow-x: auto; }
+    @media (max-width: 600px) {
+      .etq-modo > span { display: none; }
+      .etq-produto { flex-wrap: wrap; padding: 12px 16px; row-gap: 8px; }
+      .etq-produto .etq-produto-info, .etq-grupo-cabecalho .etq-produto-info { flex: 1 1 calc(100% - 60px); }
+      .etq-produto > .btn { margin-left: auto; }
+      .etq-produto > .badge { margin-left: 52px; }
+      .etq-grupo { padding: 14px 16px 16px; }
+      .etq-grupo-cabecalho > div:last-child { margin-left: auto; }
+    }
+    .etq-esq { display: grid; gap: var(--esp-5); min-width: 0; }
+    @media (min-width: 1024px) {
+      .etq-colunas { grid-template-columns: minmax(0, 1fr) 340px; }
+      .etq-dir { position: sticky; top: calc(var(--topbar-altura) + var(--esp-4)); max-height: calc(100vh - var(--topbar-altura) - 32px); overflow-y: auto; scrollbar-width: none; border-radius: var(--raio-lg, 14px); }
+      .etq-dir::-webkit-scrollbar { display: none; }
+    }
+    .etq-modo { display: flex; align-items: center; gap: 10px; font-size: var(--fs-xs); color: var(--cor-texto-3); }
+    .etq-filtros { display: grid; gap: 10px; padding-bottom: 12px; }
+
+    /* ---------- Painel ---------- */
+    .etq-painel { overflow: hidden; }
+    .etq-palco {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding: 28px 20px 16px;
+      background:
+        radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--cor-texto-3) 22%, transparent) 1px, transparent 0) 0 0 / 14px 14px,
+        var(--cor-superficie-2);
+      border-bottom: 1px solid var(--cor-borda);
+    }
+    .etq-palco .previa > p { margin: 24px 0; }
+    .etq-palco-info { font-size: var(--fs-xs); color: var(--cor-texto-3); font-variant-numeric: tabular-nums; min-height: 1em; }
+    .etq-painel-corpo { display: grid; gap: 18px; padding: 18px 20px 20px; }
+    .etq-campo { display: grid; gap: 8px; }
+
+    /* Seletor segmentado */
+    .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 3px; background: var(--cor-superficie-2); border: 1px solid var(--cor-borda); border-radius: 10px; }
+    .seg > label, .seg > button { position: relative; display: flex; }
+    .seg input { position: absolute; opacity: 0; pointer-events: none; }
+    .seg > label > span, .seg > button {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 34px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent;
+      font: inherit; font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--cor-texto-3);
+      cursor: pointer; transition: background var(--transicao), color var(--transicao), box-shadow var(--transicao); white-space: nowrap;
+    }
+    .seg > label > span svg { width: 15px; height: 15px; }
+    .seg > label:hover > span, .seg > button:hover { color: var(--cor-texto); }
+    .seg input:checked + span, .seg > button[aria-checked="true"] { background: var(--cor-superficie); color: var(--cor-texto); box-shadow: 0 1px 2px rgba(16,24,40,.08), 0 0 0 1px var(--cor-borda); }
+    .seg input:focus-visible + span, .seg > button:focus-visible { box-shadow: var(--anel-foco); }
+    .seg-mini > button { min-height: 28px; padding: 0 10px; font-size: var(--fs-xs); }
+
+    /* Liga/desliga em pílulas */
+    .togs { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tog { position: relative; }
+    .tog input { position: absolute; opacity: 0; pointer-events: none; }
+    .tog span {
+      display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 12px 0 10px;
+      border: 1px solid var(--cor-borda); border-radius: 999px; background: var(--cor-superficie);
+      font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--cor-texto-3); cursor: pointer;
+      transition: background var(--transicao), color var(--transicao), border-color var(--transicao);
+    }
+    .tog span svg { width: 14px; height: 14px; opacity: 0; margin-left: -4px; width: 0; transition: opacity var(--transicao), width var(--transicao), margin var(--transicao); }
+    .tog input:checked + span { background: var(--cor-destaque); border-color: var(--cor-destaque); color: var(--cor-destaque-texto); }
+    .tog input:checked + span svg { opacity: 1; width: 14px; margin-left: 0; }
+    .tog input:focus-visible + span { box-shadow: var(--anel-foco); }
+
+    /* Ajustes recolhidos */
+    .etq-ajustes { border-top: 1px solid var(--cor-borda); margin: 0 -20px -20px; }
+    .etq-ajustes summary {
+      display: flex; align-items: center; gap: 8px; padding: 14px 20px; list-style: none; cursor: pointer;
+      font-size: var(--fs-sm); font-weight: var(--fw-semi); color: var(--cor-texto-2);
+    }
+    .etq-ajustes summary::-webkit-details-marker { display: none; }
+    .etq-ajustes summary svg { width: 16px; height: 16px; color: var(--cor-texto-3); }
+    .etq-ajustes summary .seta { margin-left: auto; transition: transform var(--transicao); }
+    .etq-ajustes[open] summary .seta { transform: rotate(180deg); }
+    .etq-ajustes summary:hover { color: var(--cor-texto); }
+    .etq-ajustes-corpo { display: grid; gap: 14px; padding: 4px 20px 20px; }
     .aj-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); }
-    .aj-faixa { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
+    .aj-faixa { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-sm); }
     .aj-faixa > span { display: flex; justify-content: space-between; }
     .aj-faixa b { font-weight: 600; color: var(--cor-texto-2); font-variant-numeric: tabular-nums; }
     .aj-faixa input { width: 100%; accent-color: var(--cor-destaque); }
     .aj-papel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .aj-papel label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-xs); color: var(--cor-texto-3); }
-    .previa .folha-a4 { box-shadow: var(--sombra); transform-origin: top left; }
+    .aj-rodape { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--fs-xs); color: var(--cor-texto-3); }
+    .aj-rodape .btn { min-height: 28px; font-size: var(--fs-xs); flex-shrink: 0; }
 
     /* Impressão: cada etiqueta térmica em uma página do rolo; A4 em folhas */
     @media print {
@@ -88,106 +168,107 @@
         <div class="pagina-cabecalho">
           <div>
             <h1>Etiquetas</h1>
-            <p>Etiquetas com código de barras para o leitor da Frente de caixa.</p>
+            <p>Escolha as peças, confira as quantidades e imprima.</p>
           </div>
           <div class="pagina-acoes">
-            <button type="button" class="btn btn-secundario" id="btn-limpar"><i data-lucide="eraser"></i>Limpar fila</button>
+            <button type="button" class="btn btn-fantasma" id="btn-limpar"><i data-lucide="eraser"></i>Limpar fila</button>
           </div>
         </div>
 
-        <div class="form-layout etq-layout">
-          <div class="form-secoes">
-            <!-- Passo 1: escolher produtos -->
+        <div class="etq-colunas">
+          <div class="etq-esq">
+            <!-- Produtos -->
             <section class="card">
               <div class="card-cabecalho">
-                <h2 class="passo-titulo"><span class="passo-num">1</span>Escolha os produtos</h2>
-                <div class="flex items-center gap-2">
-                  <span class="texto-xs texto-3">Ao adicionar:</span>
-                  <div class="chips chips-compactos" role="radiogroup" aria-label="Quantidade ao adicionar">
-                    <button type="button" class="chip" data-qtd-modo="estoque" role="radio" aria-checked="true">= estoque</button>
-                    <button type="button" class="chip" data-qtd-modo="um" role="radio" aria-checked="false">1 de cada</button>
+                <h2>Produtos</h2>
+                <div class="etq-modo">
+                  <span>Ao adicionar</span>
+                  <div class="seg seg-mini" role="radiogroup" aria-label="Quantidade ao adicionar">
+                    <button type="button" data-qtd-modo="estoque" role="radio" aria-checked="true">Todo o estoque</button>
+                    <button type="button" data-qtd-modo="um" role="radio" aria-checked="false">1 de cada</button>
                   </div>
                 </div>
               </div>
-              <div class="card-corpo" style="padding-bottom:12px">
+              <div class="card-corpo etq-filtros">
                 <div class="etq-busca">
                   <div class="busca">
                     <i data-lucide="search"></i>
                     <label for="etq-termo" class="sr-only">Buscar produto</label>
-                    <input class="input" type="search" id="etq-termo" placeholder="Buscar produto, marca, SKU — ou leia o código de barras" autocomplete="off">
+                    <input class="input" type="search" id="etq-termo" placeholder="Buscar peça, marca ou SKU — ou leia o código de barras" autocomplete="off">
                   </div>
                 </div>
-                <div class="chips chips-rolagem mt-2" id="etq-categorias" role="group" aria-label="Filtrar por categoria"></div>
+                <div class="chips chips-rolagem" id="etq-categorias" role="group" aria-label="Filtrar por categoria"></div>
               </div>
               <ul class="etq-produtos" id="etq-produtos" aria-label="Produtos"></ul>
             </section>
 
-            <!-- Passo 2: quantidades -->
+            <!-- Fila -->
             <section class="card">
               <div class="card-cabecalho">
-                <h2 class="passo-titulo"><span class="passo-num">2</span>Confira as quantidades</h2>
-                <span class="texto-sm texto-3" id="resumo-fila"></span>
+                <h2>Fila de impressão</h2>
+                <span class="badge" id="resumo-fila"></span>
               </div>
               <div id="fila"></div>
             </section>
           </div>
 
-          <!-- Passo 3: modelo, prévia e impressão -->
-          <aside class="form-lateral">
-            <section class="card">
-              <div class="card-cabecalho"><h2 class="passo-titulo"><span class="passo-num">3</span>Modelo e impressão</h2></div>
-              <div class="card-corpo flex-col gap-3">
-                <div class="modelos" role="radiogroup" aria-label="Modelo de etiqueta">
-                  <label class="modelo-opcao">
-                    <input type="radio" name="modelo" value="termica" checked>
-                    <span class="modelo-icone"><i data-lucide="receipt"></i></span>
-                    <span><strong>Térmica (rolo)</strong><small>40 × 25 mm · impressora de etiqueta</small></span>
-                  </label>
-                  <label class="modelo-opcao">
-                    <input type="radio" name="modelo" value="pimaco">
-                    <span class="modelo-icone"><i data-lucide="file"></i></span>
-                    <span><strong>Folha A4</strong><small>Pimaco A4256 · 33 por folha</small></span>
-                  </label>
+          <!-- Painel: prévia, opções e impressão -->
+          <aside class="etq-dir">
+            <section class="card etq-painel">
+              <div class="etq-palco">
+                <div class="previa" id="previa"></div>
+                <span class="etq-palco-info" id="info-previa"></span>
+              </div>
+
+              <div class="etq-painel-corpo">
+                <div class="etq-campo">
+                  <span class="rotulo">Modelo</span>
+                  <div class="seg" role="radiogroup" aria-label="Modelo de etiqueta">
+                    <label><input type="radio" name="modelo" value="termica" checked><span><i data-lucide="receipt"></i>Rolo 40×25</span></label>
+                    <label><input type="radio" name="modelo" value="pimaco"><span><i data-lucide="file"></i>Folha A4</span></label>
+                  </div>
                 </div>
                 <div class="campo oculto" id="campo-inicio">
                   <label for="posicao-inicial">Começar na etiqueta nº</label>
                   <input class="input" type="number" id="posicao-inicial" min="1" max="33" value="1">
-                  <span class="ajuda">Para reaproveitar uma folha já usada.</span>
+                  <span class="ajuda">Para reaproveitar uma folha Pimaco já usada.</span>
                 </div>
-                <div class="etq-opcoes">
-                  <span class="rotulo">Mostrar na etiqueta</span>
-                  <label class="interruptor"><input type="checkbox" id="mostrar-loja" checked><span>Nome da loja</span></label>
-                  <label class="interruptor"><input type="checkbox" id="mostrar-preco" checked><span>Preço</span></label>
-                  <label class="interruptor"><input type="checkbox" id="mostrar-numero" checked><span>Números do código</span></label>
+                <div class="etq-campo">
+                  <span class="rotulo">Mostrar</span>
+                  <div class="togs">
+                    <label class="tog"><input type="checkbox" id="mostrar-loja" checked><span><i data-lucide="check"></i>Loja</span></label>
+                    <label class="tog"><input type="checkbox" id="mostrar-preco" checked><span><i data-lucide="check"></i>Preço</span></label>
+                    <label class="tog"><input type="checkbox" id="mostrar-numero" checked><span><i data-lucide="check"></i>Números</span></label>
+                  </div>
                 </div>
-                <div class="etq-opcoes etq-previa">
-                  <div class="aj-topo"><span class="rotulo">Prévia</span><span class="texto-xs texto-3" id="info-previa"></span></div>
-                  <div class="previa" id="previa"></div>
-                </div>
-                <div class="etq-opcoes" id="etq-ajustes">
-                  <div class="aj-topo"><span class="rotulo">Ajustar na etiqueta</span><button type="button" class="btn btn-fantasma" style="min-height:28px;font-size:var(--fs-xs)" id="aj-restaurar"><i data-lucide="rotate-ccw"></i>Restaurar</button></div>
-                  <div class="aj-linha">
-                    <span>Girar</span>
-                    <div class="chips chips-compactos" role="radiogroup" aria-label="Girar etiqueta">
-                      <button type="button" class="chip" data-girar="0" role="radio">0°</button>
-                      <button type="button" class="chip" data-girar="90" role="radio">90°</button>
-                      <button type="button" class="chip" data-girar="180" role="radio">180°</button>
-                      <button type="button" class="chip" data-girar="270" role="radio">270°</button>
+
+                <button type="button" class="btn btn-primario btn-grande btn-bloco" id="btn-imprimir" disabled><i data-lucide="printer"></i>Imprimir <span id="qtd-botao"></span></button>
+
+                <details class="etq-ajustes" id="etq-ajustes">
+                  <summary><i data-lucide="sliders-horizontal"></i>Ajustes de impressão<i data-lucide="chevron-down" class="seta"></i></summary>
+                  <div class="etq-ajustes-corpo">
+                    <div class="aj-linha">
+                      <span>Girar</span>
+                      <div class="seg seg-mini" role="radiogroup" aria-label="Girar etiqueta">
+                        <button type="button" data-girar="0" role="radio">0°</button>
+                        <button type="button" data-girar="90" role="radio">90°</button>
+                        <button type="button" data-girar="180" role="radio">180°</button>
+                        <button type="button" data-girar="270" role="radio">270°</button>
+                      </div>
+                    </div>
+                    <label class="aj-faixa"><span>Tamanho <b id="aj-escala-valor"></b></span><input type="range" id="aj-escala" min="60" max="160" step="5"></label>
+                    <label class="aj-faixa"><span>Mover para os lados <b id="aj-x-valor"></b></span><input type="range" id="aj-x" min="-8" max="8" step="0.5"></label>
+                    <label class="aj-faixa"><span>Mover para cima/baixo <b id="aj-y-valor"></b></span><input type="range" id="aj-y" min="-8" max="8" step="0.5"></label>
+                    <div class="aj-papel">
+                      <label><span>Largura (mm)</span><input class="input" type="number" id="aj-largura" min="15" max="150" step="0.5"></label>
+                      <label><span>Altura (mm)</span><input class="input" type="number" id="aj-altura" min="15" max="150" step="0.5"></label>
+                    </div>
+                    <div class="aj-rodape">
+                      <span>Salvo neste computador. Na impressora, papel em 40 × 25 mm.</span>
+                      <button type="button" class="btn btn-fantasma" id="aj-restaurar"><i data-lucide="rotate-ccw"></i>Restaurar</button>
                     </div>
                   </div>
-                  <label class="aj-faixa"><span>Tamanho <b id="aj-escala-valor"></b></span><input type="range" id="aj-escala" min="60" max="160" step="5"></label>
-                  <label class="aj-faixa"><span>Mover para os lados <b id="aj-x-valor"></b></span><input type="range" id="aj-x" min="-8" max="8" step="0.5"></label>
-                  <label class="aj-faixa"><span>Mover para cima/baixo <b id="aj-y-valor"></b></span><input type="range" id="aj-y" min="-8" max="8" step="0.5"></label>
-                  <div class="aj-papel">
-                    <label><span>Largura (mm)</span><input class="input" type="number" id="aj-largura" min="15" max="150" step="0.5"></label>
-                    <label><span>Altura (mm)</span><input class="input" type="number" id="aj-altura" min="15" max="150" step="0.5"></label>
-                  </div>
-                  <span class="ajuda">Os ajustes ficam salvos neste computador.</span>
-                </div>
-              </div>
-              <div class="etq-imprimir">
-                <button type="button" class="btn btn-primario btn-grande btn-bloco" id="btn-imprimir" disabled><i data-lucide="printer"></i>Imprimir <span id="qtd-botao"></span></button>
-                <p class="texto-xs texto-3" style="margin-top:8px">A etiqueta térmica sai como PDF do tamanho exato, sem data nem endereço do site. Na impressora, o papel deve estar em <strong>40 × 25 mm</strong>.</p>
+                </details>
               </div>
             </section>
           </aside>

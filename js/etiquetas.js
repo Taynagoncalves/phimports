@@ -162,7 +162,7 @@ App.aoIniciar(async () => {
             <span>${App.formatarMoeda(p.preco)} · <span data-total-produto="${p.id}">${totalProduto}</span> etiqueta(s)</span>
           </div>
           <div class="flex gap-2" style="flex-wrap:wrap">
-            <button type="button" class="btn btn-fantasma" data-todos="${p.id}" data-modo="estoque" title="Uma etiqueta para cada peça em estoque">= estoque</button>
+            <button type="button" class="btn btn-fantasma" data-todos="${p.id}" data-modo="estoque" title="Uma etiqueta para cada peça em estoque">Todo o estoque</button>
             <button type="button" class="btn btn-fantasma" data-todos="${p.id}" data-modo="um" title="Uma etiqueta de cada tamanho/cor">1 de cada</button>
             <button type="button" class="btn-icone perigo" data-remover="${p.id}" aria-label="Tirar ${App.escapeHtml(p.nome)} da fila" title="Tirar da fila"><i data-lucide="trash-2"></i></button>
           </div>
@@ -261,7 +261,7 @@ App.aoIniciar(async () => {
     $('etq-ajustes').classList.toggle('oculto', op.modelo !== 'termica');
     const lista = listaEtiquetas();
     const previa = $('previa');
-    if (!lista.length) { previa.innerHTML = '<p class="texto-sm texto-3 texto-centro">A prévia aparece aqui.</p>'; $('info-previa').textContent = ''; return; }
+    if (!lista.length) { previa.innerHTML = '<p class="texto-sm texto-3 texto-centro">Adicione peças para ver a etiqueta.</p>'; $('info-previa').textContent = ''; return; }
     if (op.modelo === 'termica') {
       previa.innerHTML = '<div class="previa-rolo"></div>';
       lista.slice(0, 1).forEach((item) => {
