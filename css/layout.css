@@ -881,3 +881,8 @@
   .sidebar:hover .sidebar-usuario, .sidebar:focus-within .sidebar-usuario { justify-content: flex-start; padding: var(--esp-3) var(--esp-4); }
   .sidebar .nav-texto, .sidebar .nav-grupo-titulo { white-space: nowrap; }
 }
+/* Menu lateral: rola com a roda do mouse, sem mostrar a barra de rolagem */
+.sidebar-nav { scrollbar-width: none; -ms-overflow-style: none; }
+.sidebar-nav::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.sidebar { scrollbar-width: none; }
+.sidebar::-webkit-scrollbar { display: none; }
