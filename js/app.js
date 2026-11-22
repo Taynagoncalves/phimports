@@ -881,7 +881,76 @@
    * @param {string} html  conteúdo a imprimir
    * @param {string} [cssPagina]  CSS extra só para esta impressão (ex.: "@page { size: 40mm 25mm; margin: 0 }")
    */
+  /* ---------- PDF para impressão (sem data, título e endereço do navegador) ---------- */
+  const scriptsCarregando = {};
+  function carregarScript(src) {
+    if (!scriptsCarregando[src]) {
+      scriptsCarregando[src] = new Promise((ok, erro) => {
+        const s = document.createElement('script');
+        s.src = src; s.async = true;
+        s.onload = ok; s.onerror = () => { delete scriptsCarregando[src]; erro(new Error(src)); };
+        document.head.appendChild(s);
+      });
+    }
+    return scriptsCarregando[src];
+  }
+  const carregarJsPdf = () => (window.jspdf ? Promise.resolve() : carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'));
+  const carregarHtml2Canvas = () => (window.html2canvas ? Promise.resolve() : carregarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'));
+
+  /** Abre a impressão de um PDF (o leitor de PDF do Chrome não põe cabeçalho nem rodapé) */
+  function imprimirPdf(blob) {
+    const url = URL.createObjectURL(blob);
+    const antigo = document.getElementById('quadro-impressao');
+    if (antigo) antigo.remove();
+    const quadro = document.createElement('iframe');
+    quadro.id = 'quadro-impressao';
+    quadro.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
+    quadro.onload = () => setTimeout(() => {
+      try { quadro.contentWindow.focus(); quadro.contentWindow.print(); }
+      catch (e) { window.open(url, '_blank'); }
+    }, 300);
+    quadro.src = url;
+    document.body.appendChild(quadro);
+    setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
+  }
+
+  /** Recibo / vale em PDF: largura da bobina e altura do conteúdo (uma tira só, sem quebrar página) */
+  async function cupomEmPdf(html) {
+    await Promise.all([carregarJsPdf(), carregarHtml2Canvas()]);
+    const area = document.createElement('div');
+    area.className = 'cupom-pdf';
+    area.innerHTML = html;
+    document.body.appendChild(area);
+    try {
+      const cupom = area.querySelector('.cupom');
+      const bobina = /max-width:\s*48mm/.test(cupom.getAttribute('style') || '') ? 58 : 80;
+      const util = bobina === 58 ? 48 : 72;                       // área impressa (mm)
+      cupom.style.width = util + 'mm'; cupom.style.maxWidth = util + 'mm';
+      const imagens = [...area.querySelectorAll('img')].map((img) => (img.complete ? null : new Promise((ok) => { img.onload = ok; img.onerror = ok; })));
+      await Promise.race([Promise.all(imagens), new Promise((ok) => setTimeout(ok, 2500))]);
+      const alto = Math.ceil(cupom.scrollHeight);
+      const canvas = await window.html2canvas(cupom, { scale: 4, backgroundColor: '#ffffff', useCORS: true, logging: false, height: alto, windowHeight: Math.max(alto + 50, window.innerHeight), scrollY: 0, scrollX: 0 });
+      const margemTopo = 2, margemBase = 10;                      // folga no fim para o corte
+      const alturaConteudo = canvas.height / canvas.width * util;
+      const altura = Math.max(40, alturaConteudo + margemTopo + margemBase);
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: [bobina, altura], orientation: altura >= bobina ? 'portrait' : 'landscape', compress: true });
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', (bobina - util) / 2, margemTopo, util, alturaConteudo, undefined, 'FAST');
+      doc.setProperties({ title: 'Recibo' });
+      return doc.output('blob');
+    } finally { area.remove(); }
+  }
+
   function imprimir(html, cssPagina = '') {
+    // Recibos e vales: PDF do tamanho da bobina (se não der, cai na impressão comum)
+    if (!cssPagina && /class="cupom[\s"]/.test(html)) {
+      cupomEmPdf(html).then(imprimirPdf).catch(() => imprimirNavegador(html, '@page { margin: 0; }'));
+      return;
+    }
+    imprimirNavegador(html, cssPagina);
+  }
+
+  function imprimirNavegador(html, cssPagina = '') {
     const area = document.createElement('div');
     area.className = 'area-impressao';
     area.style.display = 'none';
@@ -980,7 +1049,7 @@
   /** Largura e letra do papel */
   function estiloPapel(op) {
     const largura = Number(op.largura) === 58 ? 48 : 72;          // área impressa de cada bobina (mm)
-    const fonte = { pequena: 11, normal: 12, grande: 13.5 }[op.fonte] || 12;
+    const fonte = { pequena: 12, normal: 13.5, grande: 15.5 }[op.fonte] || 13.5;
     return `max-width:${largura}mm;font-size:${fonte}px`;
   }
 
@@ -1366,7 +1435,7 @@
     // gráficos
     corCss, paletaGrafico,
     // impressão / cupom
-    imprimir, htmlCupom, gerarCupom, gerarVale, opcoesImpressao, IMPRESSAO_PADRAO,
+    imprimir, imprimirPdf, carregarJsPdf, htmlCupom, gerarCupom, gerarVale, opcoesImpressao, IMPRESSAO_PADRAO,
     // app instalável
     instalarApp, get podeInstalar() { return !!pedidoInstalacao; }, get appInstalado() { return appInstalado(); },
     // troca/devolução (telas Vendas e Trocas)

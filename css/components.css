@@ -1097,7 +1097,7 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 
 /* Logo no topo do recibo (preto e branco, como na impressora térmica) */
 .cupom .c-logo { display: flex; justify-content: center; margin-bottom: 8px; }
-.cupom .c-logo img { max-width: 70%; max-height: 64px; width: auto; height: auto; object-fit: contain; filter: grayscale(1) contrast(1.2); }
+.cupom .c-logo img { max-width: 82%; max-height: 92px; width: auto; height: auto; object-fit: contain; filter: grayscale(1) contrast(1.2); }
 
 /* ==========================================================================
    MENSALIDADE (lado da loja) e PAINEL DO SUPORTE
@@ -1231,7 +1231,7 @@ a.produto-link[href]:hover .titulo { color: var(--cor-destaque); }
 @media (max-width: 767px) { .btn-instalar span { display: none; } }
 
 /* ---------- Recibo: QR do Instagram e impressão ---------- */
-.cupom .c-qr { width: 42%; max-width: 120px; margin: 6px auto 2px; }
+.cupom .c-qr { width: 46%; max-width: 140px; margin: 6px auto 2px; }
 .cupom .c-qr svg { width: 100%; height: auto; display: block; }
 @media print {
   .area-impressao .cupom { border: 0; box-shadow: none; padding: 0 1mm; }
@@ -1660,3 +1660,10 @@ select.pt-campo { width: auto; min-width: 180px; }
 @keyframes m3Aparecer { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { #mensalidade > *, .m3-anel .progresso, .m3-barra span { animation: none !important; } .m3-anel .progresso { stroke-dashoffset: var(--alvo); } }
 .tabela-wrap { position: relative; }
+
+/* Recibo montado fora da tela para virar PDF (sem a moldura da prévia) */
+.cupom-pdf { position: absolute; left: -10000px; top: 0; background: #fff; }
+.cupom-pdf .cupom { border: 0; box-shadow: none; border-radius: 0; padding: 0 0 6px; margin: 0; background: #fff; color: #000; }
+.cupom-pdf .cupom::before, .cupom-pdf .cupom::after { display: none; }
+.cupom-pdf .c-economia { padding: 4px 0 12px; }
+.cupom-pdf .c-sep { margin: 10px 0 8px; }

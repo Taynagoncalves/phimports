@@ -373,24 +373,9 @@ App.aoIniciar(async () => {
     return cv;
   }
 
-  /** Carrega o jsPDF só quando for imprimir */
-  let jspdfCarregando = null;
-  function carregarJsPdf() {
-    if (window.jspdf) return Promise.resolve();
-    if (!jspdfCarregando) {
-      jspdfCarregando = new Promise((ok, erro) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        s.onload = ok; s.onerror = () => { jspdfCarregando = null; erro(new Error('jsPDF')); };
-        document.head.appendChild(s);
-      });
-    }
-    return jspdfCarregando;
-  }
-
   /** PDF com uma página do tamanho exato da etiqueta para cada peça */
   async function pdfTermico(lista, op) {
-    await carregarJsPdf();
+    await App.carregarJsPdf();
     const { jsPDF } = window.jspdf;
     const w = Number(ajustes.largura), h = Number(ajustes.altura);
     const orient = w > h ? 'landscape' : 'portrait';
@@ -404,23 +389,6 @@ App.aoIniciar(async () => {
     });
     doc.setProperties({ title: 'Etiquetas' });
     return doc.output('blob');
-  }
-
-  /** Abre a impressão do PDF (o leitor de PDF não põe data, título nem endereço) */
-  function imprimirPdf(blob) {
-    const url = URL.createObjectURL(blob);
-    const antigo = document.getElementById('quadro-etiquetas');
-    if (antigo) antigo.remove();
-    const quadro = document.createElement('iframe');
-    quadro.id = 'quadro-etiquetas';
-    quadro.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none';
-    quadro.onload = () => setTimeout(() => {
-      try { quadro.contentWindow.focus(); quadro.contentWindow.print(); }
-      catch (e) { window.open(url, '_blank'); }
-    }, 300);
-    quadro.src = url;
-    document.body.appendChild(quadro);
-    setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
   }
 
   /* ---------- Painel de ajustes ---------- */
@@ -481,7 +449,7 @@ App.aoIniciar(async () => {
     if (op.modelo === 'termica') {
       const botao = $('btn-imprimir');
       botao.disabled = true;
-      pdfTermico(lista, op).then(imprimirPdf)
+      pdfTermico(lista, op).then(App.imprimirPdf)
         .catch(() => App.toast('Não foi possível gerar as etiquetas. Verifique a internet e tente de novo.', 'erro'))
         .finally(() => { botao.disabled = false; });
       return;
