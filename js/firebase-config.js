@@ -27,6 +27,7 @@ window.SUPER_ADMIN_UIDS = ['WLmBJby1xoRFC95wPOcKdoad0uo1'];
 window.PIX_SUPORTE = {
   chave: '89135eca-7c8b-4067-80c9-fea1445b0b99', // chave aleatória
   nome: 'Tayna Silva Goncalves',  // nome de quem recebe (até 25 letras, sem acento)
+  nomeRecibo: 'Tayná Silva Gonçalves', // nome que assina o recibo em PDF (com acento)
   cidade: 'Cascavel'             // cidade (até 15 letras)
 };
 

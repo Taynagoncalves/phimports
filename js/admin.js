@@ -280,8 +280,12 @@ App.aoIniciar(async () => {
         b.disabled = true;
         try {
           const ehImpl = el.querySelector('#p-tipo').value === 'implantacao';
-          await Data.admin.registrarPagamento(l.id, { competencia: ehImpl ? 'implantacao' : el.querySelector('#p-mes').value, valor: App.lerNumero(el.querySelector('#p-valor').value), pagoEm: el.querySelector('#p-data').value, forma: el.querySelector('#p-forma').value });
-          fechar(); App.toast('Pagamento registrado.', 'sucesso'); carregar();
+          const comp = ehImpl ? 'implantacao' : el.querySelector('#p-mes').value;
+          await Data.admin.registrarPagamento(l.id, { competencia: comp, valor: App.lerNumero(el.querySelector('#p-valor').value), pagoEm: el.querySelector('#p-data').value, forma: el.querySelector('#p-forma').value });
+          fechar(); App.toast('Pagamento registrado.', 'sucesso');
+          await carregar();
+          const l2 = achar(l.id);
+          if (l2) abrirRecibo(l2, l2.pagamentos.find((x) => x.competencia === comp));
         } catch (e) { App.toast(e.message, 'erro'); b.disabled = false; }
       } }]
     });
@@ -304,10 +308,13 @@ App.aoIniciar(async () => {
         <li class="lista-item" style="padding:10px 0">
           <div class="info"><div class="titulo">${nomeMes(p.competencia)}</div><div class="sub">Pago em ${App.formatarData(p.pagoEm)} · ${App.escapeHtml(p.forma || '')}</div></div>
           <span class="valor">${moeda(p.valor)}</span>
+          <button type="button" class="btn-icone" data-recibo-hist="${p.competencia}" title="Recibo em PDF" aria-label="Recibo em PDF"><i data-lucide="file-text"></i></button>
           <button type="button" class="btn-icone perigo" data-excluir-pag="${p.competencia}" title="Excluir registro" aria-label="Excluir registro"><i data-lucide="trash-2"></i></button>
         </li>`).join('')}</ul>` : '<p class="texto-sm texto-3">Nenhum pagamento registrado.</p>',
       acoes: [{ texto: 'Fechar', classe: 'btn-primario' }]
     });
+    App.icones();
+    el.querySelectorAll('[data-recibo-hist]').forEach((b) => b.addEventListener('click', () => abrirRecibo(l, l.pagamentos.find((x) => x.competencia === b.dataset.reciboHist))));
     el.querySelectorAll('[data-excluir-pag]').forEach((b) => b.addEventListener('click', async () => {
       if (!(await App.confirmar({ titulo: 'Excluir este pagamento?', mensagem: `O registro de ${nomeMes(b.dataset.excluirPag)} será apagado e o mês volta a ficar em aberto.`, textoConfirmar: 'Excluir', perigo: true }))) return;
       try { await Data.admin.excluirPagamento(l.id, b.dataset.excluirPag); fechar(); App.toast('Registro excluído.'); carregar(); } catch (e) { App.toast(e.message, 'erro'); }
@@ -371,6 +378,143 @@ App.aoIniciar(async () => {
     App.aplicarMascaras && App.aplicarMascaras(el);
   }
 
+  /* ---------- Recibo em PDF (mensalidade ou implantação) ---------- */
+  function porExtenso(valor) {
+    const un = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+    const dz = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+    const ct = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+    const ate999 = (n) => {
+      if (n === 0) return '';
+      if (n === 100) return 'cem';
+      const c = Math.floor(n / 100), r = n % 100, partes = [];
+      if (c) partes.push(ct[c]);
+      if (r) partes.push(r < 20 ? un[r] : dz[Math.floor(r / 10)] + (r % 10 ? ' e ' + un[r % 10] : ''));
+      return partes.join(' e ');
+    };
+    const inteiro = (n) => {
+      if (n === 0) return 'zero';
+      const mi = Math.floor(n / 1e6), mil = Math.floor((n % 1e6) / 1000), resto = n % 1000, partes = [];
+      if (mi) partes.push(mi === 1 ? 'um milhão' : ate999(mi) + ' milhões');
+      if (mil) partes.push(mil === 1 ? 'mil' : ate999(mil) + ' mil');
+      const inicio = partes.join(' e ');
+      if (!resto) return inicio;
+      return inicio ? inicio + (resto < 100 || resto % 100 === 0 ? ' e ' : ' ') + ate999(resto) : ate999(resto);
+    };
+    const total = Math.round((Number(valor) || 0) * 100);
+    const reais = Math.floor(total / 100), cent = total % 100;
+    const txtReais = reais ? `${inteiro(reais)} ${reais === 1 ? 'real' : 'reais'}` : '';
+    const txtCent = cent ? `${inteiro(cent)} ${cent === 1 ? 'centavo' : 'centavos'}` : '';
+    return [txtReais, txtCent].filter(Boolean).join(' e ') || 'zero real';
+  }
+  const FORMAS = { pix: 'Pix', dinheiro: 'Dinheiro', transferencia: 'Transferência', boleto: 'Boleto', cartao: 'Cartão' };
+  const nomeMesLongo = (c) => {
+    const [a, m] = String(c).split('-').map(Number);
+    if (!a || !m) return c;
+    const t = new Date(a, m - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+  const numeroRecibo = (l, p) => `${String(l.id).slice(-4).toUpperCase()}-${p.competencia === 'implantacao' ? 'IMP' : String(p.competencia).replace('-', '')}`;
+
+  async function pdfRecibo(l, p) {
+    await App.carregarJsPdf();
+    const { jsPDF } = window.jspdf;
+    const pix = window.PIX_SUPORTE || {};
+    const emissor = pix.nomeRecibo || pix.nome || 'Suporte do sistema';
+    const cidade = pix.cidade || '';
+    const ehImpl = p.competencia === 'implantacao';
+    const referente = ehImpl ? 'Implantação do sistema de gestão (pagamento único)' : `Mensalidade do sistema de gestão — ${nomeMesLongo(p.competencia)}`;
+    const doc = new jsPDF({ unit: 'mm', format: 'a5', orientation: 'portrait' });
+    const L = 148, M = 14;
+    const cinza = [110, 110, 115], tinta = [20, 20, 24], linha = [225, 225, 230];
+    // Cabeçalho
+    doc.setFillColor(20, 20, 24).rect(0, 0, L, 30, 'F');
+    doc.setTextColor(255, 255, 255).setFont('helvetica', 'bold').setFontSize(20).text('RECIBO', M, 17);
+    doc.setFont('helvetica', 'normal').setFontSize(8.5).text(`Nº ${numeroRecibo(l, p)}`, M, 23.5);
+    doc.setFontSize(8.5).text('Valor', L - M, 13, { align: 'right' });
+    doc.setFont('helvetica', 'bold').setFontSize(17).text(moeda(p.valor), L - M, 21.5, { align: 'right' });
+    // Texto principal
+    let y = 44;
+    doc.setTextColor(...tinta).setFont('helvetica', 'normal').setFontSize(10.5);
+    const texto = `Recebi de ${l.nome} a importância de ${moeda(p.valor)} (${porExtenso(p.valor)}), referente à ${ehImpl ? 'implantação do sistema de gestão' : `mensalidade do sistema de gestão do mês de ${nomeMesLongo(p.competencia).toLowerCase()}`}.`;
+    const linhas = doc.splitTextToSize(texto, L - M * 2);
+    doc.text(linhas, M, y, { lineHeightFactor: 1.5 });
+    y += linhas.length * 6.2 + 8;
+    // Detalhes
+    const dados = [
+      ['Cliente', l.nome],
+      ['Referente a', referente],
+      ['Data do pagamento', App.formatarData(p.pagoEm)],
+      ['Forma de pagamento', FORMAS[p.forma] || p.forma || '—'],
+      ['Valor', moeda(p.valor)]
+    ];
+    doc.setDrawColor(...linha).setLineWidth(0.3);
+    dados.forEach(([k, v]) => {
+      doc.line(M, y - 4.5, L - M, y - 4.5);
+      doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...cinza).text(k, M, y);
+      const val = doc.splitTextToSize(String(v), 78);
+      doc.setFont('helvetica', 'bold').setTextColor(...tinta).text(val, L - M, y, { align: 'right' });
+      y += Math.max(1, val.length) * 4.6 + 4;
+    });
+    doc.line(M, y - 4.5, L - M, y - 4.5);
+    // Local, data e assinatura
+    y += 10;
+    const hoje = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...tinta).text(`${cidade ? cidade + ', ' : ''}${hoje}.`, M, y);
+    y += 24;
+    doc.setDrawColor(...tinta).line(L / 2 - 35, y, L / 2 + 35, y);
+    doc.setFontSize(10).text(emissor, L / 2, y + 5.5, { align: 'center' });
+    doc.setFontSize(8).setTextColor(...cinza).text('Suporte e licença do sistema de gestão', L / 2, y + 10, { align: 'center' });
+    // Rodapé
+    doc.setFontSize(7.5).text(`Documento gerado em ${App.formatarDataHora(new Date().toISOString())}.`, L / 2, 202, { align: 'center' });
+    return doc.output('blob');
+  }
+
+  const nomeDoRecibo = (l, p) => `recibo-${nomeArquivo(l.nome)}-${p.competencia === 'implantacao' ? 'implantacao' : p.competencia}.pdf`;
+  function baixarBlob(nome, blob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = nome;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+  const textoWhatsRecibo = (l, p) => `Olá! Segue o recibo do pagamento ${p.competencia === 'implantacao' ? 'da implantação' : `da mensalidade de ${nomeMesLongo(p.competencia).toLowerCase()}`} do sistema (${moeda(p.valor)}). Obrigada! 😊`;
+
+  /** Janela com o recibo pronto: baixar ou mandar pelo WhatsApp */
+  async function abrirRecibo(l, p) {
+    if (!p) return;
+    let blob;
+    try { blob = await pdfRecibo(l, p); } catch (e) { App.toast('Não foi possível gerar o recibo. Verifique a internet.', 'erro'); return; }
+    const nome = nomeDoRecibo(l, p);
+    const arquivo = new File([blob], nome, { type: 'application/pdf' });
+    const podeCompartilhar = !!(navigator.canShare && navigator.canShare({ files: [arquivo] }));
+    const wa = foneWhats(l.telefone);
+    const { el } = App.abrirModal({
+      titulo: 'Recibo pronto',
+      tamanho: 'sm',
+      corpo: `
+        <div class="recibo-pronto">
+          <span class="recibo-icone"><i data-lucide="file-check-2"></i></span>
+          <div><strong>${App.escapeHtml(p.competencia === 'implantacao' ? 'Implantação' : nomeMesLongo(p.competencia))} · ${moeda(p.valor)}</strong>
+          <div class="texto-xs texto-3">${App.escapeHtml(l.nome)} · pago em ${App.formatarData(p.pagoEm)}</div></div>
+        </div>
+        <div class="flex-col gap-2 mt-4">
+          <button type="button" class="btn btn-primario btn-bloco" id="rc-whats"><i data-lucide="send"></i>${podeCompartilhar ? 'Enviar no WhatsApp' : 'Baixar e abrir o WhatsApp'}</button>
+          <button type="button" class="btn btn-secundario btn-bloco" id="rc-baixar"><i data-lucide="download"></i>Baixar PDF</button>
+        </div>
+        <p class="texto-xs texto-3 mt-4">${podeCompartilhar ? 'Em "Enviar no WhatsApp", escolha o WhatsApp e a conversa da loja.' : `O PDF é baixado e a conversa ${wa ? 'da loja ' : ''}abre com a mensagem pronta: é só anexar o arquivo (clipe → Documento).`}</p>`,
+      acoes: [{ texto: 'Fechar' }]
+    });
+    App.icones();
+    el.querySelector('#rc-baixar').addEventListener('click', () => baixarBlob(nome, blob));
+    el.querySelector('#rc-whats').addEventListener('click', async () => {
+      if (podeCompartilhar) {
+        try { await navigator.share({ files: [arquivo], title: 'Recibo', text: textoWhatsRecibo(l, p) }); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      baixarBlob(nome, blob);
+      window.open(`https://wa.me/${wa}?text=${encodeURIComponent(textoWhatsRecibo(l, p))}`, '_blank', 'noopener');
+    });
+  }
+
   /* ---------- Ficha da loja (tudo de uma loja num lugar só) ---------- */
   const foneWhats = (t) => { let d = String(t || '').replace(/\D/g, ''); if (!d) return ''; if (d.length <= 11) d = '55' + d; return d; };
   function abrirFicha(l) {
@@ -426,7 +570,7 @@ App.aoIniciar(async () => {
           <section class="ficha-bloco">
             <h3><i data-lucide="history"></i>Pagamentos</h3>
             ${pags.length ? `<ul class="ficha-pags">${pags.map((p) => `
-              <li><span>${nomeMes(p.competencia)}<small>${App.formatarData(p.pagoEm)} · ${e(p.forma || '')}</small></span><strong>${moeda(p.valor)}</strong></li>`).join('')}</ul>
+              <li><span>${nomeMes(p.competencia)}<small>${App.formatarData(p.pagoEm)} · ${e(p.forma || '')}</small></span><strong>${moeda(p.valor)}</strong><button type="button" class="btn-icone" data-recibo="${e(p.competencia)}" title="Recibo em PDF" aria-label="Recibo em PDF de ${nomeMes(p.competencia)}"><i data-lucide="file-text"></i></button></li>`).join('')}</ul>
               ${l.pagamentos.length > 6 ? `<button type="button" class="btn btn-fantasma" data-f="historico">Ver todos (${l.pagamentos.length})</button>` : '<button type="button" class="btn btn-fantasma" data-f="historico">Editar registros</button>'}`
             : '<p class="texto-sm texto-3">Nenhum pagamento registrado ainda.</p>'}
           </section>
@@ -455,6 +599,7 @@ App.aoIniciar(async () => {
       acoes: []
     });
     App.icones();
+    el.querySelectorAll('[data-recibo]').forEach((b) => b.addEventListener('click', () => abrirRecibo(l, l.pagamentos.find((x) => x.competencia === b.dataset.recibo))));
     // Cada ação fecha a ficha e abre a janela dela (as janelas já existentes)
     el.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', async () => {
       const acao = b.dataset.f;
@@ -486,7 +631,8 @@ App.aoIniciar(async () => {
     try {
       await Data.admin.responderAviso(id, competencia, !!conf);
       App.toast(conf ? 'Pagamento confirmado.' : 'Aviso recusado.', conf ? 'sucesso' : 'aviso');
-      carregar();
+      await carregar();
+      if (conf) { const l2 = achar(id); if (l2) abrirRecibo(l2, l2.pagamentos.find((x) => x.competencia === competencia)); }
     } catch (er) { App.toast(er.message, 'erro'); }
   });
   document.getElementById('btn-nova-loja')?.addEventListener('click', novaLoja);
