@@ -51,12 +51,12 @@
       { id: 'estoque', texto: 'Estoque', icone: 'package', href: 'estoque.html' },
       { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' }
     ] },
-    { grupo: 'Clientes', itens: [
+    { grupo: 'Clientes', sempreFechado: true, itens: [
       { id: 'clientes', texto: 'Clientes', icone: 'users', href: 'clientes.html' },
       { id: 'pontos', texto: 'Programa de pontos', icone: 'star', href: 'pontos.html' },
       { id: 'promocoes', texto: 'Promoções', icone: 'badge-percent', href: 'promocoes.html' }
     ] },
-    { grupo: 'Plataforma', itens: [
+    { grupo: '', itens: [
       { id: 'mensalidade', texto: 'Mensalidade', icone: 'badge-dollar-sign', href: 'mensalidade.html' }
     ] },
     { grupo: 'Gestão', itens: [
@@ -656,8 +656,9 @@
     } catch (e) { /* padrão */ }
     return MENU.filter((g) => g.fechado).map((g) => g.grupo);
   };
+  const sempreFechados = MENU.filter((g) => g.sempreFechado).map((g) => g.grupo);
   function aplicarGrupos() {
-    const fechados = gruposFechados();
+    const fechados = [...gruposFechados(), ...sempreFechados];
     document.querySelectorAll('.sidebar .nav-grupo').forEach((g) => {
       const temAtivo = !!g.querySelector('.nav-link.ativo');
       const fechado = fechados.includes(g.dataset.grupo) && !temAtivo;
@@ -673,6 +674,7 @@
     const fechar = !g.classList.contains('fechado');
     g.classList.toggle('fechado', fechar);
     bt.setAttribute('aria-expanded', String(!fechar));
+    if (sempreFechados.includes(g.dataset.grupo)) return;
     const lista = gruposFechados().filter((x) => x !== g.dataset.grupo);
     if (fechar) lista.push(g.dataset.grupo);
     try { localStorage.setItem(CHAVE_GRUPOS, JSON.stringify(lista)); } catch (er) { /* ignora */ }
