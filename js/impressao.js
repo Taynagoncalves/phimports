@@ -96,7 +96,6 @@ App.aoIniciar(async () => {
     const aj = App.ajustesImpressora();
     $('aj-area').value = aj[chaveArea()];
     $('aj-area').max = Number(op.largura) === 58 ? 58 : 80;
-    $('aj-parte').value = aj.parte;
     $('aj-mover').value = aj.mover;
     $('aj-mover-valor').textContent = `${Number(aj.mover) > 0 ? '+' : ''}${String(aj.mover).replace('.', ',')} mm`;
   }
@@ -104,11 +103,6 @@ App.aoIniciar(async () => {
     const max = Number(op.largura) === 58 ? 58 : 80;
     const n = Math.round(Number($('aj-area').value));
     App.salvarAjustesImpressora({ [chaveArea()]: n >= 30 && n <= max ? n : (max === 58 ? 48 : 72) });
-    preencherAjustes();
-  });
-  $('aj-parte').addEventListener('change', () => {
-    const n = Math.round(Number($('aj-parte').value));
-    App.salvarAjustesImpressora({ parte: n >= 40 ? n : 0 });
     preencherAjustes();
   });
   $('aj-mover').addEventListener('input', () => { App.salvarAjustesImpressora({ mover: Number($('aj-mover').value) }); preencherAjustes(); });

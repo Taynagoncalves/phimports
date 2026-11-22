@@ -895,7 +895,6 @@
     return scriptsCarregando[src];
   }
   const carregarJsPdf = () => (window.jspdf ? Promise.resolve() : carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'));
-  const carregarHtml2Canvas = () => (window.html2canvas ? Promise.resolve() : carregarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'));
 
   /** Abre a impressão de um PDF (o leitor de PDF do Chrome não põe cabeçalho nem rodapé) */
   function imprimirPdf(blob) {
@@ -916,7 +915,7 @@
 
   /* Ajustes da impressora de recibo (ficam neste computador) */
   const CHAVE_IMPRESSORA = 'gestaoloja:impressora:v3';
-  const IMPRESSORA_PADRAO = { area80: 72, area58: 48, mover: 0, parte: 0 };
+  const IMPRESSORA_PADRAO = { area80: 72, area58: 48, mover: 0 };
   function ajustesImpressora() {
     try { return { ...IMPRESSORA_PADRAO, ...JSON.parse(localStorage.getItem(CHAVE_IMPRESSORA) || '{}') }; } catch (e) { return { ...IMPRESSORA_PADRAO }; }
   }
@@ -924,88 +923,18 @@
     try { localStorage.setItem(CHAVE_IMPRESSORA, JSON.stringify({ ...ajustesImpressora(), ...aj })); } catch (e) { /* ignora */ }
   }
 
-  /** Linha de pixels toda branca? (para dividir o recibo sem cortar texto) */
-  function linhaBranca(dados, largura, y) {
-    const ini = y * largura * 4;
-    for (let i = ini; i < ini + largura * 4; i += 4) if (dados[i] < 235 || dados[i + 1] < 235 || dados[i + 2] < 235) return false;
-    return true;
-  }
-
-  /**
-   * Recibo / vale em PDF na largura que a impressora imprime de fato.
-   * Divide em partes do comprimento do papel configurado na impressora (0 = tira única).
-   */
-  async function cupomEmPdf(html) {
-    await Promise.all([carregarJsPdf(), carregarHtml2Canvas()]);
-    const area = document.createElement('div');
-    area.className = 'cupom-pdf';
-    area.innerHTML = html;
-    document.body.appendChild(area);
-    try {
-      const aj = ajustesImpressora();
-      const cupom = area.querySelector('.cupom');
-      const bobina = /max-width:\s*48mm/.test(cupom.getAttribute('style') || '') ? 58 : 80;
-      const pagina = Math.max(30, Math.min(bobina, Number(bobina === 58 ? aj.area58 : aj.area80) || (bobina === 58 ? 48 : 72)));
-      const lateral = 1;                                          // folga de cada lado (mm)
-      const util = pagina - lateral * 2;                          // largura do conteúdo (mm)
-      const x = Math.max(0, Math.min(pagina - util, lateral + (Number(aj.mover) || 0)));
-      cupom.style.width = util + 'mm'; cupom.style.maxWidth = util + 'mm';
-      const imagens = [...area.querySelectorAll('img')].map((img) => (img.complete ? null : new Promise((ok) => { img.onload = ok; img.onerror = ok; })));
-      await Promise.race([Promise.all(imagens), new Promise((ok) => setTimeout(ok, 2500))]);
-      const alto = Math.ceil(cupom.scrollHeight);
-      const canvas = await window.html2canvas(cupom, { scale: 4, backgroundColor: '#ffffff', useCORS: true, logging: false, height: alto, windowHeight: Math.max(alto + 50, window.innerHeight), scrollY: 0, scrollX: 0 });
-      const pxPorMm = canvas.width / util;
-      const alturaTotal = canvas.height / pxPorMm;
-      const margemTopo = 2, margemBase = 8;
-      const { jsPDF } = window.jspdf;
-      const parte = Number(aj.parte) || 0;
-
-      // Fatias do desenho (em px): uma só, ou várias cortando em linhas brancas
-      const fatias = [];
-      if (parte > 0 && alturaTotal + margemTopo + margemBase > parte) {
-        const dados = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
-        const cabe = Math.floor((parte - margemTopo) * pxPorMm);  // altura útil de cada parte
-        let ini = 0;
-        while (ini < canvas.height) {
-          let fim = Math.min(canvas.height, ini + cabe);
-          if (fim < canvas.height) {
-            let y = fim;
-            const limite = fim - Math.floor(Math.min(4 * pxPorMm, cabe * 0.3)); // procura um vão só nos últimos 4 mm
-            while (y > limite && !linhaBranca(dados, canvas.width, y)) y--;
-            if (y > limite) fim = y;
-          }
-          fatias.push([ini, fim]);
-          ini = fim;
-        }
-      } else fatias.push([0, canvas.height]);
-
-      let doc = null;
-      fatias.forEach(([ini, fim], i) => {
-        const pedaco = document.createElement('canvas');
-        pedaco.width = canvas.width; pedaco.height = fim - ini;
-        pedaco.getContext('2d').drawImage(canvas, 0, ini, canvas.width, fim - ini, 0, 0, canvas.width, fim - ini);
-        const alturaPedaco = (fim - ini) / pxPorMm;
-        const ultima = i === fatias.length - 1;
-        // Cada parte só com a altura do próprio conteúdo: as partes saem coladas, sem espaço em branco
-        const topo = i === 0 ? margemTopo : 0;
-        let altura = alturaPedaco + topo + (ultima ? margemBase : 0);
-        if (parte > 0 && fatias.length > 1 && !ultima) altura = Math.min(parte, altura);
-        altura = Math.max(pagina + 1, altura);   // sempre em pé (o leitor de PDF gira páginas deitadas)
-        const orient = altura >= pagina ? 'portrait' : 'landscape';
-        if (!doc) doc = new jsPDF({ unit: 'mm', format: [pagina, altura], orientation: orient, compress: true });
-        else doc.addPage([pagina, altura], orient);
-        doc.addImage(pedaco.toDataURL('image/png'), 'PNG', x, topo, util, alturaPedaco, undefined, 'FAST');
-        if (ultima) doc.setProperties({ title: 'Recibo' });
-      });
-      return doc.output('blob');
-    } finally { area.remove(); }
-  }
-
   function imprimir(html, cssPagina = '') {
-    // Recibos e vales: PDF do tamanho da bobina (se não der, cai na impressão comum)
+    // Recibos e vales: página sem margem (o navegador não tem onde pôr data, título e endereço)
+    // e na largura que a impressora imprime; a própria impressora emenda as páginas no rolo.
     if (!cssPagina && /class="cupom[\s"]/.test(html)) {
-      cupomEmPdf(html).then(imprimirPdf).catch(() => imprimirNavegador(html, '@page { margin: 0; }'));
-      return;
+      const aj = ajustesImpressora();
+      const bobina = /max-width:\s*48mm/.test(html) ? 58 : 80;
+      const area = Math.max(30, Math.min(bobina, Number(bobina === 58 ? aj.area58 : aj.area80) || (bobina === 58 ? 48 : 72)));
+      const largura = area - 2;
+      const esquerda = Math.max(0, 1 + (Number(aj.mover) || 0));
+      cssPagina = `@page { margin: 0; }
+        .area-impressao .cupom { width: ${largura}mm !important; max-width: ${largura}mm !important; margin: 0 0 0 ${esquerda}mm !important; padding: 2mm 0 8mm !important; }
+        .area-impressao .c-logo, .area-impressao .c-qr, .area-impressao .c-linha, .area-impressao .c-economia { break-inside: avoid; page-break-inside: avoid; }`;
     }
     imprimirNavegador(html, cssPagina);
   }
