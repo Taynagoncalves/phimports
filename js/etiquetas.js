@@ -250,7 +250,32 @@ App.aoIniciar(async () => {
   }
 
   /** HTML completo (rolo térmico ou folhas A4) */
+  /* ---------- Etiquetas na bobina de recibo (80 mm), para recortar ---------- */
+  const CHAVE_REC = 'gestaoloja:etq-recibo-colunas';
+  let colunasRecibo = 2;
+  try { colunasRecibo = Number(localStorage.getItem(CHAVE_REC)) === 1 ? 1 : 2; } catch (e) { /* padrão */ }
+  const AJ_FIXO = { largura: 40, altura: 25, girar: 0, escala: 100, x: 0, y: 0 };
+  function imagensRecibo(lista, op) {
+    const cache = new Map();
+    return lista.map((item) => {
+      if (!cache.has(item.sku)) cache.set(item.sku, canvasEtiqueta(item, op, AJ_FIXO).toDataURL('image/png'));
+      return cache.get(item.sku);
+    });
+  }
+  /** Linhas de 1 ou 2 etiquetas com borda tracejada (largura em mm) */
+  function htmlRecibo(lista, op, larguraMm, esquerdaMm = 0) {
+    const imgs = imagensRecibo(lista, op);
+    const linhas = [];
+    for (let i = 0; i < imgs.length; i += colunasRecibo) linhas.push(imgs.slice(i, i + colunasRecibo));
+    return `<div class="rec-folha" style="width:${larguraMm}mm;margin-left:${esquerdaMm}mm;--n:${colunasRecibo}">${linhas.map((l) => `<div class="rec-linha">${l.map((src) => `<img src="${src}" alt="">`).join('')}</div>`).join('')}</div>`;
+  }
+
   function montar(lista, op) {
+    if (op.modelo === 'recibo') {
+      const aj = App.ajustesImpressora ? App.ajustesImpressora() : { area80: 72, mover: 0 };
+      const area = Math.max(40, Math.min(80, Number(aj.area80) || 72));
+      return htmlRecibo(lista, op, area - 2, Math.max(0, 1 + (Number(aj.mover) || 0)));
+    }
     if (op.modelo === 'termica') return `<div class="rolo">${lista.map((i) => htmlEtiqueta(i, op)).join('')}</div>`;
     return folhasA4(lista, op).join('');
   }
@@ -259,10 +284,17 @@ App.aoIniciar(async () => {
     const op = opcoes();
     $('campo-inicio').classList.toggle('oculto', op.modelo !== 'pimaco');
     $('etq-ajustes').classList.toggle('oculto', op.modelo !== 'termica');
-    $('campo-colunas').classList.toggle('oculto', op.modelo !== 'termica');
+    $('campo-colunas').classList.toggle('oculto', op.modelo !== 'recibo');
+    document.querySelectorAll('[data-colunas-rec]').forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.colunasRec) === colunasRecibo)));
     const lista = listaEtiquetas();
     const previa = $('previa');
     if (!lista.length) { previa.innerHTML = '<p class="texto-sm texto-3 texto-centro">Adicione peças para ver a etiqueta.</p>'; $('info-previa').textContent = ''; return; }
+    if (op.modelo === 'recibo') {
+      previa.innerHTML = `<div class="rec-papel">${htmlRecibo(lista.slice(0, colunasRecibo * 3), op, 70)}</div>`;
+      const linhas = Math.ceil(lista.length / colunasRecibo);
+      $('info-previa').textContent = `Bobina 80 mm · ${colunasRecibo} por linha · ${linhas} linha${linhas === 1 ? '' : 's'}`;
+      return;
+    }
     if (op.modelo === 'termica') {
       previa.innerHTML = '<div class="previa-rolo"></div>';
       const linha = lista.slice(0, colunas());
@@ -387,7 +419,7 @@ App.aoIniciar(async () => {
   }
 
   /** PDF com uma página do tamanho exato da etiqueta para cada peça */
-  const colunas = () => Math.max(1, Math.min(3, Number(ajustes.colunas) || 1));
+  const colunas = () => 1;   // impressora de etiquetas: uma por vez no rolo
   const espaco = () => (colunas() > 1 ? Math.max(0, Number(ajustes.espaco) || 0) : 0);
   const larguraLinha = () => colunas() * Number(ajustes.largura) + (colunas() - 1) * espaco();
   /** Uma linha do rolo: até N etiquetas lado a lado (as vagas sobram em branco) */
@@ -431,7 +463,6 @@ App.aoIniciar(async () => {
     $('aj-x').value = ajustes.x; $('aj-x-valor').textContent = `${Number(ajustes.x).toLocaleString('pt-BR')} mm`;
     $('aj-y').value = ajustes.y; $('aj-y-valor').textContent = `${Number(ajustes.y).toLocaleString('pt-BR')} mm`;
     $('aj-largura').value = ajustes.largura; $('aj-altura').value = ajustes.altura;
-    document.querySelectorAll('[data-colunas]').forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.colunas) === colunas())));
     $('aj-espaco').value = ajustes.espaco;
     $('aj-espaco-campo').hidden = colunas() < 2;
   }
@@ -445,7 +476,11 @@ App.aoIniciar(async () => {
     const n = Number(String(e.target.value).replace(',', '.'));
     mudarAjuste(campo, n >= 15 && n <= 150 ? n : padrao);
   }));
-  document.querySelectorAll('[data-colunas]').forEach((b) => b.addEventListener('click', () => mudarAjuste('colunas', Number(b.dataset.colunas))));
+  document.querySelectorAll('[data-colunas-rec]').forEach((b) => b.addEventListener('click', () => {
+    colunasRecibo = Number(b.dataset.colunasRec) === 1 ? 1 : 2;
+    try { localStorage.setItem(CHAVE_REC, String(colunasRecibo)); } catch (e) { /* ignora */ }
+    desenharPrevia();
+  }));
   $('aj-espaco').addEventListener('change', (e) => { const n = Number(String(e.target.value).replace(',', '.')); mudarAjuste('espaco', n >= 0 && n <= 10 ? n : 2); });
   // Restaurar volta posição e tamanho; mantém quantas por linha
   $('aj-restaurar').addEventListener('click', () => { ajustes = { ...AJUSTES_PADRAO, colunas: ajustes.colunas, espaco: ajustes.espaco }; salvarAjustes(); desenharAjustes(); desenharPrevia(); });
@@ -491,6 +526,11 @@ App.aoIniciar(async () => {
       pdfTermico(lista, op).then(App.imprimirPdf)
         .catch(() => App.toast('Não foi possível gerar as etiquetas. Verifique a internet e tente de novo.', 'erro'))
         .finally(() => { botao.disabled = false; });
+      return;
+    }
+    if (op.modelo === 'recibo') {
+      // Igual ao recibo: página sem margem (sem data/endereço) e a impressora emenda o rolo
+      App.imprimir(montar(lista, op), '@page { margin: 0; }');
       return;
     }
     App.imprimir(montar(lista, op), '@page { size: A4; margin: 0; }');
