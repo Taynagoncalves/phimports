@@ -18,6 +18,13 @@
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/layout.css">
+  <style>
+    .imp-aj { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .aj-faixa { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
+    .aj-faixa > span { display: flex; justify-content: space-between; }
+    .aj-faixa b { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .aj-faixa input { width: 100%; accent-color: var(--cor-destaque); }
+  </style>
 </head>
 <body data-pagina="impressao" data-titulo="Impressão">
   <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
@@ -61,6 +68,18 @@
                 </div>
               </div>
               <label class="interruptor mt-4"><input type="checkbox" id="imp-auto"><span>Abrir a impressão sozinha ao finalizar a venda</span></label>
+            </section>
+
+            <section class="card card-corpo">
+              <h2>Ajuste da impressora</h2>
+              <p class="texto-xs texto-3 mt-1">Se o recibo sair cortado, ajuste aqui e use "Imprimir teste". Fica salvo neste computador.</p>
+              <div class="imp-aj mt-4">
+                <label class="campo"><span class="rotulo">Largura impressa (mm)</span><input class="input" type="number" id="aj-area" min="30" max="80" step="1"></label>
+                <label class="campo"><span class="rotulo">Comprimento do papel (mm)</span><input class="input" type="number" id="aj-parte" min="0" max="3300" step="10"></label>
+              </div>
+              <label class="aj-faixa mt-4"><span>Mover para os lados <b id="aj-mover-valor"></b></span><input type="range" id="aj-mover" min="-4" max="4" step="0.5"></label>
+              <p class="ajuda mt-2">Cortou à direita: diminua a largura ou mova para a esquerda. Parou no meio: o recibo é dividido em partes do comprimento do papel da impressora (0 = uma tira só).</p>
+              <button type="button" class="btn btn-fantasma mt-2" id="aj-restaurar"><i data-lucide="rotate-ccw"></i>Restaurar padrão</button>
             </section>
 
             <section class="card card-corpo">

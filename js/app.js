@@ -914,7 +914,27 @@
     setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
   }
 
-  /** Recibo / vale em PDF: largura da bobina e altura do conteúdo (uma tira só, sem quebrar página) */
+  /* Ajustes da impressora de recibo (ficam neste computador) */
+  const CHAVE_IMPRESSORA = 'gestaoloja:impressora';
+  const IMPRESSORA_PADRAO = { area80: 72, area58: 48, mover: 0, parte: 80 };
+  function ajustesImpressora() {
+    try { return { ...IMPRESSORA_PADRAO, ...JSON.parse(localStorage.getItem(CHAVE_IMPRESSORA) || '{}') }; } catch (e) { return { ...IMPRESSORA_PADRAO }; }
+  }
+  function salvarAjustesImpressora(aj) {
+    try { localStorage.setItem(CHAVE_IMPRESSORA, JSON.stringify({ ...ajustesImpressora(), ...aj })); } catch (e) { /* ignora */ }
+  }
+
+  /** Linha de pixels toda branca? (para dividir o recibo sem cortar texto) */
+  function linhaBranca(dados, largura, y) {
+    const ini = y * largura * 4;
+    for (let i = ini; i < ini + largura * 4; i += 4) if (dados[i] < 235 || dados[i + 1] < 235 || dados[i + 2] < 235) return false;
+    return true;
+  }
+
+  /**
+   * Recibo / vale em PDF na largura que a impressora imprime de fato.
+   * Divide em partes do comprimento do papel configurado na impressora (0 = tira única).
+   */
   async function cupomEmPdf(html) {
     await Promise.all([carregarJsPdf(), carregarHtml2Canvas()]);
     const area = document.createElement('div');
@@ -922,21 +942,57 @@
     area.innerHTML = html;
     document.body.appendChild(area);
     try {
+      const aj = ajustesImpressora();
       const cupom = area.querySelector('.cupom');
       const bobina = /max-width:\s*48mm/.test(cupom.getAttribute('style') || '') ? 58 : 80;
-      const util = bobina === 58 ? 48 : 72;                       // área impressa (mm)
+      const pagina = Math.max(30, Math.min(bobina, Number(bobina === 58 ? aj.area58 : aj.area80) || (bobina === 58 ? 48 : 72)));
+      const lateral = 1;                                          // folga de cada lado (mm)
+      const util = pagina - lateral * 2;                          // largura do conteúdo (mm)
+      const x = Math.max(0, Math.min(pagina - util, lateral + (Number(aj.mover) || 0)));
       cupom.style.width = util + 'mm'; cupom.style.maxWidth = util + 'mm';
       const imagens = [...area.querySelectorAll('img')].map((img) => (img.complete ? null : new Promise((ok) => { img.onload = ok; img.onerror = ok; })));
       await Promise.race([Promise.all(imagens), new Promise((ok) => setTimeout(ok, 2500))]);
       const alto = Math.ceil(cupom.scrollHeight);
       const canvas = await window.html2canvas(cupom, { scale: 4, backgroundColor: '#ffffff', useCORS: true, logging: false, height: alto, windowHeight: Math.max(alto + 50, window.innerHeight), scrollY: 0, scrollX: 0 });
-      const margemTopo = 2, margemBase = 10;                      // folga no fim para o corte
-      const alturaConteudo = canvas.height / canvas.width * util;
-      const altura = Math.max(40, alturaConteudo + margemTopo + margemBase);
+      const pxPorMm = canvas.width / util;
+      const alturaTotal = canvas.height / pxPorMm;
+      const margemTopo = 2, margemBase = 8;
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit: 'mm', format: [bobina, altura], orientation: altura >= bobina ? 'portrait' : 'landscape', compress: true });
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', (bobina - util) / 2, margemTopo, util, alturaConteudo, undefined, 'FAST');
-      doc.setProperties({ title: 'Recibo' });
+      const parte = Number(aj.parte) || 0;
+
+      // Fatias do desenho (em px): uma só, ou várias cortando em linhas brancas
+      const fatias = [];
+      if (parte > 0 && alturaTotal + margemTopo + margemBase > parte) {
+        const dados = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+        const cabe = Math.floor((parte - margemTopo) * pxPorMm);  // altura útil de cada parte
+        let ini = 0;
+        while (ini < canvas.height) {
+          let fim = Math.min(canvas.height, ini + cabe);
+          if (fim < canvas.height) {
+            let y = fim;
+            const limite = ini + Math.floor(cabe * 0.6);
+            while (y > limite && !linhaBranca(dados, canvas.width, y)) y--;
+            if (y > limite) fim = y;
+          }
+          fatias.push([ini, fim]);
+          ini = fim;
+        }
+      } else fatias.push([0, canvas.height]);
+
+      let doc = null;
+      fatias.forEach(([ini, fim], i) => {
+        const pedaco = document.createElement('canvas');
+        pedaco.width = canvas.width; pedaco.height = fim - ini;
+        pedaco.getContext('2d').drawImage(canvas, 0, ini, canvas.width, fim - ini, 0, 0, canvas.width, fim - ini);
+        const alturaPedaco = (fim - ini) / pxPorMm;
+        const ultima = i === fatias.length - 1;
+        const altura = parte > 0 && fatias.length > 1 ? parte : Math.max(30, alturaPedaco + margemTopo + margemBase);
+        const orient = altura >= pagina ? 'portrait' : 'landscape';
+        if (!doc) doc = new jsPDF({ unit: 'mm', format: [pagina, altura], orientation: orient, compress: true });
+        else doc.addPage([pagina, altura], orient);
+        doc.addImage(pedaco.toDataURL('image/png'), 'PNG', x, margemTopo, util, alturaPedaco, undefined, 'FAST');
+        if (ultima) doc.setProperties({ title: 'Recibo' });
+      });
       return doc.output('blob');
     } finally { area.remove(); }
   }
@@ -1435,7 +1491,7 @@
     // gráficos
     corCss, paletaGrafico,
     // impressão / cupom
-    imprimir, imprimirPdf, carregarJsPdf, htmlCupom, gerarCupom, gerarVale, opcoesImpressao, IMPRESSAO_PADRAO,
+    imprimir, imprimirPdf, carregarJsPdf, ajustesImpressora, salvarAjustesImpressora, htmlCupom, gerarCupom, gerarVale, opcoesImpressao, IMPRESSAO_PADRAO,
     // app instalável
     instalarApp, get podeInstalar() { return !!pedidoInstalacao; }, get appInstalado() { return appInstalado(); },
     // troca/devolução (telas Vendas e Trocas)

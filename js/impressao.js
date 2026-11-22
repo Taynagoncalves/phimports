@@ -90,6 +90,35 @@ App.aoIniciar(async () => {
   document.querySelectorAll('[data-modelo]').forEach((b) => b.addEventListener('click', () => { modelo = b.dataset.modelo; marcar('[data-modelo]', 'modelo', modelo); desenharPrevia(); }));
   $('btn-teste').addEventListener('click', () => App.imprimir($('imp-papel').innerHTML));
 
+  /* ---------- Ajuste da impressora (neste computador) ---------- */
+  function chaveArea() { return Number(op.largura) === 58 ? 'area58' : 'area80'; }
+  function preencherAjustes() {
+    const aj = App.ajustesImpressora();
+    $('aj-area').value = aj[chaveArea()];
+    $('aj-area').max = Number(op.largura) === 58 ? 58 : 80;
+    $('aj-parte').value = aj.parte;
+    $('aj-mover').value = aj.mover;
+    $('aj-mover-valor').textContent = `${Number(aj.mover) > 0 ? '+' : ''}${String(aj.mover).replace('.', ',')} mm`;
+  }
+  $('aj-area').addEventListener('change', () => {
+    const max = Number(op.largura) === 58 ? 58 : 80;
+    const n = Math.round(Number($('aj-area').value));
+    App.salvarAjustesImpressora({ [chaveArea()]: n >= 30 && n <= max ? n : (max === 58 ? 48 : 72) });
+    preencherAjustes();
+  });
+  $('aj-parte').addEventListener('change', () => {
+    const n = Math.round(Number($('aj-parte').value));
+    App.salvarAjustesImpressora({ parte: n >= 40 ? n : 0 });
+    preencherAjustes();
+  });
+  $('aj-mover').addEventListener('input', () => { App.salvarAjustesImpressora({ mover: Number($('aj-mover').value) }); preencherAjustes(); });
+  $('aj-restaurar').addEventListener('click', () => {
+    try { localStorage.removeItem('gestaoloja:impressora'); } catch (e) { /* ignora */ }
+    preencherAjustes();
+  });
+  document.querySelectorAll('[data-largura]').forEach((b) => b.addEventListener('click', preencherAjustes));
+
   preencher();
+  preencherAjustes();
   await desenharPrevia();
 });
