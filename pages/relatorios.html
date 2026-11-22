@@ -86,18 +86,6 @@
           </article>
         </section>
 
-        <!-- Gráficos -->
-        <section class="grid-dash secao">
-          <article class="card">
-            <div class="card-cabecalho"><h2>Vendas por período</h2></div>
-            <div class="card-corpo"><div class="grafico"><canvas id="g-periodo" role="img" aria-label="Faturamento e lucro por dia"></canvas></div></div>
-          </article>
-          <article class="card">
-            <div class="card-cabecalho"><h2>Por categoria</h2></div>
-            <div class="card-corpo"><div class="grafico"><canvas id="g-categoria" role="img" aria-label="Faturamento por categoria"></canvas></div></div>
-          </article>
-        </section>
-
         <section class="grid-2 secao">
           <!-- Mais vendidos -->
           <article class="card">
@@ -113,7 +101,12 @@
           <!-- Formas de pagamento -->
           <article class="card">
             <div class="card-cabecalho"><h2>Formas de pagamento</h2></div>
-            <div class="card-corpo"><div class="grafico-sm"><canvas id="g-pagamento" role="img" aria-label="Faturamento por forma de pagamento"></canvas></div></div>
+            <div class="tabela-wrap">
+              <table class="tabela tabela-responsiva">
+                <thead><tr><th>Forma</th><th class="num">Valor</th><th class="num">%</th></tr></thead>
+                <tbody id="t-pagamento"></tbody>
+              </table>
+            </div>
           </article>
         </section>
 
@@ -152,7 +145,6 @@
   </div>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
   <!-- Geração do PDF do relatório -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>

@@ -1,11 +1,10 @@
 /* ==========================================================================
-   relatorios.js — Relatórios por período: totais, gráficos (Chart.js),
+   relatorios.js — Relatórios por período: totais,
    produtos mais vendidos, lucro e estoque parado. Exporta CSV.
    ========================================================================== */
 App.aoIniciar(async () => {
   const inputInicio = document.getElementById('inicio');
   const inputFim = document.getElementById('fim');
-  const graficos = {};
   let relatorio = null;
 
   /* ---------- Atalhos de período ---------- */
@@ -30,7 +29,6 @@ App.aoIniciar(async () => {
     relatorio = await Data.obterRelatorio({ dataInicio: inputInicio.value, dataFim: inputFim.value });
     document.getElementById('periodo-texto').textContent = `De ${App.formatarData(inputInicio.value)} até ${App.formatarData(inputFim.value)}`;
     desenharTotais();
-    desenharGraficos();
     desenharTabelas();
     App.icones();
   }
@@ -47,98 +45,19 @@ App.aoIniciar(async () => {
     document.getElementById('r-pecas-det').textContent = t.vendas ? `${(t.pecas / t.vendas).toFixed(1).replace('.', ',')} peças por venda` : '—';
   }
 
-  /* ---------- Gráficos ---------- */
-  // Cada gráfico guarda a "fábrica" da sua configuração para poder ser
-  // redesenhado em tamanho fixo na exportação para PDF.
-  const fabricas = {};
-  function recriar(id, fabrica) {
-    fabricas[id] = fabrica;
-    if (graficos[id]) graficos[id].destroy();
-    graficos[id] = new Chart(document.getElementById(id), fabrica());
-  }
-
-  /**
-   * Desenha o gráfico num canvas fora da tela, com tamanho fixo e sem
-   * animação, e devolve a imagem PNG (independe do tamanho da tela).
-   */
-  function imagemDoGrafico(id, larguraPx, alturaPx) {
-    const area = document.createElement('div');
-    area.style.cssText = `position:fixed;left:-10000px;top:0;width:${larguraPx}px;height:${alturaPx}px`;
-    const canvas = document.createElement('canvas');
-    canvas.width = larguraPx;
-    canvas.height = alturaPx;
-    area.appendChild(canvas);
-    document.body.appendChild(area);
-    const config = fabricas[id]();
-    config.options = { ...config.options, responsive: false, animation: false, devicePixelRatio: 2 };
-    const grafico = new Chart(canvas, config);
-    const imagem = grafico.toBase64Image('image/png', 1);
-    grafico.destroy();
-    area.remove();
-    return imagem;
-  }
-
-  function desenharGraficos() {
-    const destaque = App.corCss('--cor-destaque');
-    const sucesso = App.corCss('--cor-sucesso');
-    const moeda = (v) => App.formatarMoeda(v).replace(',00', '');
-
-    // Linha: faturamento x lucro por dia
-    const dias = relatorio.porDia;
-    recriar('g-periodo', () => ({
-      type: 'line',
-      data: {
-        labels: dias.map((d) => App.formatarData(d.data).slice(0, 5)),
-        datasets: [
-          { label: 'Faturamento', data: dias.map((d) => d.total), borderColor: destaque, backgroundColor: App.paletaGrafico(6)[5], fill: true, tension: 0.35, pointRadius: dias.length > 31 ? 0 : 3, borderWidth: 2 },
-          { label: 'Lucro', data: dias.map((d) => d.lucro), borderColor: sucesso, backgroundColor: 'transparent', tension: 0.35, pointRadius: dias.length > 31 ? 0 : 3, borderWidth: 2, borderDash: [5, 4] }
-        ]
-      },
-      options: {
-        interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { position: 'top', align: 'end' }, tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${App.formatarMoeda(c.raw)}` } } },
-        scales: {
-          x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
-          y: { beginAtZero: true, border: { display: false }, ticks: { callback: moeda } }
-        }
-      }
-    }));
-
-    // Rosca: por categoria
-    const cats = relatorio.porCategoria;
-    recriar('g-categoria', () => ({
-      type: 'doughnut',
-      data: {
-        labels: cats.length ? cats.map((c) => c.categoria) : ['Sem vendas'],
-        datasets: [{ data: cats.length ? cats.map((c) => c.total) : [1], backgroundColor: cats.length ? App.paletaGrafico(cats.length) : [App.corCss('--cor-borda')], borderWidth: 3, borderColor: App.corCss('--cor-superficie') }]
-      },
-      options: {
-        cutout: '64%',
-        plugins: {
-          legend: { position: 'bottom' },
-          tooltip: { enabled: cats.length > 0, callbacks: { label: (c) => ` ${c.label}: ${App.formatarMoeda(c.raw)}` } }
-        }
-      }
-    }));
-
-    // Barras horizontais: formas de pagamento
-    const pag = relatorio.porPagamento;
-    recriar('g-pagamento', () => ({
-      type: 'bar',
-      data: {
-        labels: pag.map((p) => App.FORMAS_PAGAMENTO[p.forma] || p.forma),
-        datasets: [{ data: pag.map((p) => p.total), backgroundColor: App.paletaGrafico(pag.length), borderRadius: 6, maxBarThickness: 28 }]
-      },
-      options: {
-        indexAxis: 'y',
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => ` ${App.formatarMoeda(c.raw)}` } } },
-        scales: { x: { beginAtZero: true, border: { display: false }, ticks: { callback: moeda } }, y: { grid: { display: false } } }
-      }
-    }));
-  }
-
   /* ---------- Tabelas ---------- */
   function desenharTabelas() {
+    // Formas de pagamento
+    const pag = relatorio.porPagamento || [];
+    const totalPag = pag.reduce((t, p) => t + p.total, 0);
+    document.getElementById('t-pagamento').innerHTML = pag.length ? pag.map((p) => `
+      <tr>
+        <td class="cel-principal">${App.escapeHtml(App.FORMAS_PAGAMENTO[p.forma] || p.forma)}</td>
+        <td data-label="Valor" class="num negrito">${App.formatarMoeda(p.total)}</td>
+        <td data-label="%" class="num">${App.formatarPercentual(totalPag ? (p.total / totalPag) * 100 : 0)}</td>
+      </tr>`).join('')
+      : `<tr><td colspan="3">${App.estadoVazio({ icone: 'wallet', titulo: 'Sem vendas no período' })}</td></tr>`;
+
     // Comissão por vendedor
     const vend = relatorio.porVendedor || [];
     const totalComissao = vend.reduce((s, v) => s + v.comissao, 0);
@@ -230,13 +149,16 @@ App.aoIniciar(async () => {
       ['Peças vendidas', App.formatarNumero(t.pecas), `Custo ${moeda(t.custo)}`]
     ]);
 
-    // Gráficos redesenhados em tamanho fixo (5 px por mm)
-    const grafico = (id) => (w, h) => (fabricas[id] ? imagemDoGrafico(id, Math.round(w * 5), Math.round(h * 5)) : null);
-    pdf.imagens([{ titulo: 'Vendas por período (faturamento x lucro)', imagem: grafico('g-periodo') }], 62);
-    pdf.imagens([
-      { titulo: 'Por categoria', imagem: grafico('g-categoria') },
-      { titulo: 'Formas de pagamento', imagem: grafico('g-pagamento') }
-    ], 58);
+    const pagPdf = relatorio.porPagamento || [];
+    const totalPagPdf = pagPdf.reduce((s2, p) => s2 + p.total, 0);
+    pdf.tabela({
+      titulo: 'Formas de pagamento',
+      cabecalho: ['Forma', 'Valor', '%'],
+      linhas: pagPdf.map((p) => [App.FORMAS_PAGAMENTO[p.forma] || p.forma, moeda(p.total), App.formatarPercentual(totalPagPdf ? (p.total / totalPagPdf) * 100 : 0)]),
+      direita: [1, 2],
+      vazio: 'Sem vendas no período.',
+      rodape: ['Total', moeda(totalPagPdf), pagPdf.length ? '100%' : '']
+    });
 
     /* ---------- NCM (atual do cadastro: ncmEfetivo/ncmOrigem vêm de data.js) ---------- */
     const produtos = await Data.listarProdutos();
