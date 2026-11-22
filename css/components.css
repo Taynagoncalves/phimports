@@ -1667,3 +1667,9 @@ select.pt-campo { width: auto; min-width: 180px; }
 .cupom-pdf .cupom::before, .cupom-pdf .cupom::after { display: none; }
 .cupom-pdf .c-economia { padding: 4px 0 12px; }
 .cupom-pdf .c-sep { margin: 10px 0 8px; }
+
+/* Link "← voltar" acima do título (telas que abrem a partir de outra) */
+.link-voltar { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 4px; font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--cor-texto-3); text-decoration: none; }
+.link-voltar:hover { color: var(--cor-texto); }
+.link-voltar svg { width: 14px; height: 14px; }
+a.aba { text-decoration: none; display: inline-block; }

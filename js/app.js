@@ -36,7 +36,8 @@
   }
 
   /* ---------- Itens do menu (grupo → links) ---------- */
-  // Grupo sem título = o que se usa todo dia; "Ajustes" começa fechado
+  // Grupo sem título = sem cabeçalho (uso diário no topo, Configurações no fim).
+  // Inventário e Reposição abrem pela tela Estoque; Aparência e Impressão pelas abas de Configurações.
   const MENU = [
     { grupo: '', itens: [
       { id: 'dashboard', texto: 'Dashboard', icone: 'layout-dashboard', href: 'dashboard.html' },
@@ -49,9 +50,7 @@
     { grupo: 'Produtos', itens: [
       { id: 'produtos', texto: 'Produtos', icone: 'shirt', href: 'produtos.html' },
       { id: 'estoque', texto: 'Estoque', icone: 'package', href: 'estoque.html' },
-      { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' },
-      { id: 'reposicao', texto: 'Reposição', icone: 'shopping-cart', href: 'reposicao.html' },
-      { id: 'inventario', texto: 'Inventário', icone: 'clipboard-check', href: 'inventario.html' }
+      { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' }
     ] },
     { grupo: 'Clientes', itens: [
       { id: 'clientes', texto: 'Clientes', icone: 'users', href: 'clientes.html' },
@@ -67,9 +66,7 @@
       { id: 'relatorios', texto: 'Relatórios', icone: 'trending-up', href: 'relatorios.html' },
       { id: 'fornecedores', texto: 'Fornecedores', icone: 'truck', href: 'fornecedores.html' }
     ] },
-    { grupo: 'Ajustes', fechado: true, itens: [
-      { id: 'aparencia', texto: 'Aparência', icone: 'palette', href: 'aparencia.html' },
-      { id: 'impressao', texto: 'Impressão', icone: 'printer', href: 'impressao.html' },
+    { grupo: '', itens: [
       { id: 'configuracoes', texto: 'Configurações', icone: 'settings', href: 'configuracoes.html' }
     ] }
   ];
