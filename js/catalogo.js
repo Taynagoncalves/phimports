@@ -113,12 +113,24 @@
     if (cat) aplicarTema(temaPrevia);
   });
 
+
+  const ICONES_SELO = {
+    caminhao: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17.5" cy="17.5" r="1.6"/></svg>',
+    loja: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v10h16V10M3 10l2-6h14l2 6M9 20v-5h6v5"/></svg>',
+    conversa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.8 7L4 20l1-4.2A8 8 0 1 1 20 12Z"/></svg>',
+    estrela: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 2.4 5 5.4.7-4 3.7 1 5.3L12 16.2 7.2 18.7l1-5.3-4-3.7 5.4-.7z"/></svg>'
+  };
   /* ---------- Topo, abertura e rodapé ---------- */
   function desenharMarca() {
     document.title = `${cat.nome} — Catálogo`;
     if (cat.logo) $('logo-topo').src = cat.logo;
     $('logo-topo').alt = cat.nome;
     $('hero-sobre').textContent = cat.nome;
+    $('hero-selos').innerHTML = [
+      cat.entrega === false ? [ICONES_SELO.loja, 'Retire na loja'] : [ICONES_SELO.caminhao, 'Enviamos para todo o Brasil'],
+      [ICONES_SELO.conversa, 'Atendimento pelo WhatsApp'],
+      [ICONES_SELO.estrela, 'Peças selecionadas']
+    ].map(([i, t]) => `<li>${i}${esc(t)}</li>`).join('');
     // Faixa do topo: o recado da loja (separe por "·") + avisos fixos
     const avisos = [
       ...String(cat.mensagem || '').split(/\s*[·|]\s*/).filter(Boolean),
@@ -143,7 +155,7 @@
         </div>
         <ol class="rodape-passos">
           <li><strong>01</strong>Escolha as peças</li>
-          <li><strong>02</strong>Finalize pelo WhatsApp</li>
+          <li><strong>02</strong>Envie o pedido</li>
           <li><strong>03</strong>${cat.entrega === false ? 'Retire na loja' : 'Receba em todo o Brasil'}</li>
         </ol>
         ${cat.endereco ? `<p class="rodape-endereco">${esc(cat.endereco)}</p>` : ''}
@@ -598,6 +610,7 @@
   }
   function abrirSacola() {
     desenharSacola();
+    etapaSacola('itens');
     abrirCamada('camada-sacola');
     history.pushState({ camada: 'sacola' }, '');
   }
@@ -623,58 +636,118 @@
     return Promise.resolve();
   }
 
-  /* ---------- Finalizar pelo WhatsApp ---------- */
+  /* ---------- Finalizar: etapa 2 (dados) e as duas formas de enviar ---------- */
+  function etapaSacola(etapa) {
+    const dados = etapa === 'dados';
+    $('s-itens').hidden = dados;
+    $('s-fim').hidden = dados || !sacola.length;
+    $('form-pedido').hidden = !dados;
+    $('s-voltar').hidden = !dados;
+    $('s-titulo').textContent = dados ? 'Finalizar pedido' : 'Sua sacola';
+    if (dados) {
+      const n = pecasSacola();
+      $('s-resumo').textContent = `${n} peça${n === 1 ? '' : 's'}`;
+      $('s-resumo-total').textContent = $('s-total').textContent;
+      $('btn-enviar-whats').hidden = !cat.whatsapp;
+      document.querySelector('#form-pedido .ou').hidden = !cat.whatsapp;
+      $('btn-enviar-whats').nextElementSibling.hidden = !cat.whatsapp;
+    }
+    document.querySelector('.folha.sacola').scrollTop = 0;
+  }
+  $('btn-continuar').addEventListener('click', () => { if (sacola.length) etapaSacola('dados'); });
+  $('s-voltar').addEventListener('click', () => etapaSacola('itens'));
   document.querySelectorAll('input[name=entrega]').forEach((r) => r.addEventListener('change', () => {
     $('f-endereco-bloco').hidden = document.querySelector('input[name=entrega]:checked').value !== 'entregar';
   }));
-  $('form-pedido').addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    if (!sacola.length) return;
-    if (!cat.whatsapp) return aviso('A loja ainda não informou o WhatsApp.');
+  ['f-nome', 'f-fone', 'f-endereco'].forEach((id) => $(id).addEventListener('input', () => $(id).classList.remove('erro')));
+  $('form-pedido').addEventListener('submit', (ev) => ev.preventDefault());
+
+  const digitos = (t) => String(t || '').replace(/\D/g, '');
+  function marcarErro(id, texto) { $(id).classList.add('erro'); $(id).focus(); aviso(texto); return false; }
+
+  /** Monta o pedido a partir da sacola e do formulário (ou devolve false se faltar algo) */
+  function montarPedido(modo) {
+    if (!sacola.length) return false;
     const nome = $('f-nome').value.trim();
+    const fone = $('f-fone').value.trim();
     const entrega = cat.entrega === false ? 'retirar' : document.querySelector('input[name=entrega]:checked').value;
     const endereco = $('f-endereco').value.trim();
-    if (entrega === 'entregar' && !endereco) { $('f-endereco').focus(); return aviso('Informe o endereço com CEP.'); }
-    const fone = $('f-fone').value.trim();
+    const obs = $('f-obs').value.trim();
+    if (!nome) return marcarErro('f-nome', 'Informe seu nome.');
+    if (modo === 'loja' && digitos(fone).length < 10) return marcarErro('f-fone', 'Informe seu WhatsApp com DDD para a loja te chamar.');
+    if (entrega === 'entregar' && !endereco) return marcarErro('f-endereco', 'Informe o endereço com CEP.');
     try { localStorage.setItem(CHAVE_CLIENTE, JSON.stringify({ nome, endereco, fone })); } catch (e) { /* ignora */ }
     const codigo = codigoPedido();
-    const linhas = sacola.map((i, n) => {
-      const p = acharPeca(i.id); const preco = precoDe(p);
-      const det = [i.c, i.t && `Tam. ${i.t}`].filter(Boolean).join(' · ');
-      return `${n + 1}. *${p.nome}*${det ? ` (${det})` : ''}\n    ${i.qtd} × ${preco === null ? 'a consultar' : moeda(preco)}${preco === null ? '' : ` = ${moeda(preco * i.qtd)}`}`;
-    });
-    const texto = [
-      `Olá! Quero fazer um pedido pelo catálogo 🛍️`,
-      `*Pedido #${codigo}*`,
-      '',
-      ...linhas,
-      '',
-      `*Total: ${moeda(totalSacola())}*${sacola.some((i) => precoDe(acharPeca(i.id)) === null) ? ' + itens a consultar' : ''}`,
-      nome ? `Nome: ${nome}` : '',
-      entrega === 'entregar' ? `Enviar para: ${endereco}` : 'Vou retirar na loja',
-      $('f-obs').value.trim() ? `Obs.: ${$('f-obs').value.trim()}` : '',
-      '',
-      'Pode confirmar a disponibilidade? 😊'
-    ].filter((l, i, arr) => l !== '' || arr[i - 1] !== '').join('\n');
-    // Grava o pedido no sistema (a loja vê na aba "Pedidos online", com as peças reservadas)
-    const pedido = {
+    return {
       id: 'ped' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       codigo, status: 'novo', origem: 'catalogo', criadoEm: new Date().toISOString(),
       cliente: { nome: nome.slice(0, 60), telefone: fone.slice(0, 20) },
-      entrega, endereco: entrega === 'entregar' ? endereco.slice(0, 160) : '', obs: $('f-obs').value.trim().slice(0, 140),
+      entrega, endereco: entrega === 'entregar' ? endereco.slice(0, 160) : '', obs: obs.slice(0, 140),
       itens: sacola.map((i) => {
         const p = acharPeca(i.id); const v = variacao(p, i.c, i.t) || {};
         return { produtoId: p.id, sku: v.s || '', nome: p.nome, cor: i.c || '', tamanho: i.t || '', qtd: i.qtd, preco: precoDe(p) || 0 };
       }),
       total: Math.round(totalSacola() * 100) / 100
     };
-    gravarPedido(pedido).catch((e) => console.warn('Pedido não foi gravado no sistema:', e));
-    window.open(linkWhats(texto), '_blank', 'noopener');
-    // Sacola esvaziada + confirmação
+  }
+
+  function textoWhats(pedido) {
+    const linhas = pedido.itens.map((i, n) => {
+      const det = [i.cor, i.tamanho && `Tam. ${i.tamanho}`].filter(Boolean).join(' · ');
+      return `${n + 1}. *${i.nome}*${det ? ` (${det})` : ''}\n    ${i.qtd} × ${i.preco ? moeda(i.preco) : 'a consultar'}${i.preco ? ` = ${moeda(i.preco * i.qtd)}` : ''}`;
+    });
+    return [
+      'Olá! Quero fazer um pedido pelo catálogo 🛍️',
+      `*Pedido #${pedido.codigo}*`,
+      '',
+      ...linhas,
+      '',
+      `*Total: ${moeda(pedido.total)}*${pedido.itens.some((i) => !i.preco) ? ' + itens a consultar' : ''}`,
+      `Nome: ${pedido.cliente.nome}`,
+      pedido.entrega === 'entregar' ? `Enviar para: ${pedido.endereco}` : 'Vou retirar na loja',
+      pedido.obs ? `Obs.: ${pedido.obs}` : '',
+      '',
+      'Pode confirmar a disponibilidade? 😊'
+    ].filter((l, i, arr) => l !== '' || arr[i - 1] !== '').join('\n');
+  }
+
+  function pedidoConcluido(pedido, modo) {
     sacola = [];
     salvarSacola();
+    $('f-obs').value = '';
+    etapaSacola('itens');
     $('s-fim').hidden = true;
-    $('s-itens').innerHTML = `<div class="sacola-vazia pedido-ok"><p>Pedido #${esc(codigo)} enviado!</p>A loja vai confirmar a disponibilidade e o pagamento com você pelo WhatsApp. Obrigada! 💛</div>`;
+    const primeiroNome = esc(pedido.cliente.nome.split(' ')[0]);
+    $('s-itens').innerHTML = modo === 'loja'
+      ? `<div class="sacola-vazia pedido-ok"><p>Pedido #${esc(pedido.codigo)} enviado!</p>Obrigada, ${primeiroNome}! A loja já recebeu seu pedido e vai te chamar no WhatsApp <strong>${esc(pedido.cliente.telefone)}</strong> para confirmar e combinar o pagamento.</div>`
+      : `<div class="sacola-vazia pedido-ok"><p>Pedido #${esc(pedido.codigo)} pronto!</p>Obrigada, ${primeiroNome}! Agora é só enviar a mensagem que abriu no WhatsApp. A loja confirma a disponibilidade e o pagamento com você.</div>`;
+  }
+
+  // 1) Enviar para a loja: grava no sistema e a loja chama a cliente
+  $('btn-enviar-loja').addEventListener('click', async () => {
+    const pedido = montarPedido('loja');
+    if (!pedido) return;
+    const botao = $('btn-enviar-loja');
+    botao.disabled = true; botao.textContent = 'Enviando…';
+    try {
+      await gravarPedido(pedido);
+      pedidoConcluido(pedido, 'loja');
+    } catch (e) {
+      console.warn('Pedido não foi gravado:', e);
+      aviso(cat.whatsapp ? 'Não foi possível enviar agora. Tente pelo WhatsApp.' : 'Não foi possível enviar agora. Tente de novo.');
+    } finally {
+      botao.disabled = false; botao.textContent = 'Enviar pedido para a loja';
+    }
+  });
+
+  // 2) Enviar pelo WhatsApp: grava no sistema e abre a conversa com o pedido escrito
+  $('btn-enviar-whats').addEventListener('click', () => {
+    if (!cat.whatsapp) return aviso('A loja ainda não informou o WhatsApp.');
+    const pedido = montarPedido('whats');
+    if (!pedido) return;
+    gravarPedido(pedido).catch((e) => console.warn('Pedido não foi gravado no sistema:', e));
+    window.open(linkWhats(textoWhats(pedido)), '_blank', 'noopener');
+    pedidoConcluido(pedido, 'whats');
   });
 
   /* ---------- Camadas (abrir/fechar, botão voltar do celular) ---------- */
