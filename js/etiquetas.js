@@ -264,14 +264,14 @@ App.aoIniciar(async () => {
     if (!lista.length) { previa.innerHTML = '<p class="texto-sm texto-3 texto-centro">A prévia aparece aqui.</p>'; $('info-previa').textContent = ''; return; }
     if (op.modelo === 'termica') {
       previa.innerHTML = '<div class="previa-rolo"></div>';
-      lista.slice(0, 4).forEach((item) => {
+      lista.slice(0, 1).forEach((item) => {
         const cv = canvasEtiqueta(item, op);
         cv.className = 'etq-canvas';
         cv.style.aspectRatio = `${ajustes.largura} / ${ajustes.altura}`;
         previa.firstChild.appendChild(cv);
       });
       const mm = (n) => String(n).replace('.', ',');
-      $('info-previa').textContent = `${mm(ajustes.largura)} × ${mm(ajustes.altura)} mm` + (lista.length > 4 ? ` · 4 de ${lista.length}` : '');
+      $('info-previa').textContent = `${mm(ajustes.largura)} × ${mm(ajustes.altura)} mm` + (lista.length > 1 ? ` · 1 de ${lista.length}` : '');
     } else {
       // Só a primeira folha, reduzida para caber na lateral
       const folhas = folhasA4(lista.slice(0, POR_FOLHA), op);

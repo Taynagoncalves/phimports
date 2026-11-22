@@ -53,8 +53,11 @@
     /* Prévia na tela */
     .previa { background: var(--cor-superficie-2); border-radius: var(--raio); padding: 16px; overflow: auto; max-height: 70vh; }
     .previa .etq-termica, .previa .etq-pimaco { outline: 1px dashed #c8ccd6; }
+    body[data-pagina="etiquetas"] .form-lateral { position: static; }
+    .previa-fixa { order: -1; position: sticky; top: calc(var(--topbar-altura) + 12px); z-index: 3; box-shadow: var(--sombra-sm); }
+    .previa-fixa .previa { padding: 12px; }
     .previa-rolo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .etq-canvas { width: 100%; max-width: 230px; height: auto; background: #fff; border-radius: 3px; box-shadow: 0 0 0 1px #d5d9e2, 0 2px 8px rgba(0,0,0,.08); }
+    .etq-canvas { width: 100%; max-width: 220px; height: auto; background: #fff; border-radius: 3px; box-shadow: 0 0 0 1px #d5d9e2, 0 2px 8px rgba(0,0,0,.08); }
     .aj-topo { display: flex; align-items: center; justify-content: space-between; }
     .aj-linha { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); }
     .aj-faixa { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
@@ -184,7 +187,7 @@
                 <p class="texto-xs texto-3" style="margin-top:8px">A etiqueta térmica sai como PDF do tamanho exato, sem data nem endereço do site. Na impressora, o papel deve estar em <strong>40 × 25 mm</strong>.</p>
               </div>
             </section>
-            <section class="card">
+            <section class="card previa-fixa">
               <div class="card-cabecalho"><h2>Prévia</h2><span class="texto-xs texto-3" id="info-previa"></span></div>
               <div class="card-corpo"><div class="previa" id="previa"></div></div>
             </section>
