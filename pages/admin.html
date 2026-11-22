@@ -26,8 +26,35 @@
     .admin-topo .marca { display: flex; align-items: center; gap: 16px; }
     .admin-topo .marca span { font-size: var(--fs-sm); color: var(--cor-texto-3); letter-spacing: .14em; text-transform: uppercase; }
     .admin-lojas td { vertical-align: middle; }
-    .acoes-loja { display: flex; gap: 2px; justify-content: flex-end; flex-wrap: nowrap; }
-    .admin-lojas .acoes-loja .btn-icone { width: 32px; height: 32px; }
+    .linha-loja { cursor: pointer; }
+    .linha-loja:hover td { background: var(--cor-fundo-2); }
+    .btn-gerenciar { min-height: 34px; gap: 4px; padding-right: 10px; }
+    .btn-gerenciar svg { width: 16px; height: 16px; }
+    /* Ficha da loja */
+    .ficha-status { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+    .ficha-grade { display: grid; gap: 14px; }
+    @media (min-width: 700px) { .ficha-grade { grid-template-columns: 1fr 1fr; } }
+    .ficha-bloco { display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--cor-borda); border-radius: 12px; }
+    .ficha-bloco h3, .ficha-perigo h3 { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: var(--fw-semi); }
+    .ficha-bloco h3 svg, .ficha-perigo h3 svg { width: 16px; height: 16px; color: var(--cor-texto-3); }
+    .ficha-dados { display: grid; gap: 6px; margin: 0; }
+    .ficha-dados > div { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); }
+    .ficha-dados dt { color: var(--cor-texto-3); }
+    .ficha-dados dd { margin: 0; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+    .ficha-valor { font-size: 24px; font-weight: 700; letter-spacing: -.02em; }
+    .ficha-valor small { font-size: var(--fs-sm); font-weight: 500; color: var(--cor-texto-3); margin-left: 2px; }
+    .ficha-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
+    .ficha-acoes .btn { min-height: 36px; }
+    .ficha-pags { list-style: none; margin: 0; padding: 0; display: grid; }
+    .ficha-pags li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--cor-borda); font-size: var(--fs-sm); }
+    .ficha-pags li:last-child { border-bottom: 0; }
+    .ficha-pags small { display: block; font-size: var(--fs-xs); color: var(--cor-texto-3); }
+    .ficha-bloco > .btn-fantasma { align-self: flex-start; min-height: 30px; padding: 0 8px; font-size: var(--fs-xs); }
+    .ficha-perigo { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding: 16px; border: 1px solid color-mix(in srgb, var(--cor-perigo) 35%, var(--cor-borda)); border-radius: 12px; background: color-mix(in srgb, var(--cor-perigo) 4%, transparent); }
+    .ficha-perigo h3 svg { color: var(--cor-perigo); }
+    .ficha-perigo .ficha-acoes { margin-top: 0; }
+    .btn-perigo-contorno { border: 1px solid color-mix(in srgb, var(--cor-perigo) 45%, transparent); color: var(--cor-perigo); background: var(--cor-superficie); }
+    .btn-perigo-contorno:hover:not(:disabled) { background: var(--cor-perigo); color: #fff; }
     .admin .grid-stats { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
     .aviso-pagamento { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--cor-borda); }
     .aviso-pagamento:last-child { border-bottom: none; }

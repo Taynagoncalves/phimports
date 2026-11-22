@@ -80,7 +80,7 @@ App.aoIniciar(async () => {
       const dono = l.usuarios.find((u) => u.perfil === 'dono') || l.usuarios[0] || {};
       const ultimo = l.pagamentos[0];
       return `
-      <tr>
+      <tr class="linha-loja" data-ficha="${l.id}">
         <td class="cel-principal">
           <div class="titulo negrito">${App.escapeHtml(l.nome)}</div>
           <div class="texto-xs texto-3">${App.escapeHtml(dono.email || 'sem dono')}${l.telefone ? ' · ' + App.escapeHtml(l.telefone) : ''} · ${l.usuarios.length} usuário(s)</div>
@@ -92,15 +92,7 @@ App.aoIniciar(async () => {
         <td data-label="Este mês">${badgeSituacao(l.situacao || { status: 'sem' })}</td>
         <td data-label="Último pagamento">${ultimo ? `${nomeMes(ultimo.competencia)}<div class="texto-xs texto-3">${moeda(ultimo.valor)} em ${App.formatarData(ultimo.pagoEm)}</div>` : '<span class="texto-3">—</span>'}</td>
         <td data-label="Acesso">${l.bloqueada ? `<span class="badge badge-perigo" title="${App.escapeHtml(l.motivoBloqueio || '')}">Bloqueada</span>` : '<span class="badge badge-sucesso">Ativa</span>'}</td>
-        <td class="col-acoes"><div class="acoes-loja">
-          <button type="button" class="btn-icone" data-acao="pagamento" data-id="${l.id}" title="Registrar pagamento" aria-label="Registrar pagamento"><i data-lucide="hand-coins"></i></button>
-          <button type="button" class="btn-icone" data-acao="mensalidade" data-id="${l.id}" title="Editar mensalidade" aria-label="Editar mensalidade"><i data-lucide="badge-dollar-sign"></i></button>
-          <button type="button" class="btn-icone" data-acao="historico" data-id="${l.id}" title="Histórico de pagamentos" aria-label="Histórico de pagamentos"><i data-lucide="history"></i></button>
-          <button type="button" class="btn-icone" data-acao="zerar" data-id="${l.id}" title="Zerar dados da loja" aria-label="Zerar dados da loja"><i data-lucide="eraser"></i></button>
-          <button type="button" class="btn-icone" data-acao="backup" data-id="${l.id}" title="Backup da loja" aria-label="Backup da loja"><i data-lucide="database-backup"></i></button>
-          <button type="button" class="btn-icone" data-acao="senha" data-id="${l.id}" title="Enviar link de nova senha ao dono" aria-label="Enviar link de nova senha"><i data-lucide="key-round"></i></button>
-          <button type="button" class="btn-icone ${l.bloqueada ? '' : 'perigo'}" data-acao="bloqueio" data-id="${l.id}" title="${l.bloqueada ? 'Desbloquear loja' : 'Bloquear loja'}" aria-label="${l.bloqueada ? 'Desbloquear loja' : 'Bloquear loja'}"><i data-lucide="${l.bloqueada ? 'lock-open' : 'lock'}"></i></button>
-        </div></td>
+        <td class="col-acoes"><button type="button" class="btn btn-secundario btn-gerenciar" data-ficha="${l.id}">Gerenciar<i data-lucide="chevron-right"></i></button></td>
       </tr>`;
     }).join('') : `<tr><td colspan="6">${App.estadoVazio({ icone: 'store', titulo: 'Nenhuma loja ainda', texto: 'Clique em "Nova loja" para cadastrar a primeira cliente.' })}</td></tr>`;
     App.icones();
@@ -379,12 +371,110 @@ App.aoIniciar(async () => {
     App.aplicarMascaras && App.aplicarMascaras(el);
   }
 
+  /* ---------- Ficha da loja (tudo de uma loja num lugar só) ---------- */
+  const foneWhats = (t) => { let d = String(t || '').replace(/\D/g, ''); if (!d) return ''; if (d.length <= 11) d = '55' + d; return d; };
+  function abrirFicha(l) {
+    const e = App.escapeHtml;
+    const dono = l.usuarios.find((u) => u.perfil === 'dono') || l.usuarios[0] || {};
+    const a = l.assinatura || {};
+    const temMens = a.valor > 0;
+    const fimPromo = temMens && Data.fimDaPromocao(a);
+    const wa = foneWhats(l.telefone);
+    const dias = diasDesdeBackup(l);
+    const pags = l.pagamentos.slice(0, 6);
+    const linha = (rotulo, valor) => `<div><dt>${rotulo}</dt><dd>${valor}</dd></div>`;
+    const { el, fechar } = App.abrirModal({
+      titulo: l.nome,
+      tamanho: 'lg',
+      corpo: `
+        <div class="ficha-status">
+          ${l.bloqueada ? '<span class="badge badge-perigo">Bloqueada</span>' : '<span class="badge badge-sucesso">Ativa</span>'}
+          ${badgeSituacao(l.situacao || { status: 'sem' })}
+          <span class="badge ${dias === null || dias > 7 ? 'badge-alerta' : ''}">${textoBackup(l)}</span>
+        </div>
+
+        <div class="ficha-grade">
+          <section class="ficha-bloco">
+            <h3><i data-lucide="user-round"></i>Contato</h3>
+            <dl class="ficha-dados">
+              ${linha('Dono(a)', e(dono.nome || '—'))}
+              ${linha('E-mail', e(dono.email || '—'))}
+              ${linha('Telefone', l.telefone ? e(l.telefone) : '—')}
+              ${linha('Usuários', `${l.usuarios.length}`)}
+            </dl>
+            <div class="ficha-acoes">
+              ${wa ? `<a class="btn btn-secundario" href="https://wa.me/${wa}" target="_blank" rel="noopener"><i data-lucide="message-circle"></i>WhatsApp</a>` : ''}
+              <button type="button" class="btn btn-secundario" data-f="senha"><i data-lucide="key-round"></i>Enviar nova senha</button>
+            </div>
+          </section>
+
+          <section class="ficha-bloco">
+            <h3><i data-lucide="badge-dollar-sign"></i>Mensalidade</h3>
+            ${temMens ? `
+              <div class="ficha-valor">${moeda(Data.valorDaMensalidade(a, mesAtual()))}<small>/mês</small></div>
+              <dl class="ficha-dados">
+                ${linha('Vencimento', `todo dia ${a.diaVencimento}${a.ativa === false ? ' · <span class="valor-negativo">pausada</span>' : ''}`)}
+                ${fimPromo && mesAtual() <= fimPromo ? linha('Promoção', `até ${nomeMes(fimPromo)}, depois ${moeda(a.valor)}`) : ''}
+                ${l.implantacao && l.implantacao.status !== 'sem' ? linha('Implantação', `${moeda(l.implantacao.valor)} · ${{ paga: '<span class="valor-positivo">paga</span>', informada: 'informada', pendente: '<span class="valor-negativo">pendente</span>' }[l.implantacao.status]}`) : ''}
+              </dl>` : '<p class="texto-sm texto-3">Sem mensalidade cadastrada.</p>'}
+            <div class="ficha-acoes">
+              <button type="button" class="btn btn-primario" data-f="pagamento"><i data-lucide="hand-coins"></i>Registrar pagamento</button>
+              <button type="button" class="btn btn-secundario" data-f="mensalidade"><i data-lucide="pencil"></i>Editar</button>
+            </div>
+          </section>
+
+          <section class="ficha-bloco">
+            <h3><i data-lucide="history"></i>Pagamentos</h3>
+            ${pags.length ? `<ul class="ficha-pags">${pags.map((p) => `
+              <li><span>${nomeMes(p.competencia)}<small>${App.formatarData(p.pagoEm)} · ${e(p.forma || '')}</small></span><strong>${moeda(p.valor)}</strong></li>`).join('')}</ul>
+              ${l.pagamentos.length > 6 ? `<button type="button" class="btn btn-fantasma" data-f="historico">Ver todos (${l.pagamentos.length})</button>` : '<button type="button" class="btn btn-fantasma" data-f="historico">Editar registros</button>'}`
+            : '<p class="texto-sm texto-3">Nenhum pagamento registrado ainda.</p>'}
+          </section>
+
+          <section class="ficha-bloco">
+            <h3><i data-lucide="database-backup"></i>Backup</h3>
+            <p class="texto-sm ${dias === null || dias > 7 ? 'valor-negativo' : 'texto-3'}">${textoBackup(l)}.</p>
+            <p class="texto-xs texto-3">Cópia de tudo da loja: produtos, estoque, vendas, clientes e configurações.</p>
+            <div class="ficha-acoes">
+              <button type="button" class="btn btn-secundario" data-f="baixar"><i data-lucide="download"></i>Baixar backup</button>
+              <button type="button" class="btn btn-fantasma" data-f="backup"><i data-lucide="upload"></i>Restaurar…</button>
+            </div>
+          </section>
+        </div>
+
+        <section class="ficha-perigo">
+          <div>
+            <h3><i data-lucide="shield-alert"></i>Zona de perigo</h3>
+            <p class="texto-xs texto-3">Ações que afetam o uso ou os dados da loja. Sempre pedem confirmação.</p>
+          </div>
+          <div class="ficha-acoes">
+            <button type="button" class="btn ${l.bloqueada ? 'btn-secundario' : 'btn-perigo-contorno'}" data-f="bloqueio"><i data-lucide="${l.bloqueada ? 'lock-open' : 'lock'}"></i>${l.bloqueada ? 'Desbloquear loja' : 'Bloquear loja'}</button>
+            <button type="button" class="btn btn-perigo-contorno" data-f="zerar"><i data-lucide="eraser"></i>Zerar dados</button>
+          </div>
+        </section>`,
+      acoes: []
+    });
+    App.icones();
+    // Cada ação fecha a ficha e abre a janela dela (as janelas já existentes)
+    el.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', async () => {
+      const acao = b.dataset.f;
+      if (acao === 'baixar') {
+        b.disabled = true;
+        try { const bk = await baixarBackup(l); App.toast(`Backup baixado: ${contarRegistros(bk)} registros.`, 'sucesso'); fechar(); carregar(); }
+        catch (er) { App.toast(er.message, 'erro'); b.disabled = false; }
+        return;
+      }
+      fechar();
+      setTimeout(() => ({ pagamento: () => registrarPagamento(l), mensalidade: () => editarMensalidade(l), historico: () => historico(l), bloqueio: () => alternarBloqueio(l), senha: () => enviarSenha(l), backup: () => abrirBackup(l), zerar: () => abrirZerar(l) })[acao](), 220);
+    }));
+  }
+
   /* ---------- Eventos ---------- */
   document.getElementById('admin-lista')?.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-acao]');
-    if (!b) return;
-    const l = achar(b.dataset.id);
-    ({ pagamento: () => registrarPagamento(l), mensalidade: () => editarMensalidade(l), historico: () => historico(l), bloqueio: () => alternarBloqueio(l), senha: () => enviarSenha(l), backup: () => abrirBackup(l), zerar: () => abrirZerar(l) })[b.dataset.acao]();
+    const alvo = e.target.closest('[data-ficha]');
+    if (!alvo || e.target.closest('a')) return;
+    const l = achar(alvo.dataset.ficha);
+    if (l) abrirFicha(l);
   });
   document.getElementById('admin-avisos')?.addEventListener('click', async (e) => {
     const conf = e.target.closest('[data-confirmar]');
