@@ -54,8 +54,7 @@
     .previa { background: var(--cor-superficie-2); border-radius: var(--raio); padding: 16px; overflow: auto; max-height: 70vh; }
     .previa .etq-termica, .previa .etq-pimaco { outline: 1px dashed #c8ccd6; }
     body[data-pagina="etiquetas"] .form-lateral { position: static; }
-    .previa-fixa { order: -1; position: sticky; top: calc(var(--topbar-altura) + 12px); z-index: 3; box-shadow: var(--sombra-sm); }
-    .previa-fixa .previa { padding: 12px; }
+    .etq-previa .previa { padding: 12px; }
     .previa-rolo { display: flex; flex-direction: column; align-items: center; gap: 10px; }
     .etq-canvas { width: 100%; max-width: 220px; height: auto; background: #fff; border-radius: 3px; box-shadow: 0 0 0 1px #d5d9e2, 0 2px 8px rgba(0,0,0,.08); }
     .aj-topo { display: flex; align-items: center; justify-content: space-between; }
@@ -161,6 +160,10 @@
                   <label class="interruptor"><input type="checkbox" id="mostrar-preco" checked><span>Preço</span></label>
                   <label class="interruptor"><input type="checkbox" id="mostrar-numero" checked><span>Números do código</span></label>
                 </div>
+                <div class="etq-opcoes etq-previa">
+                  <div class="aj-topo"><span class="rotulo">Prévia</span><span class="texto-xs texto-3" id="info-previa"></span></div>
+                  <div class="previa" id="previa"></div>
+                </div>
                 <div class="etq-opcoes" id="etq-ajustes">
                   <div class="aj-topo"><span class="rotulo">Ajustar na etiqueta</span><button type="button" class="btn btn-fantasma" style="min-height:28px;font-size:var(--fs-xs)" id="aj-restaurar"><i data-lucide="rotate-ccw"></i>Restaurar</button></div>
                   <div class="aj-linha">
@@ -186,10 +189,6 @@
                 <button type="button" class="btn btn-primario btn-grande btn-bloco" id="btn-imprimir" disabled><i data-lucide="printer"></i>Imprimir <span id="qtd-botao"></span></button>
                 <p class="texto-xs texto-3" style="margin-top:8px">A etiqueta térmica sai como PDF do tamanho exato, sem data nem endereço do site. Na impressora, o papel deve estar em <strong>40 × 25 mm</strong>.</p>
               </div>
-            </section>
-            <section class="card previa-fixa">
-              <div class="card-cabecalho"><h2>Prévia</h2><span class="texto-xs texto-3" id="info-previa"></span></div>
-              <div class="card-corpo"><div class="previa" id="previa"></div></div>
             </section>
           </aside>
         </div>
