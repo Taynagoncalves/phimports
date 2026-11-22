@@ -40,7 +40,6 @@
   // Inventário e Reposição abrem pela tela Estoque; Aparência e Impressão pelas abas de Configurações.
   const MENU = [
     { grupo: '', itens: [
-      { id: 'dashboard', texto: 'Dashboard', icone: 'layout-dashboard', href: 'dashboard.html' },
       { id: 'pdv', texto: 'Frente de caixa', icone: 'scan-barcode', href: 'pdv.html' },
       { id: 'pedidos', texto: 'Pedidos online', icone: 'shopping-basket', href: 'pedidos.html' },
       { id: 'caixa', texto: 'Caixa', icone: 'wallet', href: 'caixa.html' },
@@ -732,7 +731,7 @@
     // Se for igual ao guardado, o menu mostrado na abertura da página é mantido (sem piscar).
     const sidebarHtml = `
       <div class="sidebar-logo">
-        <a href="dashboard.html" class="sidebar-logo-img" title="${escapeHtml(loja.nome)} — início">
+        <a href="dashboard.html" class="sidebar-logo-img" title="Dashboard (início)" aria-label="Dashboard (início)">
           <img src="../img/logo-phimports.png" alt="${escapeHtml(loja.nome || 'PH Imports')}">
         </a>
         <button type="button" class="btn-icone btn-recolher" id="btn-recolher" aria-label="Recolher menu" title="Recolher menu">${icone('panel-left-close')}</button>
