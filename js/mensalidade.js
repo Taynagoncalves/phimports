@@ -95,114 +95,93 @@ App.aoIniciar(async () => {
       try { codigo = Pix.gerarCodigo({ chave: pix.chave, nome: pix.nome, cidade: pix.cidade, valor: totalMarcado, txid: `PH${ref}${String(m.lojaId).slice(-6)}`, descricao: marcadas.length === 1 ? marcadas[0].titulo : 'Mensalidade do sistema' }); } catch (e) { codigo = ''; }
     }
 
-    // ======================= VISUAL PREMIUM =======================
+    // ======================= VISUAL LIMPO =======================
     const diaV = String((assinatura && assinatura.diaVencimento) || 10).padStart(2, '0');
     const estado = pendencias.length ? (temAtraso ? 'atraso' : 'aberto') : informados.length ? 'informado' : 'emdia';
     const rotuloEstado = { atraso: 'Em atraso', aberto: 'A pagar', informado: 'Aguardando confirmação', emdia: 'Tudo em dia' }[estado];
-    const iconeEstado = { atraso: 'circle-alert', aberto: 'clock', informado: 'hourglass', emdia: 'badge-check' }[estado];
+    const iconeEstado = { atraso: 'circle-alert', aberto: 'clock', informado: 'hourglass', emdia: 'circle-check' }[estado];
     const proximaData = primeiraFutura || (proximo ? `${proximo}-${diaV}` : null);
     const proximoValor = primeiraFutura ? Data.valorDaMensalidade(assinatura, inicioCobranca) : (proximo ? Data.valorDaMensalidade(assinatura, proximo) : 0);
     const valorTopo = pendencias.length ? totalPendente : informados.length ? informados.reduce((s, i) => s + i.valor, 0) : proximoValor;
-    const legendaTopo = pendencias.length ? 'em aberto' : informados.length ? 'informado' : primeiraFutura ? '1ª mensalidade' : 'próxima mensalidade';
+    const legendaTopo = pendencias.length ? `em aberto · ${pendencias.length} ${pendencias.length === 1 ? 'item' : 'itens'}`
+      : informados.length ? 'pagamento informado · o suporte confirma em breve'
+      : primeiraFutura ? 'primeira mensalidade' : 'próxima mensalidade';
 
-    // Anel: dias para vencer (ou de atraso) da conta mais urgente
+    // Data em destaque: a conta mais urgente (ou a próxima)
     const maisUrgente = listaMeses.filter((x) => x.status === 'atrasado' || x.status === 'aberto').sort((a, b) => a.vencimento.localeCompare(b.vencimento))[0];
     const alvoData = maisUrgente ? maisUrgente.vencimento : proximaData;
     const dias = alvoData ? diasEntre(hoje(), alvoData) : null;
-    const frac = dias === null ? 1 : dias < 0 ? 1 : Math.max(0.04, Math.min(1, 1 - dias / 30));
-    const R = 52, CIRC = 2 * Math.PI * R;
-    const anel = `
-      <div class="m3-anel ${dias !== null && dias < 0 ? 'atraso' : ''}">
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <circle cx="60" cy="60" r="${R}" class="trilha"/>
-          <circle cx="60" cy="60" r="${R}" class="progresso" style="--circ:${CIRC.toFixed(1)};--alvo:${(CIRC * (1 - frac)).toFixed(1)}"/>
-        </svg>
-        <div class="m3-anel-texto">
-          ${estado === 'emdia' && dias === null ? '<i data-lucide="check"></i><small>em dia</small>'
-          : dias === null ? '<strong>—</strong>'
-          : dias < 0 ? `<strong>${-dias}</strong><small>dia${dias === -1 ? '' : 's'} de atraso</small>`
-          : dias === 0 ? '<strong>Hoje</strong><small>vence hoje</small>'
-          : `<strong>${dias}</strong><small>dia${dias === 1 ? '' : 's'} para vencer</small>`}
-        </div>
-      </div>`;
+    const dataAlvo = alvoData ? new Date(alvoData + 'T12:00:00') : null;
+    const calendario = dataAlvo ? `
+      <div class="m4-data ${dias !== null && dias < 0 ? 'atraso' : ''}">
+        <span class="m4-data-mes">${dataAlvo.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}</span>
+        <strong>${dataAlvo.getDate()}</strong>
+        <span class="m4-data-legenda">${dias < 0 ? `${-dias} dia${dias === -1 ? '' : 's'} de atraso` : dias === 0 ? 'vence hoje' : `em ${dias} dia${dias === 1 ? '' : 's'}`}</span>
+      </div>` : '';
 
-    const topo = `
-      <section class="m3-hero ${estado}">
-        <div class="m3-hero-brilho" aria-hidden="true"></div>
-        <div class="m3-hero-esq">
-          <span class="m3-marca"><i data-lucide="gem"></i>Plano do sistema${lojaNome ? ' · ' + App.escapeHtml(lojaNome) : ''}</span>
-          <span class="m3-estado"><i data-lucide="${iconeEstado}"></i>${rotuloEstado}</span>
-          <div class="m3-valor"><span class="m3-contar" data-valor="${valorTopo}">${moeda(valorTopo)}</span><small>${legendaTopo}</small></div>
-          <p class="m3-sub">${pendencias.length ? pendencias.map((p) => p.titulo).join(' · ')
-            : informados.length ? 'Recebemos o seu aviso. O suporte confere o Pix e confirma em breve.'
-            : proximaData ? `Vence em ${App.formatarData(proximaData)}. Você será avisado aqui.` : 'Nenhum pagamento pendente.'}</p>
-          ${pendencias.length ? '<a href="#pagar" class="m3-btn"><i data-lucide="qr-code"></i>Pagar com Pix</a>' : ''}
-        </div>
-        ${anel}
-      </section>`;
-
-    // Linha do ano: últimos meses + o próximo
+    // Meses (os últimos e o próximo) em bolinhas discretas
     const mapa = Object.fromEntries(listaMeses.map((x) => [x.competencia, x]));
-    const comecoLinha = assinatura && assinatura.inicio && assinatura.inicio > somarMes(mesAtual(), -8) ? assinatura.inicio : somarMes(mesAtual(), -8);
+    const comecoLinha = assinatura && assinatura.inicio && assinatura.inicio > somarMes(mesAtual(), -5) ? assinatura.inicio : somarMes(mesAtual(), -5);
     const linha = [];
-    for (let c = comecoLinha; c <= somarMes(mesAtual(), 2); c = somarMes(c, 1)) {
+    for (let c = comecoLinha; c <= somarMes(mesAtual(), 1); c = somarMes(c, 1)) {
       const x = mapa[c];
       const pago = pagamentos.find((pg) => pg.competencia === c);
       linha.push({ c, st: pago ? 'pago' : x ? x.status : (c > mesAtual() ? 'futuro' : 'pago-fora') });
     }
-    const iconeMes = { pago: 'check', informado: 'hourglass', atrasado: 'x', aberto: 'clock', futuro: 'calendar', 'pago-fora': 'minus' };
-    const linhaAno = cobrancaAtiva ? `
-      <section class="card m3-ano">
-        <div class="m3-titulo-secao"><h2>Linha do tempo</h2><span>${pagamentos.filter((pg) => pg.competencia !== 'implantacao').length} mensalidade${pagamentos.length === 1 ? '' : 's'} paga${pagamentos.length === 1 ? '' : 's'}</span></div>
-        <ol class="m3-meses">
-          ${linha.map((x) => `
-            <li class="m3-mes ${x.st} ${x.c === mesAtual() ? 'atual' : ''}" title="${nomeMes(x.c)}">
-              <span class="m3-mes-bola"><i data-lucide="${iconeMes[x.st]}"></i></span>
-              <span class="m3-mes-nome">${nomeMes(x.c, true)}</span>
-            </li>`).join('')}
-        </ol>
-      </section>` : '';
+    const rotuloMes = { pago: 'paga', informado: 'informada', atrasado: 'atrasada', aberto: 'em aberto', futuro: 'a vencer', 'pago-fora': '—' };
+    const mesesHtml = cobrancaAtiva ? `
+      <ol class="m4-meses" aria-label="Mensalidades por mês">
+        ${linha.map((x) => `<li class="${x.st} ${x.c === mesAtual() ? 'atual' : ''}" title="${nomeMes(x.c)}: ${rotuloMes[x.st]}"><span></span>${nomeMes(x.c, true)}</li>`).join('')}
+      </ol>` : '';
 
-    // Pagar em 3 passos: escolher → pagar → avisar
-    const passoAtual = totalMarcado > 0 ? 2 : 1;
-    const blocoPagar = pendencias.length ? `
-      <section class="card m3-pagar" id="pagar">
-        <ol class="m3-passos">
-          <li class="${passoAtual >= 1 ? 'feito' : ''}"><span>1</span>Escolha</li>
-          <li class="${passoAtual >= 2 ? 'feito' : ''}"><span>2</span>Pague com Pix</li>
-          <li><span>3</span>Avise que pagou</li>
-        </ol>
-        <div class="m3-pagar-corpo">
-          <div class="m3-itens">
-            ${pendencias.map((p) => `
-              <label class="m3-item ${selecionados.has(p.id) ? 'marcada' : ''} ${p.tom === 'perigo' ? 'atrasada' : ''}">
-                <input type="checkbox" data-pendencia="${p.id}" ${selecionados.has(p.id) ? 'checked' : ''}>
-                <span class="m3-check" aria-hidden="true"><i data-lucide="check"></i></span>
-                <span class="m3-item-info"><strong>${p.titulo}</strong><small>${p.detalhe}</small></span>
-                <span class="m3-item-valor">${moeda(p.valor)}</span>
-              </label>`).join('')}
-            <div class="m3-total"><span>Total selecionado</span><strong>${moeda(totalMarcado)}</strong></div>
+    const topo = `
+      <section class="card m4-resumo ${estado}">
+        <div class="m4-resumo-corpo">
+          <div class="m4-resumo-esq">
+            <span class="m4-estado"><i data-lucide="${iconeEstado}"></i>${rotuloEstado}</span>
+            <div class="m4-valor"><span class="m3-contar" data-valor="${valorTopo}">${moeda(valorTopo)}</span></div>
+            <p class="m4-legenda">${legendaTopo}</p>
+            ${pendencias.length ? '<a href="#pagar" class="btn btn-primario m4-btn-pagar"><i data-lucide="qr-code"></i>Pagar com Pix</a>' : ''}
           </div>
-          <div class="m3-ticket">
-            ${totalMarcado <= 0 ? '<div class="m3-ticket-vazio"><i data-lucide="mouse-pointer-click"></i><span>Marque o que vai pagar para gerar o Pix.</span></div>'
+          ${calendario}
+        </div>
+        ${mesesHtml}
+      </section>`;
+
+    // Pagar: escolher o que pagar + Pix
+    const blocoPagar = pendencias.length ? `
+      <section class="card m4-pagar" id="pagar">
+        <div class="m4-cabeca"><h2>Pagamento</h2><span>Marque o que vai pagar. O Pix sai com o total.</span></div>
+        <div class="m4-pagar-corpo">
+          <div class="m4-itens">
+            ${pendencias.map((p) => `
+              <label class="m4-item ${selecionados.has(p.id) ? 'marcada' : ''} ${p.tom === 'perigo' ? 'atrasada' : ''}">
+                <input type="checkbox" data-pendencia="${p.id}" ${selecionados.has(p.id) ? 'checked' : ''}>
+                <span class="m4-check" aria-hidden="true"><i data-lucide="check"></i></span>
+                <span class="m4-item-info"><strong>${p.titulo}</strong><small>${p.detalhe}</small></span>
+                <span class="m4-item-valor">${moeda(p.valor)}</span>
+              </label>`).join('')}
+            <div class="m4-total"><span>Total</span><strong>${moeda(totalMarcado)}</strong></div>
+          </div>
+          <div class="m4-pix">
+            ${totalMarcado <= 0 ? '<div class="m4-pix-vazio"><i data-lucide="mouse-pointer-click"></i><span>Marque ao menos um item para gerar o Pix.</span></div>'
             : codigo ? `
-              <div class="m3-ticket-topo"><span>Pix</span><strong>${moeda(totalMarcado)}</strong></div>
-              <div class="m3-qr">${Pix.qrSvg(codigo, 6)}</div>
-              <div class="m3-corte" aria-hidden="true"></div>
-              <p class="m3-ticket-dica">Banco → <strong>Pix</strong> → <strong>Ler QR Code</strong> ou <strong>Copia e cola</strong><br><span>Recebedor: ${App.escapeHtml(pix.nome || '')}</span></p>
+              <div class="m4-qr">${Pix.qrSvg(codigo, 6)}</div>
+              <p class="m4-pix-dica">Abra o app do banco → <strong>Pix</strong> → <strong>Ler QR Code</strong><br>ou use o <strong>Copia e cola</strong> abaixo.</p>
               <div class="m2-copia">
                 <input class="input mono" id="pix-copia" readonly value="${App.escapeHtml(codigo)}" aria-label="Pix copia e cola">
                 <button type="button" class="btn btn-secundario" id="btn-copiar"><i data-lucide="copy"></i><span>Copiar</span></button>
               </div>
-              <button type="button" class="btn btn-primario btn-bloco btn-grande" id="btn-ja-paguei"><i data-lucide="check-check"></i>Já paguei</button>`
+              <button type="button" class="btn btn-primario btn-bloco btn-grande" id="btn-ja-paguei"><i data-lucide="check-check"></i>Já paguei ${moeda(totalMarcado)}</button>
+              <span class="m4-recebedor">Recebedor: ${App.escapeHtml(pix.nomeRecibo || pix.nome || '')}</span>`
             : '<div class="alerta"><i data-lucide="triangle-alert"></i><span>A chave Pix do suporte ainda não foi configurada. Fale com o suporte para pagar.</span></div>'}
           </div>
         </div>
       </section>` : '';
 
-    // Plano (com a barra da promoção) + pagamentos
+    // Plano + pagamentos
     const plano = (() => {
-      if (!cobrancaAtiva) return '<section class="card m3-plano"><h2>Seu plano</h2><p class="texto-sm texto-3">Sem mensalidade ativa.</p></section>';
+      if (!cobrancaAtiva) return '<section class="card m4-bloco"><div class="m4-cabeca"><h2>Seu plano</h2></div><p class="texto-sm texto-3">Sem mensalidade ativa.</p></section>';
       const fim = Data.fimDaPromocao(assinatura);
       const ref = mesAtual() < inicioCobranca ? inicioCobranca : mesAtual();
       const emPromo = fim && ref <= fim;
@@ -210,41 +189,31 @@ App.aoIniciar(async () => {
       let mesPromo = 0;
       if (emPromo && totalPromo) { for (let c = inicioCobranca; c <= ref; c = somarMes(c, 1)) mesPromo++; }
       return `
-        <section class="card m3-plano">
-          <h2>Seu plano</h2>
-          <div class="m3-plano-valor">${moeda(Data.valorDaMensalidade(assinatura, ref))}<small>/mês</small></div>
-          <span class="texto-sm texto-3">Vence todo dia ${assinatura.diaVencimento}</span>
-          ${emPromo && totalPromo ? `
-            <div class="m3-promo">
-              <div class="m3-promo-topo"><span><i data-lucide="sparkles"></i>Preço promocional</span><span>mês ${Math.min(mesPromo, totalPromo)} de ${totalPromo}</span></div>
-              <div class="m3-barra"><span style="--p:${Math.min(100, (mesPromo / totalPromo) * 100)}%"></span></div>
-              <small>Depois de ${nomeMes(fim).toLowerCase()}: ${moeda(assinatura.valor)}/mês</small>
-            </div>` : ''}
-          ${implantacao.status !== 'sem' ? `<div class="m3-impl"><span>Implantação</span><strong>${moeda(implantacao.valor)}</strong><span class="m3-tag ${implantacao.status}">${{ paga: 'paga', informada: 'informada', pendente: 'pendente' }[implantacao.status]}</span></div>` : ''}
-          <ul class="m3-recursos">
-            <li><i data-lucide="scan-barcode"></i>Caixa e vendas</li>
-            <li><i data-lucide="package"></i>Estoque e etiquetas</li>
-            <li><i data-lucide="store"></i>Catálogo online</li>
-            <li><i data-lucide="cloud"></i>Nuvem com backup</li>
-            <li><i data-lucide="refresh-cw"></i>Atualizações</li>
-            <li><i data-lucide="headset"></i>Suporte</li>
-          </ul>
+        <section class="card m4-bloco">
+          <div class="m4-cabeca"><h2>Seu plano</h2></div>
+          <div class="m4-plano-valor">${moeda(Data.valorDaMensalidade(assinatura, ref))}<small>/mês</small></div>
+          <dl class="m4-dados">
+            <div><dt>Vencimento</dt><dd>todo dia ${assinatura.diaVencimento}</dd></div>
+            ${emPromo && totalPromo ? `<div><dt>Preço promocional</dt><dd>mês ${Math.min(mesPromo, totalPromo)} de ${totalPromo}</dd></div>` : ''}
+            ${emPromo && totalPromo ? `<div class="m4-barra-linha"><div class="m4-barra"><span style="--p:${Math.min(100, (mesPromo / totalPromo) * 100)}%"></span></div><small>Depois de ${nomeMes(fim).toLowerCase()}: ${moeda(assinatura.valor)}/mês</small></div>` : ''}
+            ${implantacao.status !== 'sem' ? `<div><dt>Implantação</dt><dd>${moeda(implantacao.valor)} <span class="m4-tag ${implantacao.status}">${{ paga: 'paga', informada: 'informada', pendente: 'pendente' }[implantacao.status]}</span></dd></div>` : ''}
+          </dl>
+          <p class="m4-inclui"><i data-lucide="sparkles"></i>Inclui o sistema completo, catálogo online, dados na nuvem com backup, atualizações e suporte.</p>
           ${assinatura.observacao ? `<p class="texto-xs texto-3">${App.escapeHtml(assinatura.observacao)}</p>` : ''}
         </section>`;
     })();
     const historicoHtml = `
-      <section class="card m3-historico">
-        <h2>Pagamentos</h2>
-        ${pagamentos.length ? `<ul>${[...pagamentos].sort((a, b) => String(b.pagoEm).localeCompare(String(a.pagoEm))).slice(0, 8).map((pg) => `
-          <li><span class="m3-hist-icone"><i data-lucide="check"></i></span><span class="m3-hist-info"><strong>${pg.competencia === 'implantacao' ? 'Implantação do sistema' : nomeMes(pg.competencia)}</strong><small>Pago em ${App.formatarData(pg.pagoEm)} · ${pg.forma === 'pix' ? 'Pix' : App.escapeHtml(pg.forma || '')}</small></span><strong class="m3-hist-valor">${moeda(pg.valor)}</strong></li>`).join('')}</ul>`
-        : '<div class="m3-hist-vazio"><i data-lucide="receipt"></i><span>Seus pagamentos confirmados aparecem aqui.</span></div>'}
+      <section class="card m4-bloco">
+        <div class="m4-cabeca"><h2>Pagamentos</h2>${pagamentos.length ? `<span>${pagamentos.length} confirmado${pagamentos.length === 1 ? '' : 's'}</span>` : ''}</div>
+        ${pagamentos.length ? `<ul class="m4-hist">${[...pagamentos].sort((a, b) => String(b.pagoEm).localeCompare(String(a.pagoEm))).slice(0, 8).map((pg) => `
+          <li><span class="m4-hist-icone"><i data-lucide="check"></i></span><span class="m4-hist-info"><strong>${pg.competencia === 'implantacao' ? 'Implantação do sistema' : nomeMes(pg.competencia)}</strong><small>Pago em ${App.formatarData(pg.pagoEm)} · ${pg.forma === 'pix' ? 'Pix' : App.escapeHtml(pg.forma || '')}</small></span><strong>${moeda(pg.valor)}</strong></li>`).join('')}</ul>`
+        : '<div class="m4-hist-vazio"><i data-lucide="receipt"></i><span>Seus pagamentos confirmados aparecem aqui.</span></div>'}
       </section>`;
 
     el.innerHTML = `
       ${topo}
-      ${linhaAno}
       ${blocoPagar}
-      <div class="m3-baixo">${plano}${historicoHtml}</div>`;
+      <div class="m4-baixo">${plano}${historicoHtml}</div>`;
 
     // Valor do topo "contando" até o total (só na primeira vez)
     const contador = el.querySelector('.m3-contar');
