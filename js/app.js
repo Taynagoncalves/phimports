@@ -36,40 +36,39 @@
   }
 
   /* ---------- Itens do menu (grupo → links) ---------- */
+  // Grupo sem título = o que se usa todo dia; "Ajustes" começa fechado
   const MENU = [
-    { grupo: 'Principal', itens: [
+    { grupo: '', itens: [
       { id: 'dashboard', texto: 'Dashboard', icone: 'layout-dashboard', href: 'dashboard.html' },
       { id: 'pdv', texto: 'Frente de caixa', icone: 'scan-barcode', href: 'pdv.html' },
+      { id: 'vendas', texto: 'Vendas', icone: 'shopping-bag', href: 'vendas.html' },
       { id: 'pedidos', texto: 'Pedidos online', icone: 'shopping-basket', href: 'pedidos.html' },
       { id: 'caixa', texto: 'Caixa', icone: 'wallet', href: 'caixa.html' },
       { id: 'trocas', texto: 'Trocas', icone: 'repeat', href: 'trocas.html' },
       { id: 'notas', texto: 'Notas fiscais', icone: 'file-text', href: 'notas.html' }
     ] },
-    { grupo: 'Catálogo', itens: [
+    { grupo: 'Produtos', itens: [
       { id: 'produtos', texto: 'Produtos', icone: 'shirt', href: 'produtos.html' },
       { id: 'estoque', texto: 'Estoque', icone: 'package', href: 'estoque.html' },
       { id: 'etiquetas', texto: 'Etiquetas', icone: 'tag', href: 'etiquetas.html' },
-      { id: 'aparencia', texto: 'Aparência', icone: 'palette', href: 'aparencia.html' }
+      { id: 'reposicao', texto: 'Reposição', icone: 'shopping-cart', href: 'reposicao.html' },
+      { id: 'inventario', texto: 'Inventário', icone: 'clipboard-check', href: 'inventario.html' }
     ] },
-    { grupo: 'Cadastros', itens: [
+    { grupo: 'Clientes', itens: [
       { id: 'clientes', texto: 'Clientes', icone: 'users', href: 'clientes.html' },
-      { id: 'fornecedores', texto: 'Fornecedores', icone: 'truck', href: 'fornecedores.html' }
-    ] },
-    { grupo: 'Plataforma', itens: [
-      { id: 'mensalidade', texto: 'Mensalidade', icone: 'badge-dollar-sign', href: 'mensalidade.html' }
-    ] },
-    { grupo: 'Ferramentas', itens: [
-      { id: 'promocoes', texto: 'Promoções', icone: 'badge-percent', href: 'promocoes.html' },
       { id: 'pontos', texto: 'Programa de pontos', icone: 'star', href: 'pontos.html' },
-      { id: 'inventario', texto: 'Inventário', icone: 'clipboard-check', href: 'inventario.html' },
-      { id: 'reposicao', texto: 'Reposição', icone: 'shopping-cart', href: 'reposicao.html' }
+      { id: 'promocoes', texto: 'Promoções', icone: 'badge-percent', href: 'promocoes.html' }
     ] },
     { grupo: 'Gestão', itens: [
-      { id: 'vendas', texto: 'Vendas', icone: 'shopping-bag', href: 'vendas.html' },
       { id: 'financeiro', texto: 'Financeiro', icone: 'landmark', href: 'financeiro.html' },
       { id: 'relatorios', texto: 'Relatórios', icone: 'trending-up', href: 'relatorios.html' },
+      { id: 'fornecedores', texto: 'Fornecedores', icone: 'truck', href: 'fornecedores.html' }
+    ] },
+    { grupo: 'Ajustes', fechado: true, itens: [
+      { id: 'aparencia', texto: 'Aparência', icone: 'palette', href: 'aparencia.html' },
       { id: 'impressao', texto: 'Impressão', icone: 'printer', href: 'impressao.html' },
-      { id: 'configuracoes', texto: 'Configurações', icone: 'settings', href: 'configuracoes.html' }
+      { id: 'configuracoes', texto: 'Configurações', icone: 'settings', href: 'configuracoes.html' },
+      { id: 'mensalidade', texto: 'Mensalidade', icone: 'badge-dollar-sign', href: 'mensalidade.html' }
     ] }
   ];
 
@@ -651,8 +650,14 @@
   }
 
   /* ---------- Grupos do menu que abrem e fecham ---------- */
-  const CHAVE_GRUPOS = 'gestaoloja:menu-fechados';
-  const gruposFechados = () => { try { return JSON.parse(localStorage.getItem(CHAVE_GRUPOS)) || []; } catch (e) { return []; } };
+  const CHAVE_GRUPOS = 'gestaoloja:menu-fechados:v2';
+  const gruposFechados = () => {
+    try {
+      const salvo = JSON.parse(localStorage.getItem(CHAVE_GRUPOS));
+      if (Array.isArray(salvo)) return salvo;
+    } catch (e) { /* padrão */ }
+    return MENU.filter((g) => g.fechado).map((g) => g.grupo);
+  };
   function aplicarGrupos() {
     const fechados = gruposFechados();
     document.querySelectorAll('.sidebar .nav-grupo').forEach((g) => {
@@ -736,7 +741,7 @@
       <nav class="sidebar-nav" aria-label="Menu principal">
         ${MENU.map((g) => ({ ...g, itens: g.itens.filter((it) => podeAcessar(it.id) && (it.id !== 'notas' || loja.emitirNota) && (it.id !== 'caixa' || loja.controlarCaixa) && (it.id !== 'mensalidade' || Data.modo === 'nuvem')) })).filter((g) => g.itens.length).map((g) => `
           <div class="nav-grupo" data-grupo="${g.grupo}">
-            <button type="button" class="nav-grupo-titulo" aria-expanded="true">${g.grupo}${icone('chevron-down')}</button>
+            ${g.grupo ? `<button type="button" class="nav-grupo-titulo" aria-expanded="true">${g.grupo}${icone('chevron-down')}</button>` : ''}
             <div class="nav-grupo-itens">
             ${g.itens.map((it) => `
               <a href="${it.href}" class="nav-link" data-menu-id="${it.id}" title="${it.texto}">
