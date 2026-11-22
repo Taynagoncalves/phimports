@@ -58,6 +58,9 @@ App.aoIniciar(async () => {
   /* ==================================================================
      CONSULTA DE PRODUTOS (F2) — catálogo em janela
      ================================================================== */
+  // Notebook: no caixa, o menu fica só com ícones para sobrar espaço (não muda a escolha salva)
+  if (window.innerWidth >= 1024 && window.innerWidth < 1366) document.documentElement.classList.add('menu-recolhido');
+
   // Pedido online sendo atendido (vem de Pedidos online → "Virar venda")
   const pedidoId = App.parametroUrl('pedido');
   let pedidoAtual = null;
@@ -865,7 +868,7 @@ App.aoIniciar(async () => {
   /* ==================================================================
      CARRINHO COMO PAINEL INFERIOR (celular/tablet)
      ================================================================== */
-  const telaPequena = window.matchMedia('(max-width: 1199px)');
+  const telaPequena = window.matchMedia('(max-width: 1023px)');
   function alternarCarrinho(abrir) {
     elCarrinho.classList.toggle('expandido', abrir);
     btnToggle.setAttribute('aria-expanded', String(abrir));
