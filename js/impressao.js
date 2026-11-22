@@ -113,7 +113,7 @@ App.aoIniciar(async () => {
   });
   $('aj-mover').addEventListener('input', () => { App.salvarAjustesImpressora({ mover: Number($('aj-mover').value) }); preencherAjustes(); });
   $('aj-restaurar').addEventListener('click', () => {
-    try { localStorage.removeItem('gestaoloja:impressora:v2'); } catch (e) { /* ignora */ }
+    try { localStorage.removeItem('gestaoloja:impressora:v3'); } catch (e) { /* ignora */ }
     preencherAjustes();
   });
   document.querySelectorAll('[data-largura]').forEach((b) => b.addEventListener('click', preencherAjustes));

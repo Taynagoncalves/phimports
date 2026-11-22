@@ -915,8 +915,8 @@
   }
 
   /* Ajustes da impressora de recibo (ficam neste computador) */
-  const CHAVE_IMPRESSORA = 'gestaoloja:impressora:v2';
-  const IMPRESSORA_PADRAO = { area80: 72, area58: 48, mover: 0, parte: 120 };
+  const CHAVE_IMPRESSORA = 'gestaoloja:impressora:v3';
+  const IMPRESSORA_PADRAO = { area80: 72, area58: 48, mover: 0, parte: 0 };
   function ajustesImpressora() {
     try { return { ...IMPRESSORA_PADRAO, ...JSON.parse(localStorage.getItem(CHAVE_IMPRESSORA) || '{}') }; } catch (e) { return { ...IMPRESSORA_PADRAO }; }
   }
