@@ -806,26 +806,26 @@
    espaços, botões e campos um pouco menores, para caber mais na tela.
    ========================================================================== */
 @media (min-width: 1024px) and (max-width: 1440px), (min-width: 1024px) and (max-height: 820px) {
-  html { font-size: 14px; }
+  html { font-size: 13px; }
   :root {
-    --esp-3: 10px; --esp-4: 14px; --esp-5: 16px; --esp-6: 20px;
-    --esp-8: 26px; --esp-10: 32px; --esp-12: 44px;
-    --sidebar-largura: 216px; --topbar-altura: 56px;
+    --esp-3: 9px; --esp-4: 12px; --esp-5: 14px; --esp-6: 18px;
+    --esp-8: 22px; --esp-10: 28px; --esp-12: 36px;
+    --sidebar-largura: 204px; --topbar-altura: 52px;
     --raio: 12px;
   }
-  .btn { min-height: 34px; padding: 0 12px; }
-  .btn.btn-grande { min-height: 42px; }
-  .input, .select, .textarea { min-height: 36px; padding: 6px 10px; }
+  .btn { min-height: 32px; padding: 0 11px; }
+  .btn.btn-grande { min-height: 40px; }
+  .input, .select, .textarea { min-height: 33px; padding: 5px 10px; }
   .select { padding-right: 32px; }
-  .nav-link { min-height: 32px; }
-  .btn-icone { width: 32px; height: 32px; }
+  .nav-link { min-height: 30px; }
+  .btn-icone { width: 30px; height: 30px; }
   .pagina-cabecalho { margin-bottom: var(--esp-5); }
-  .pagina-cabecalho h1 { font-size: 1.35rem; }
-  .stat-valor { font-size: 1.45rem; }
-  .tabela td { padding-top: 10px; padding-bottom: 10px; }
-  .sidebar-logo-img img { max-height: 54px; }
-  .sidebar-logo:has(.sidebar-logo-img) { height: 70px; }
-  .pdv-qtd { height: 48px; }
+  .pagina-cabecalho h1 { font-size: 1.3rem; }
+  .stat-valor { font-size: 1.35rem; }
+  .tabela td { padding-top: 8px; padding-bottom: 8px; }
+  .sidebar-logo-img img { max-height: 48px; }
+  .sidebar-logo:has(.sidebar-logo-img) { height: 62px; }
+  .pdv-qtd { height: 44px; }
 }
 @media (min-width: 1024px) and (max-width: 1440px) {
   .pdv { grid-template-columns: minmax(0, 1fr) 340px; gap: var(--esp-4); }
