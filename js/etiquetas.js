@@ -259,19 +259,22 @@ App.aoIniciar(async () => {
     const op = opcoes();
     $('campo-inicio').classList.toggle('oculto', op.modelo !== 'pimaco');
     $('etq-ajustes').classList.toggle('oculto', op.modelo !== 'termica');
+    $('campo-colunas').classList.toggle('oculto', op.modelo !== 'termica');
     const lista = listaEtiquetas();
     const previa = $('previa');
     if (!lista.length) { previa.innerHTML = '<p class="texto-sm texto-3 texto-centro">Adicione peças para ver a etiqueta.</p>'; $('info-previa').textContent = ''; return; }
     if (op.modelo === 'termica') {
       previa.innerHTML = '<div class="previa-rolo"></div>';
-      lista.slice(0, 1).forEach((item) => {
-        const cv = canvasEtiqueta(item, op);
-        cv.className = 'etq-canvas';
-        cv.style.aspectRatio = `${ajustes.largura} / ${ajustes.altura}`;
-        previa.firstChild.appendChild(cv);
-      });
-      const mm = (n) => String(n).replace('.', ',');
-      $('info-previa').textContent = `${mm(ajustes.largura)} × ${mm(ajustes.altura)} mm` + (lista.length > 1 ? ` · 1 de ${lista.length}` : '');
+      const linha = lista.slice(0, colunas());
+      const cv = colunas() > 1 ? canvasLinha(linha, op) : canvasEtiqueta(linha[0], op);
+      cv.className = 'etq-canvas' + (colunas() > 1 ? ' linha' : '');
+      cv.style.aspectRatio = `${larguraLinha()} / ${ajustes.altura}`;
+      previa.firstChild.appendChild(cv);
+      const mm = (n) => String(Math.round(n * 10) / 10).replace('.', ',');
+      const linhas = Math.ceil(lista.length / colunas());
+      $('info-previa').textContent = colunas() > 1
+        ? `${colunas()} por linha · rolo de ${mm(larguraLinha())} mm · ${linhas} linha${linhas === 1 ? '' : 's'}`
+        : `${mm(ajustes.largura)} × ${mm(ajustes.altura)} mm` + (lista.length > 1 ? ` · 1 de ${lista.length}` : '');
     } else {
       // Só a primeira folha, reduzida para caber na lateral
       const folhas = folhasA4(lista.slice(0, POR_FOLHA), op);
@@ -282,7 +285,7 @@ App.aoIniciar(async () => {
 
   /* ---------- Etiqueta térmica: desenho em canvas + ajustes ---------- */
   const CHAVE_AJUSTES = 'gestaoloja:etq-ajustes';
-  const AJUSTES_PADRAO = { largura: 40, altura: 25, girar: 0, escala: 100, x: 0, y: 0 };
+  const AJUSTES_PADRAO = { largura: 40, altura: 25, girar: 0, escala: 100, x: 0, y: 0, colunas: 1, espaco: 2 };
   const PX_MM = 8;                     // resolução da impressora térmica (203 dpi = 8 pontos por mm)
   const PT = 0.3528;                   // 1 ponto em mm
   let ajustes = { ...AJUSTES_PADRAO };
@@ -384,18 +387,38 @@ App.aoIniciar(async () => {
   }
 
   /** PDF com uma página do tamanho exato da etiqueta para cada peça */
+  const colunas = () => Math.max(1, Math.min(3, Number(ajustes.colunas) || 1));
+  const espaco = () => (colunas() > 1 ? Math.max(0, Number(ajustes.espaco) || 0) : 0);
+  const larguraLinha = () => colunas() * Number(ajustes.largura) + (colunas() - 1) * espaco();
+  /** Uma linha do rolo: até N etiquetas lado a lado (as vagas sobram em branco) */
+  function canvasLinha(itens, op, cache) {
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(larguraLinha() * PX_MM); cv.height = Math.round(Number(ajustes.altura) * PX_MM);
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    itens.forEach((item, k) => {
+      let um = cache && cache.get(item.sku);
+      if (!um) { um = canvasEtiqueta(item, op); if (cache) cache.set(item.sku, um); }
+      ctx.drawImage(um, Math.round(k * (Number(ajustes.largura) + espaco()) * PX_MM), 0);
+    });
+    return cv;
+  }
+  const emLinhas = (lista) => { const n = colunas(), out = []; for (let i = 0; i < lista.length; i += n) out.push(lista.slice(i, i + n)); return out; };
+
   async function pdfTermico(lista, op) {
     await App.carregarJsPdf();
     const { jsPDF } = window.jspdf;
-    const w = Number(ajustes.largura), h = Number(ajustes.altura);
+    const w = larguraLinha(), h = Number(ajustes.altura);
     const orient = w > h ? 'landscape' : 'portrait';
     const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: orient, compress: true });
-    const cache = new Map();          // mesma peça = mesma imagem
-    lista.forEach((item, i) => {
+    const cache = new Map();          // mesma peça = mesmo desenho
+    const imagens = new Map();        // mesma linha = mesma imagem no PDF
+    emLinhas(lista).forEach((linha, i) => {
       if (i) doc.addPage([w, h], orient);
-      let img = cache.get(item.sku);
-      if (!img) { img = canvasEtiqueta(item, op).toDataURL('image/png'); cache.set(item.sku, img); }
-      doc.addImage(img, 'PNG', 0, 0, w, h, item.sku, 'FAST');
+      const chave = linha.map((it) => it.sku).join('|');
+      let img = imagens.get(chave);
+      if (!img) { img = canvasLinha(linha, op, cache).toDataURL('image/png'); imagens.set(chave, img); }
+      doc.addImage(img, 'PNG', 0, 0, w, h, chave, 'FAST');
     });
     doc.setProperties({ title: 'Etiquetas' });
     return doc.output('blob');
@@ -408,6 +431,9 @@ App.aoIniciar(async () => {
     $('aj-x').value = ajustes.x; $('aj-x-valor').textContent = `${Number(ajustes.x).toLocaleString('pt-BR')} mm`;
     $('aj-y').value = ajustes.y; $('aj-y-valor').textContent = `${Number(ajustes.y).toLocaleString('pt-BR')} mm`;
     $('aj-largura').value = ajustes.largura; $('aj-altura').value = ajustes.altura;
+    document.querySelectorAll('[data-colunas]').forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.colunas) === colunas())));
+    $('aj-espaco').value = ajustes.espaco;
+    $('aj-espaco-campo').hidden = colunas() < 2;
   }
   function mudarAjuste(campo, valor) {
     ajustes[campo] = valor;
@@ -419,7 +445,10 @@ App.aoIniciar(async () => {
     const n = Number(String(e.target.value).replace(',', '.'));
     mudarAjuste(campo, n >= 15 && n <= 150 ? n : padrao);
   }));
-  $('aj-restaurar').addEventListener('click', () => { ajustes = { ...AJUSTES_PADRAO }; salvarAjustes(); desenharAjustes(); desenharPrevia(); });
+  document.querySelectorAll('[data-colunas]').forEach((b) => b.addEventListener('click', () => mudarAjuste('colunas', Number(b.dataset.colunas))));
+  $('aj-espaco').addEventListener('change', (e) => { const n = Number(String(e.target.value).replace(',', '.')); mudarAjuste('espaco', n >= 0 && n <= 10 ? n : 2); });
+  // Restaurar volta posição e tamanho; mantém quantas por linha
+  $('aj-restaurar').addEventListener('click', () => { ajustes = { ...AJUSTES_PADRAO, colunas: ajustes.colunas, espaco: ajustes.espaco }; salvarAjustes(); desenharAjustes(); desenharPrevia(); });
   desenharAjustes();
 
   /* ---------- Eventos ---------- */

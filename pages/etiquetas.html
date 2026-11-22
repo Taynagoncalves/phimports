@@ -54,6 +54,7 @@
     .previa { overflow: auto; max-height: 60vh; display: flex; justify-content: center; }
     .previa .etq-termica, .previa .etq-pimaco { outline: 1px dashed #c8ccd6; }
     .previa-rolo { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+    .etq-canvas.linha { max-width: 100%; }
     .etq-canvas { width: 100%; max-width: 250px; height: auto; background: #fff; border-radius: 4px; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 8px 24px -8px rgba(16,24,40,.18); }
     .previa .folha-a4 { box-shadow: var(--sombra); transform-origin: top left; }
 
@@ -228,6 +229,14 @@
                     <label><input type="radio" name="modelo" value="pimaco"><span><i data-lucide="file"></i>Folha A4</span></label>
                   </div>
                 </div>
+                <div class="etq-campo" id="campo-colunas">
+                  <span class="rotulo">Etiquetas por linha</span>
+                  <div class="seg" role="radiogroup" aria-label="Etiquetas por linha do rolo">
+                    <button type="button" data-colunas="1" role="radio">1</button>
+                    <button type="button" data-colunas="2" role="radio">2 · rolo 80 mm</button>
+                    <button type="button" data-colunas="3" role="radio">3</button>
+                  </div>
+                </div>
                 <div class="campo oculto" id="campo-inicio">
                   <label for="posicao-inicial">Começar na etiqueta nº</label>
                   <input class="input" type="number" id="posicao-inicial" min="1" max="33" value="1">
@@ -260,7 +269,8 @@
                     <label class="aj-faixa"><span>Mover para os lados <b id="aj-x-valor"></b></span><input type="range" id="aj-x" min="-8" max="8" step="0.5"></label>
                     <label class="aj-faixa"><span>Mover para cima/baixo <b id="aj-y-valor"></b></span><input type="range" id="aj-y" min="-8" max="8" step="0.5"></label>
                     <div class="aj-papel">
-                      <label><span>Largura (mm)</span><input class="input" type="number" id="aj-largura" min="15" max="150" step="0.5"></label>
+                      <label id="aj-espaco-campo" style="grid-column:1 / -1"><span>Espaço entre etiquetas da linha (mm)</span><input class="input" type="number" id="aj-espaco" min="0" max="10" step="0.5"></label>
+                      <label><span>Largura de cada etiqueta (mm)</span><input class="input" type="number" id="aj-largura" min="15" max="150" step="0.5"></label>
                       <label><span>Altura (mm)</span><input class="input" type="number" id="aj-altura" min="15" max="150" step="0.5"></label>
                     </div>
                     <div class="aj-rodape">
