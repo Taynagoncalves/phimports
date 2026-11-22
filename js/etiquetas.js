@@ -283,7 +283,7 @@ App.aoIniciar(async () => {
   /* ---------- Etiqueta térmica: desenho em canvas + ajustes ---------- */
   const CHAVE_AJUSTES = 'gestaoloja:etq-ajustes';
   const AJUSTES_PADRAO = { largura: 40, altura: 25, girar: 0, escala: 100, x: 0, y: 0 };
-  const PX_MM = 12;                    // resolução do desenho (~305 dpi)
+  const PX_MM = 8;                     // resolução da impressora térmica (203 dpi = 8 pontos por mm)
   const PT = 0.3528;                   // 1 ponto em mm
   let ajustes = { ...AJUSTES_PADRAO };
   try { ajustes = { ...AJUSTES_PADRAO, ...JSON.parse(localStorage.getItem(CHAVE_AJUSTES) || '{}') }; } catch (e) { /* padrão */ }
@@ -293,7 +293,7 @@ App.aoIniciar(async () => {
   function barrasCanvas(codigo) {
     const c = document.createElement('canvas');
     try {
-      JsBarcode(c, codigo, { format: ean13Valido(codigo) ? 'EAN13' : 'CODE128', displayValue: false, margin: 0, height: 80, width: 3, flat: true });
+      JsBarcode(c, codigo, { format: ean13Valido(codigo) ? 'EAN13' : 'CODE128', displayValue: false, margin: 0, height: 10, width: 1, flat: true });
       return c;
     } catch (e) { return null; }
   }
@@ -330,13 +330,13 @@ App.aoIniciar(async () => {
     // Linhas (altura em mm) — distribuídas de cima a baixo
     const margem = 1, util = W - margem * 2;
     const linhas = [];
-    if (op.loja) linhas.push({ tipo: 'texto', txt: String(loja.nome || '').toUpperCase(), fonte: `${6.5 * PT}px Arial, Helvetica, sans-serif`, alt: 6.5 * PT });
-    linhas.push({ tipo: 'texto', txt: p.nome, fonte: `bold ${8.5 * PT}px Arial, Helvetica, sans-serif`, alt: 8.5 * PT });
+    if (op.loja) linhas.push({ tipo: 'texto', txt: String(loja.nome || '').toUpperCase(), fonte: `bold ${7 * PT}px Arial, Helvetica, sans-serif`, alt: 7 * PT });
+    linhas.push({ tipo: 'texto', txt: p.nome, fonte: `bold ${9 * PT}px Arial, Helvetica, sans-serif`, alt: 9 * PT });
     linhas.push({ tipo: 'var', alt: 8 * PT });
     const barras = barrasCanvas(v.codigoBarras || v.sku);
-    linhas.push({ tipo: 'barras', alt: op.numero ? 6.8 : 8.5 });
-    if (op.numero) linhas.push({ tipo: 'texto', txt: v.codigoBarras || v.sku, fonte: `${7 * PT}px "Courier New", monospace`, alt: 7 * PT });
-    if (op.preco) linhas.push({ tipo: 'texto', txt: App.formatarMoeda(p.preco), fonte: `bold ${14 * PT}px Arial, Helvetica, sans-serif`, alt: 14 * PT });
+    linhas.push({ tipo: 'barras', alt: op.numero ? 6.2 : 8.5 });
+    if (op.numero) linhas.push({ tipo: 'texto', txt: v.codigoBarras || v.sku, fonte: `bold ${7.5 * PT}px Arial, Helvetica, sans-serif`, alt: 7.5 * PT });
+    if (op.preco) linhas.push({ tipo: 'texto', txt: App.formatarMoeda(p.preco), fonte: `bold ${15 * PT}px Arial, Helvetica, sans-serif`, alt: 15 * PT });
     const soma = linhas.reduce((t, l) => t + l.alt, 0);
     const folga = Math.max(0, (H - margem * 2 - soma) / Math.max(1, linhas.length - 1));
     let y = margem;
@@ -348,7 +348,7 @@ App.aoIniciar(async () => {
       } else if (l.tipo === 'var') {
         // "Tam. 38 · Preto" com o tamanho em negrito
         const a = 'Tam. ', b = String(v.tamanho), c = ` · ${v.cor}`;
-        const normal = `${8 * PT}px Arial, Helvetica, sans-serif`, negrito = `bold ${8 * PT}px Arial, Helvetica, sans-serif`;
+        const normal = `bold ${8 * PT}px Arial, Helvetica, sans-serif`, negrito = `900 ${8.5 * PT}px Arial Black, Arial, Helvetica, sans-serif`;
         ctx.font = normal; const wa = ctx.measureText(a).width; let cc = c;
         ctx.font = negrito; const wb = ctx.measureText(b).width;
         ctx.font = normal; cc = caber(ctx, c, Math.max(2, util - wa - wb)); const wc = ctx.measureText(cc).width;
@@ -361,7 +361,9 @@ App.aoIniciar(async () => {
       } else if (l.tipo === 'barras') {
         if (barras) {
           ctx.imageSmoothingEnabled = false;
-          const larg = Math.min(util, W - 2);
+          const modulos = barras.width;                                   // 1 px = 1 módulo
+          const k = Math.max(1, Math.floor((util * PX_MM * s) / modulos));   // pontos por módulo
+          const larg = Math.min(util, (k * modulos) / (PX_MM * s));
           ctx.drawImage(barras, (W - larg) / 2, y, larg, l.alt);
         } else {
           ctx.font = `${7 * PT}px Arial, sans-serif`;
@@ -370,6 +372,14 @@ App.aoIniciar(async () => {
       }
       y += l.alt + folga;
     });
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const img = ctx.getImageData(0, 0, cv.width, cv.height);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const v2 = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11 < 175 ? 0 : 255;
+      d[i] = d[i + 1] = d[i + 2] = v2; d[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
     return cv;
   }
 
