@@ -456,3 +456,21 @@ body.fonte-urbana .hero.cinema h1 em { font-style: normal; color: transparent; -
   .hero.cinema { height: auto; min-height: 0; padding-top: 120px; }
   .cine-conteudo { padding-bottom: 30px; }
 }
+
+/* Capa da loja (foto de campanha) com zoom lento de câmera */
+.cine-capa { position: absolute; inset: 0; z-index: -3; overflow: hidden; }
+.cine-capa img { width: 100%; height: 100%; object-fit: cover; object-position: 75% 55%; transform-origin: 70% 60%; animation: cineCamera 26s ease-in-out infinite alternate; }
+@keyframes cineCamera { from { transform: scale(1.02); } to { transform: scale(1.12) translateX(-1.5%); } }
+.hero.com-capa .cine-luzes { display: none; }
+.hero.com-capa .cine-vinheta { background:
+  linear-gradient(90deg, rgba(7, 7, 7, .85) 0%, rgba(7, 7, 7, .35) 45%, rgba(7, 7, 7, 0) 70%),
+  linear-gradient(180deg, rgba(7, 7, 7, .35) 0%, rgba(7, 7, 7, 0) 30%, rgba(7, 7, 7, .55) 75%, #070707 100%),
+  radial-gradient(120% 90% at 60% 45%, transparent 50%, rgba(0, 0, 0, .55) 100%); }
+@media (max-width: 700px) {
+  .hero.cinema.com-capa { height: calc(100svh - 64px - 30px - 24px); min-height: 560px; padding-top: 0; }
+  .cine-capa img { object-position: 50% 30%; transform-origin: 50% 30%; }
+  .hero.com-capa .cine-vinheta { background:
+    linear-gradient(180deg, rgba(7, 7, 7, .25) 0%, rgba(7, 7, 7, 0) 25%, rgba(7, 7, 7, .55) 55%, rgba(7, 7, 7, .92) 80%, #070707 100%); }
+}
+@media (prefers-reduced-motion: reduce) { .cine-capa img { animation: none; } }
+@media (min-width: 701px) { .hero.com-capa h1 { font-size: clamp(48px, 6.4vw, 108px); max-width: 62%; } }

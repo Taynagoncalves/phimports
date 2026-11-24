@@ -175,6 +175,13 @@
   function desenharFundoCinema() {
     const fotos = cat.produtos.filter((p) => p.foto && !esgotada(p)).map((p) => foto(p.foto, 420));
     const el = $('cine-fundo');
+    // Capa própria da loja principal (img/capa-computador.jpg e img/capa-celular.jpg)
+    if (lojaId === window.CATALOGO_PRINCIPAL || !lojaId) {
+      $('cine-capa').hidden = false;
+      $('hero').classList.add('com-capa');
+      el.innerHTML = '';
+      return;
+    }
     // Sem fotos: fundo tipográfico (faixas gigantes com o nome da loja e as categorias)
     if (!fotos.length) {
       const palavras = [cat.nome, 'Streetwear', ...new Set(cat.produtos.map((p) => p.categoria).filter(Boolean)), 'Coleção ' + new Date().getFullYear()];
