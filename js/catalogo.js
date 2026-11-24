@@ -175,7 +175,19 @@
   function desenharFundoCinema() {
     const fotos = cat.produtos.filter((p) => p.foto && !esgotada(p)).map((p) => foto(p.foto, 420));
     const el = $('cine-fundo');
-    if (fotos.length < 3) { el.innerHTML = ''; return; }
+    // Sem fotos: fundo tipográfico (faixas gigantes com o nome da loja e as categorias)
+    if (!fotos.length) {
+      const palavras = [cat.nome, 'Streetwear', ...new Set(cat.produtos.map((p) => p.categoria).filter(Boolean)), 'Coleção ' + new Date().getFullYear()];
+      const linha = (k) => {
+        const l = palavras.map((_, i) => palavras[(i + k) % palavras.length]);
+        const t = l.map((w) => `<span>${esc(w)}</span>`).join('<i>✦</i>');
+        return `<div class="cine-texto">${t}<i>✦</i>${t}<i>✦</i></div>`;
+      };
+      el.className = 'cine-fundo tipografico';
+      el.innerHTML = [0, 2, 1, 3, 2].map(linha).join('');
+      return;
+    }
+    el.className = 'cine-fundo';
     // 3 faixas, cada uma com as fotos em ordem diferente (repetidas para nunca acabar)
     const faixa = (desloc) => {
       let lista = fotos.map((_, i) => fotos[(i + desloc) % fotos.length]);
