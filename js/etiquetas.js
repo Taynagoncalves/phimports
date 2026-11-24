@@ -470,8 +470,6 @@ App.aoIniciar(async () => {
     $('aj-x').value = ajustes.x; $('aj-x-valor').textContent = `${Number(ajustes.x).toLocaleString('pt-BR')} mm`;
     $('aj-y').value = ajustes.y; $('aj-y-valor').textContent = `${Number(ajustes.y).toLocaleString('pt-BR')} mm`;
     $('aj-largura').value = ajustes.largura; $('aj-altura').value = ajustes.altura;
-    $('aj-espaco').value = ajustes.espaco;
-    $('aj-espaco-campo').hidden = colunas() < 2;
   }
   function mudarAjuste(campo, valor) {
     ajustes[campo] = valor;
@@ -493,7 +491,6 @@ App.aoIniciar(async () => {
     try { localStorage.setItem(CHAVE_REC, String(colunasRecibo)); } catch (e) { /* ignora */ }
     desenharPrevia();
   }));
-  $('aj-espaco').addEventListener('change', (e) => { const n = Number(String(e.target.value).replace(',', '.')); mudarAjuste('espaco', n >= 0 && n <= 10 ? n : 2); });
   // Restaurar volta posição e tamanho; mantém quantas por linha
   $('aj-restaurar').addEventListener('click', () => { ajustes = { ...AJUSTES_PADRAO, colunas: ajustes.colunas, espaco: ajustes.espaco }; salvarAjustes(); desenharAjustes(); desenharPrevia(); });
   desenharAjustes();
