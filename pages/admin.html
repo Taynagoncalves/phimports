@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="../css/layout.css">
   <style>
     .admin { max-width: 1200px; margin: 0 auto; padding: 24px 16px 80px; }
+    @media (display-mode: window-controls-overlay) { .admin { padding-top: calc(env(titlebar-area-height, 32px) + 12px); } }
     .admin-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--cor-borda); }
     .admin-topo img { width: 130px; height: auto; }
     [data-tema="escuro"] .admin-topo img { filter: invert(1); }
@@ -64,6 +65,7 @@
     .aviso-pagamento { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--cor-borda); }
     .aviso-pagamento:last-child { border-bottom: none; }
   </style>
+  <style>@media (display-mode: window-controls-overlay){body::before{content:"";position:fixed;top:0;left:env(titlebar-area-x,0);width:env(titlebar-area-width,100%);height:env(titlebar-area-height,32px);-webkit-app-region:drag;app-region:drag;z-index:9999}}</style>
 </head>
 <body data-titulo="Painel do Suporte">
   <main class="admin" id="conteudo">

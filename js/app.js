@@ -770,6 +770,7 @@
         <span class="atalho" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
       </form>
       <button type="button" class="btn btn-secundario btn-sm btn-instalar" data-instalar-app hidden title="Instalar o sistema como aplicativo">${icone('download')}<span>Instalar app</span></button>
+      <button type="button" class="btn-icone btn-recarregar" id="btn-recarregar" aria-label="Atualizar a página" title="Atualizar (F5)">${icone('rotate-cw')}</button>
       <button type="button" class="btn-icone btn-tema" id="btn-tema" aria-label="Alternar tema claro/escuro" title="Tema claro/escuro">
         <span class="icone-claro">${icone('moon')}</span><span class="icone-escuro">${icone('sun')}</span>
       </button>
@@ -793,10 +794,24 @@
       }
     });
 
+    // Botão de atualizar (aparece só no app instalado; no navegador já existe o recarregar)
+    document.getElementById('btn-recarregar').addEventListener('click', (e) => {
+      e.currentTarget.classList.add('girando');
+      location.reload();
+    });
+
+    // Barra de título do app na mesma cor do topo do sistema (muda com o tema)
+    const corDaBarra = () => {
+      const cor = getComputedStyle(document.documentElement).getPropertyValue('--cor-superficie').trim() || '#FFFFFF';
+      document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.content = cor; });
+    };
+    corDaBarra();
+
     // Tema claro/escuro (lembrado no navegador). Gráficos são redesenhados recarregando a página.
     document.getElementById('btn-tema').addEventListener('click', () => {
       const novo = document.documentElement.dataset.tema === 'escuro' ? 'claro' : 'escuro';
       document.documentElement.dataset.tema = novo;
+      corDaBarra();
       try { localStorage.setItem('gestaoloja:tema', novo); } catch (e) { /* ignora */ }
       if (document.querySelector('canvas')) location.reload();
     });

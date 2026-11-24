@@ -886,3 +886,24 @@
 .sidebar-nav::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .sidebar { scrollbar-width: none; }
 .sidebar::-webkit-scrollbar { display: none; }
+
+
+/* ==========================================================================
+   App instalado (janela própria)
+   ========================================================================== */
+.btn-recarregar { display: none; }
+.btn-recarregar.girando svg { animation: girarUmaVez .6s linear infinite; }
+@keyframes girarUmaVez { to { transform: rotate(360deg); } }
+@media (display-mode: standalone), (display-mode: window-controls-overlay) {
+  .btn-recarregar { display: inline-grid; }
+  .btn-instalar { display: none !important; }
+}
+/* Sem a barra de título do Windows: o topo do sistema ocupa o lugar dela.
+   Arrastar pelo topo move a janela; os botões do Windows ficam à direita. */
+@media (display-mode: window-controls-overlay) {
+  .topbar {
+    -webkit-app-region: drag; app-region: drag;
+    padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 12px) !important;
+  }
+  .topbar button, .topbar a, .topbar input, .topbar form, .topbar label, .topbar kbd, .topbar .atalho { -webkit-app-region: no-drag; app-region: no-drag; }
+}
