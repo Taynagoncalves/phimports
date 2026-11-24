@@ -17,17 +17,17 @@ App.aoIniciar(async () => {
   /* ==================================================================
      CATÁLOGO
      ================================================================== */
-  const PADRAO = { fundo: 'creme', destaque: '', fonte: 'classica', frase1: '', frase2: '', faixa: true, foto: 'retrato', cantos: 'retos', colunas: 2 };
-  const FUNDOS = [['creme', 'Creme', '#FAF8F5'], ['branco', 'Branco', '#FFFFFF'], ['areia', 'Areia', '#F3EDE4'], ['cinza', 'Cinza', '#F4F4F5'], ['preto', 'Preto', '#121212']];
+  const PADRAO = { fundo: 'concreto', destaque: '', fonte: 'urbana', frase1: '', frase2: '', faixa: true, foto: 'retrato', cantos: 'retos', colunas: 2 };
+  const FUNDOS = [['concreto', 'Concreto', '#F1F1EE'], ['creme', 'Creme', '#FAF8F5'], ['branco', 'Branco', '#FFFFFF'], ['areia', 'Areia', '#F3EDE4'], ['cinza', 'Cinza', '#F4F4F5'], ['preto', 'Preto', '#121212']];
   const DESTAQUES = [['', 'Preto', '#141414'], ['#5B1A2B', 'Vinho', '#5B1A2B'], ['#1E2A44', 'Marinho', '#1E2A44'], ['#4B5A3A', 'Oliva', '#4B5A3A'], ['#A0522D', 'Terracota', '#A0522D'], ['#B07A7A', 'Rosé', '#B07A7A'], ['#B8924A', 'Dourado', '#B8924A']];
-  const FONTES = [['classica', 'Clássica', "'Cormorant Garamond', Georgia, serif"], ['editorial', 'Editorial', "'Playfair Display', Georgia, serif"], ['moderna', 'Moderna', 'Inter, sans-serif']];
+  const FONTES = [['urbana', 'Urbana', "'Anton', Impact, sans-serif"], ['classica', 'Clássica', "'Cormorant Garamond', Georgia, serif"], ['editorial', 'Editorial', "'Playfair Display', Georgia, serif"], ['moderna', 'Moderna', 'Inter, sans-serif']];
   let tema = { ...PADRAO, ...((loja.catalogo || {}).tema || {}) };
 
   // Fontes do catálogo para mostrar as opções de letra
   if (!document.querySelector('link[data-fontes-catalogo]')) {
     const l = document.createElement('link');
     l.rel = 'stylesheet'; l.dataset.fontesCatalogo = '1';
-    l.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Playfair+Display:ital,wght@0,500;1,500&display=swap';
+    l.href = 'https://fonts.googleapis.com/css2?family=Anton&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Playfair+Display:ital,wght@0,500;1,500&display=swap';
     document.head.appendChild(l);
   }
 

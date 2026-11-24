@@ -64,6 +64,7 @@
 
   /* ---------- Aparência (escolhida em Catálogo → Aparência) ---------- */
   const FUNDOS = {
+    concreto: { fundo: '#F1F1EE', fundo2: '#E6E6E2', papel: '#FFFFFF', linha: '#DCDCD7' },
     creme: { fundo: '#FAF8F5', fundo2: '#F1EDE7', papel: '#FFFFFF', linha: '#E6E1DA' },
     branco: { fundo: '#FFFFFF', fundo2: '#F4F4F3', papel: '#FFFFFF', linha: '#ECECEA' },
     areia: { fundo: '#F3EDE4', fundo2: '#E8DFD2', papel: '#FBF8F3', linha: '#DCD1C1' },
@@ -71,6 +72,7 @@
     preto: { fundo: '#121212', fundo2: '#1D1D1D', papel: '#191919', linha: '#2E2D2B', escuro: true }
   };
   const FONTES = {
+    urbana: "'Anton', Impact, 'Arial Narrow', sans-serif",
     classica: "'Cormorant Garamond', Georgia, serif",
     editorial: "'Playfair Display', Georgia, serif",
     moderna: "Inter, system-ui, sans-serif"
@@ -78,17 +80,19 @@
   const PROPORCOES = { retrato: '4 / 5', alta: '3 / 4', quadrada: '1 / 1' };
   function aplicarTema(t = {}) {
     const raizEl = document.documentElement.style;
-    const f = FUNDOS[t.fundo] || FUNDOS.creme;
+    const f = FUNDOS[t.fundo] || FUNDOS.concreto;
     raizEl.setProperty('--fundo', f.fundo);
     raizEl.setProperty('--fundo-2', f.fundo2);
     raizEl.setProperty('--papel', f.papel);
     raizEl.setProperty('--linha', f.linha);
     document.body.classList.toggle('tema-escuro', !!f.escuro);
-    const acao = /^#[0-9a-f]{6}$/i.test(t.destaque || '') ? t.destaque : (f.escuro ? '#F2EEE8' : '#141414');
+    const acao = /^#[0-9a-f]{6}$/i.test(t.destaque || '') ? t.destaque : (f.escuro ? '#F2F2EE' : '#0E0E0E');
     raizEl.setProperty('--acao', acao);
     raizEl.setProperty('--acao-texto', corDeTexto(acao));
-    raizEl.setProperty('--serifa', FONTES[t.fonte] || FONTES.classica);
-    document.body.classList.toggle('titulos-modernos', t.fonte === 'moderna');
+    const fonte = FONTES[t.fonte] ? t.fonte : 'urbana';
+    raizEl.setProperty('--serifa', FONTES[fonte]);
+    document.body.classList.toggle('titulos-modernos', fonte === 'moderna');
+    document.body.classList.toggle('fonte-urbana', fonte === 'urbana');
     raizEl.setProperty('--proporcao', PROPORCOES[t.foto] || PROPORCOES.retrato);
     raizEl.setProperty('--raio-loja', t.cantos === 'arredondados' ? '14px' : '0px');
     document.body.classList.toggle('uma-coluna', String(t.colunas) === '1');
@@ -178,7 +182,7 @@
     return `
       <button type="button" class="card${n <= 0 ? ' esgotado' : ''}" data-peca="${esc(p.id)}" aria-label="${esc(p.nome)} — ${esc(textoEstoque(n))}">
         <div class="card-foto">
-          ${p.foto ? `<img src="${esc(foto(p.foto, 600))}" alt="" loading="lazy">` : ICONE_CABIDE}
+          ${p.foto ? `<img src="${esc(foto(p.foto, 600))}" alt="" loading="lazy">${p.fotosExtras && p.fotosExtras[0] ? `<img class="card-foto-2" src="${esc(foto(p.fotosExtras[0], 600))}" alt="" loading="lazy">` : ''}` : ICONE_CABIDE}
           ${selo}
           <span class="card-ver" aria-hidden="true">${n <= 0 ? 'Avise-me quando chegar' : tams.length ? tams.map(esc).join('  ·  ') : 'Ver peça'}</span>
         </div>

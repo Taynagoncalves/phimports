@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="icon" type="image/png" href="../img/favicon.png">
   <link rel="apple-touch-icon" href="../img/app-192.png">
-  <meta name="theme-color" content="#FAF8F5">
+  <meta name="theme-color" content="#F1F1EE">
   <title>PH Imports — Catálogo</title>
   <!-- Prévia do link no WhatsApp / Instagram -->
   <meta name="description" content="Escolha suas peças, monte a sacola e envie o pedido para a loja.">
@@ -19,7 +19,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Playfair+Display:ital,wght@0,500;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Playfair+Display:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/catalogo.css">
 </head>
 <body>
@@ -54,12 +54,15 @@
     <section class="hero" id="hero">
       <span class="sr-only" id="hero-sobre"></span>
       <h1 id="hero-titulo">Sua presença fala,<br><em>seu estilo confirma</em></h1>
-      <ul class="hero-selos" id="hero-selos"></ul>
+      <div class="hero-pe">
+        <ul class="hero-selos" id="hero-selos"></ul>
+        <a href="#colecao" class="hero-ver">Ver as peças<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+      </div>
     </section>
 
     <!-- Vitrines -->
     <section class="vitrine" id="vitrine-novidades" hidden>
-      <div class="secao-cabeca"><h2>Novidades</h2><span class="secao-sub">Acabaram de chegar</span></div>
+      <div class="secao-cabeca"><h2>Novidades</h2><span class="secao-sub">Acabou de chegar</span></div>
       <div class="trilho" id="trilho-novidades"></div>
     </section>
     <section class="vitrine" id="vitrine-promo" hidden>
