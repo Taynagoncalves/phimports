@@ -473,7 +473,7 @@ body.fonte-urbana .hero.cinema h1 em { font-style: normal; color: transparent; -
     linear-gradient(180deg, rgba(7, 7, 7, .25) 0%, rgba(7, 7, 7, 0) 25%, rgba(7, 7, 7, .55) 55%, rgba(7, 7, 7, .92) 80%, #070707 100%); }
 }
 @media (prefers-reduced-motion: reduce) { .cine-capa img { animation: none; } }
-@media (min-width: 701px) { .hero.com-capa h1 { font-size: clamp(48px, 6.4vw, 108px); max-width: 62%; } }
+@media (min-width: 701px) { .hero.com-capa h1 { font-size: clamp(46px, 5.9vw, 100px); max-width: 58%; } }
 
 /* ---------- Topo escuro sobre a abertura ---------- */
 .topo { transition: background .35s ease, border-color .35s ease; }
