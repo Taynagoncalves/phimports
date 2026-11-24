@@ -136,10 +136,6 @@
     if (cat.logo) $('logo-topo').src = cat.logo;
     $('logo-topo').alt = cat.nome;
     $('hero-sobre').textContent = `${cat.nome} · Coleção ${new Date().getFullYear()}`;
-    // Faixa gigante: nome da loja e categorias, alternando cheio e contorno
-    const palavras = [cat.nome, 'Streetwear', ...new Set(cat.produtos.map((p) => p.categoria).filter(Boolean))].slice(0, 6);
-    const voltaFaixa = palavras.map((w) => `<span>${esc(w)}</span><i>✦</i>`).join('');
-    $('faixa-grande').innerHTML = voltaFaixa + voltaFaixa;
     $('hero-selos').innerHTML = [
       cat.entrega === false ? [ICONES_SELO.loja, 'Retire na loja'] : [ICONES_SELO.caminhao, 'Enviamos para todo o Brasil'],
       [ICONES_SELO.conversa, 'Atendimento pelo WhatsApp'],
