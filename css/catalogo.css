@@ -543,3 +543,70 @@ body.carregando .hero.cinema h1 .linha > span, body.carregando .hero.cinema .her
 body.carregando .hero.cinema h1 .linha > span { transform: translateY(105%); }
 body.carregando .hero.cinema .hero-pe { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .abertura img, .abertura-barra { opacity: 1; transform: none; } }
+
+/* ==========================================================================
+   Vantagens, categorias e bloco da marca
+   ========================================================================== */
+.vantagens { max-width: var(--largura); margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid var(--linha); }
+@media (min-width: 900px) { .vantagens { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0 24px; } }
+.vantagem { display: flex; align-items: center; gap: 14px; padding: 22px 12px 22px 0; }
+.vantagem + .vantagem { padding-left: 16px; border-left: 1px solid var(--linha); }
+@media (max-width: 899px) { .vantagem:nth-child(3) { border-left: 0; padding-left: 0; } .vantagem:nth-child(n+3) { border-top: 1px solid var(--linha); } }
+.vantagem svg { width: 26px; height: 26px; flex-shrink: 0; stroke-width: 1.4; }
+.vantagem div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vantagem strong { font-size: 13.5px; font-weight: 600; line-height: 1.25; }
+.vantagem span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase; color: var(--tinta-3); }
+@media (max-width: 520px) { .vantagem { gap: 10px; padding: 16px 8px 16px 0; } .vantagem svg { width: 22px; height: 22px; } .vantagem strong { font-size: 12.5px; } .vantagem span { display: none; } }
+
+.cats-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 900px) { .cats-grade { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } }
+.cat-bloco { position: relative; isolation: isolate; overflow: hidden; aspect-ratio: 4 / 5; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 6px; padding: 16px; border-radius: var(--raio-loja); background: #0C0C0C; color: #F4F4F0; text-align: left; }
+.cat-bloco::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(90% 70% at 70% 20%, rgba(255, 255, 255, .09), transparent 60%); }
+.cat-bloco img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transition: transform .9s var(--suave); }
+.cat-bloco.com-foto::before { background: linear-gradient(180deg, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, .75) 100%); }
+.cat-bloco strong { font-family: var(--serifa); font-weight: 400; font-size: clamp(28px, 3.4vw, 46px); line-height: .95; text-transform: uppercase; }
+.cat-qtd { position: absolute; top: 14px; right: 14px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: rgba(244, 244, 240, .7); }
+.cat-ver { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: rgba(244, 244, 240, .8); }
+.cat-ver svg { width: 14px; height: 14px; transition: transform .3s var(--suave); }
+@media (hover: hover) { .cat-bloco:hover img { transform: scale(1.05); } .cat-bloco:hover .cat-ver svg { transform: translateX(4px); } }
+
+.manifesto { position: relative; isolation: isolate; overflow: hidden; margin-top: 80px; background: #070707 url('../img/capa-computador.jpg') center 40% / cover no-repeat; color: #F4F4F0; }
+.manifesto::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(7, 7, 7, .95) 0%, rgba(7, 7, 7, .8) 45%, rgba(7, 7, 7, .45) 100%); }
+@media (max-width: 700px) { .manifesto { background-image: url('../img/capa-celular.jpg'); background-position: center 30%; } .manifesto::before { background: linear-gradient(180deg, rgba(7, 7, 7, .55) 0%, rgba(7, 7, 7, .92) 60%); } }
+.manifesto-dentro { max-width: var(--largura); margin: 0 auto; padding: 88px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+@media (min-width: 900px) { .manifesto-dentro { padding: 120px 24px; } }
+.manifesto h2 { font-family: var(--serifa); font-weight: 400; font-size: clamp(42px, 7vw, 104px); line-height: .92; text-transform: uppercase; }
+.manifesto h2 em { font-style: normal; color: transparent; -webkit-text-stroke: 1.5px #F4F4F0; }
+.manifesto p { max-width: 460px; font-size: 15px; line-height: 1.6; color: rgba(244, 244, 240, .78); }
+.manifesto-botoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.manifesto-btn { display: inline-flex; align-items: center; gap: 10px; height: 50px; padding: 0 22px; border: 1.5px solid #F4F4F0; border-radius: var(--raio-loja); color: #F4F4F0; text-decoration: none; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; transition: background .2s, color .2s; }
+.manifesto-btn svg { width: 18px; height: 18px; }
+.manifesto-btn.cheio, .manifesto-btn:hover { background: #F4F4F0; color: #070707; }
+.manifesto-btn.cheio:hover { background: transparent; color: #F4F4F0; }
+.manifesto + .rodape, main + .rodape { margin-top: 0; }
+/* Rodapé mais discreto (o bloco da marca já tem a frase grande) */
+.rodape-frase { font-size: clamp(26px, 2.8vw, 40px); max-width: 520px; }
+
+/* Categorias sem foto: blocos quadrados, alternando escuro e claro */
+.cat-bloco { aspect-ratio: 1 / 1; }
+.cat-bloco:not(.com-foto):nth-child(even) { background: var(--papel); color: var(--tinta); box-shadow: inset 0 0 0 1.5px var(--tinta); }
+.cat-bloco:not(.com-foto):nth-child(even)::before { display: none; }
+.cat-bloco:not(.com-foto):nth-child(even) .cat-qtd, .cat-bloco:not(.com-foto):nth-child(even) .cat-ver { color: var(--tinta-2); }
+@media (min-width: 900px) { .cat-bloco:not(.com-foto):nth-child(even) { background: transparent; } }
+
+/* Xadrez: no celular (2 colunas) e no computador (4 colunas) */
+.cat-bloco:not(.com-foto):nth-child(n) { background: #0C0C0C; color: #F4F4F0; box-shadow: none; }
+.cat-bloco:not(.com-foto):nth-child(n)::before { display: block; }
+.cat-bloco:not(.com-foto):nth-child(n) .cat-qtd { color: rgba(244, 244, 240, .7); }
+.cat-bloco:not(.com-foto):nth-child(n) .cat-ver { color: rgba(244, 244, 240, .8); }
+.cat-bloco:not(.com-foto).claro { background: transparent; color: var(--tinta); box-shadow: inset 0 0 0 1.5px var(--tinta); }
+.cat-bloco:not(.com-foto).claro::before { display: none; }
+.cat-bloco:not(.com-foto).claro .cat-qtd, .cat-bloco:not(.com-foto).claro .cat-ver { color: var(--tinta-2); }
+@media (max-width: 899px) { .cat-bloco:not(.com-foto):is(:nth-child(4n+2), :nth-child(4n+3)) { background: transparent; color: var(--tinta); box-shadow: inset 0 0 0 1.5px var(--tinta); }
+  .cat-bloco:not(.com-foto):is(:nth-child(4n+2), :nth-child(4n+3))::before { display: none; }
+  .cat-bloco:not(.com-foto):is(:nth-child(4n+2), :nth-child(4n+3)) :is(.cat-qtd, .cat-ver) { color: var(--tinta-2); } }
+@media (min-width: 900px) { .cat-bloco { aspect-ratio: 4 / 3; }
+  .cat-bloco:not(.com-foto):is(:nth-child(8n+2), :nth-child(8n+4), :nth-child(8n+5), :nth-child(8n+7)) { background: transparent; color: var(--tinta); box-shadow: inset 0 0 0 1.5px var(--tinta); }
+  .cat-bloco:not(.com-foto):is(:nth-child(8n+2), :nth-child(8n+4), :nth-child(8n+5), :nth-child(8n+7))::before { display: none; }
+  .cat-bloco:not(.com-foto):is(:nth-child(8n+2), :nth-child(8n+4), :nth-child(8n+5), :nth-child(8n+7)) :is(.cat-qtd, .cat-ver) { color: var(--tinta-2); } }
+@media (max-width: 899px) { .cat-bloco { aspect-ratio: 5 / 4; padding: 14px; } .cat-bloco strong { font-size: 30px; } }

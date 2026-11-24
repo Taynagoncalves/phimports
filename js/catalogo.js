@@ -130,6 +130,61 @@
     conversa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.8 7L4 20l1-4.2A8 8 0 1 1 20 12Z"/></svg>',
     estrela: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 2.4 5 5.4.7-4 3.7 1 5.3L12 16.2 7.2 18.7l1-5.3-4-3.7 5.4-.7z"/></svg>'
   };
+  /* ---------- Vantagens, categorias e bloco da marca ---------- */
+  const ICONES_EXTRA = {
+    caminhao: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17.5" cy="17.5" r="1.6"/></svg>',
+    cartao: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>',
+    conversa: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.8 7L4 20l1-4.2A8 8 0 1 1 20 12Z"/></svg>',
+    estrela: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 2.4 5 5.4.7-4 3.7 1 5.3L12 16.2 7.2 18.7l1-5.3-4-3.7 5.4-.7z"/></svg>',
+    loja: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v10h16V10M3 10l2-6h14l2 6M9 20v-5h6v5"/></svg>',
+    seta: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+  };
+  function desenharExtras() {
+    // Vantagens
+    const itens = [
+      cat.entrega === false ? [ICONES_EXTRA.loja, 'Retire na loja', 'Separamos o seu pedido'] : [ICONES_EXTRA.caminhao, 'Enviamos para todo o Brasil', 'Ou retire na loja'],
+      [ICONES_EXTRA.cartao, 'Pix ou cartão', 'Pagamento combinado com a loja'],
+      [ICONES_EXTRA.conversa, 'Atendimento pelo WhatsApp', 'Tire dúvidas antes de comprar'],
+      [ICONES_EXTRA.estrela, 'Peças selecionadas', 'Estilo de rua, escolhido a dedo']
+    ];
+    $('vantagens').innerHTML = itens.map(([i, t, s]) => `<div class="vantagem">${i}<div><strong>${esc(t)}</strong><span>${esc(s)}</span></div></div>`).join('');
+
+    // Categorias (com foto da 1ª peça que tiver, senão o "pôster")
+    const porCat = new Map();
+    cat.produtos.forEach((p) => {
+      if (!p.categoria) return;
+      const g = porCat.get(p.categoria) || { n: 0, foto: '' };
+      g.n += 1; if (!g.foto && p.foto && !esgotada(p)) g.foto = p.foto;
+      porCat.set(p.categoria, g);
+    });
+    const lista = [...porCat.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 8);
+    $('secao-cats').hidden = lista.length < 2;
+    $('cats-grade').innerHTML = lista.map(([nome, g]) => `
+      <button type="button" class="cat-bloco${g.foto ? ' com-foto' : ''}" data-ir-cat="${esc(nome)}">
+        ${g.foto ? `<img src="${esc(foto(g.foto, 700))}" alt="" loading="lazy">` : ''}
+        <span class="cat-qtd">${g.n} peça${g.n === 1 ? '' : 's'}</span>
+        <strong>${esc(nome)}</strong>
+        <span class="cat-ver">Ver ${ICONES_EXTRA.seta}</span>
+      </button>`).join('');
+    $('cats-grade').querySelectorAll('[data-ir-cat]').forEach((b) => b.addEventListener('click', () => {
+      categoria = b.dataset.irCat; desenharCategorias(); desenharGrade();
+      $('colecao').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+
+    // Bloco da marca
+    const insta = cat.instagram ? `https://instagram.com/${encodeURIComponent(cat.instagram)}` : '';
+    $('manifesto').innerHTML = `
+      <div class="manifesto-dentro">
+        <span class="cine-rotulo">${esc(cat.nome)}</span>
+        <h2>Feito pra rua.<br><em>Escolhido a dedo.</em></h2>
+        <p>Peças streetwear selecionadas para quem veste atitude. Ficou com dúvida de tamanho ou quer ver mais fotos? Chama a gente.</p>
+        <div class="manifesto-botoes">
+          ${cat.whatsapp ? `<a class="manifesto-btn cheio" href="${linkWhats(`Olá! Vim pelo catálogo da ${cat.nome}.`)}" target="_blank" rel="noopener">${ICONE_WHATS}Falar no WhatsApp</a>` : ''}
+          ${insta ? `<a class="manifesto-btn" href="${insta}" target="_blank" rel="noopener">${ICONE_INSTA}Seguir no Instagram</a>` : ''}
+        </div>
+      </div>`;
+  }
+
   /* ---------- Topo, abertura e rodapé ---------- */
   function desenharMarca() {
     document.title = `${cat.nome} — Catálogo`;
@@ -874,6 +929,7 @@
     desenharFundoCinema();
     desenharVitrines();
     desenharCategorias();
+    desenharExtras();
     desenharGrade();
     lerSacola();
     atualizarContadores();
