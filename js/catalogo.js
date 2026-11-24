@@ -310,13 +310,9 @@
   });
 
   function desenharVitrines() {
-    const novos = cat.produtos.filter((p) => p.novo && !esgotada(p)).slice(0, 12);
     const promo = cat.produtos.filter((p) => temPromo(p) && !esgotada(p)).slice(0, 12);
-    $('vitrine-novidades').hidden = novos.length < 2;
     $('vitrine-promo').hidden = promo.length < 1;
-    $('trilho-novidades').innerHTML = novos.map(cardHtml).join('');
     $('trilho-promo').innerHTML = promo.map(cardHtml).join('');
-    ligarCards($('trilho-novidades'));
     ligarCards($('trilho-promo'));
   }
 
