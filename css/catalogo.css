@@ -474,3 +474,15 @@ body.fonte-urbana .hero.cinema h1 em { font-style: normal; color: transparent; -
 }
 @media (prefers-reduced-motion: reduce) { .cine-capa img { animation: none; } }
 @media (min-width: 701px) { .hero.com-capa h1 { font-size: clamp(48px, 6.4vw, 108px); max-width: 62%; } }
+
+/* ---------- Topo escuro sobre a abertura ---------- */
+.topo { transition: background .35s ease, border-color .35s ease; }
+.topo.escuro { background: #070707; border-bottom-color: rgba(244, 244, 240, .08); }
+.topo.escuro .topo-marca img { filter: invert(1); }
+.topo.escuro .topo-icone { color: #F4F4F0; }
+.topo.escuro .topo-icone:hover { background: rgba(244, 244, 240, .08); }
+.topo.escuro .contador { background: #F4F4F0; color: #070707; }
+.topo.escuro .topo-nav button { color: rgba(244, 244, 240, .62); }
+.topo.escuro .topo-nav button:hover, .topo.escuro .topo-nav button[aria-current="true"] { color: #F4F4F0; border-bottom-color: #F4F4F0; }
+.topo.escuro .topo-busca input { background: #141414; color: #F4F4F0; border-color: #F4F4F0; }
+.topo-marca img, .topo-icone, .topo-nav button { transition: filter .35s ease, color .35s ease, background .2s, border-color .2s; }

@@ -818,7 +818,16 @@
   $('q').addEventListener('input', () => { desenharGrade(); if ($('q').value) $('colecao').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
   $('ordem').addEventListener('change', desenharGrade);
   $('link-inicio').addEventListener('click', (e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-  window.addEventListener('scroll', () => $('topo').classList.toggle('rolou', window.scrollY > 10), { passive: true });
+  // Topo: escuro e integrado enquanto está sobre a abertura; claro ao chegar nas peças
+  function ajustarTopo() {
+    const topo = $('topo'), hero = $('hero');
+    topo.classList.toggle('rolou', window.scrollY > 10);
+    const fimHero = hero.offsetTop + hero.offsetHeight - topo.offsetHeight;
+    topo.classList.toggle('escuro', window.scrollY < fimHero);
+  }
+  window.addEventListener('scroll', ajustarTopo, { passive: true });
+  window.addEventListener('resize', ajustarTopo);
+  ajustarTopo();
 
   /* ---------- Início ---------- */
   carregar().then((dados) => {
