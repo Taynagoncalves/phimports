@@ -843,8 +843,29 @@
   ajustarTopo();
 
   /* ---------- Início ---------- */
+  /* ---------- Abertura de carregamento ---------- */
+  const inicioAbertura = Date.now();
+  function tirarAbertura() {
+    const el = $('abertura');
+    if (!el || el.classList.contains('saindo')) return;
+    const espera = Math.max(0, 900 - (Date.now() - inicioAbertura));   // tempo mínimo para a logo aparecer
+    setTimeout(() => {
+      el.classList.add('saindo');
+      document.body.classList.remove('carregando');                       // libera as animações do título
+      setTimeout(() => el.remove(), 900);
+    }, espera);
+  }
+  /** Espera a capa carregar (no máximo 2,5 s) para não aparecer a tela vazia */
+  function quandoCapaPronta() {
+    const capa = $('cine-capa');
+    const img = capa && !capa.hidden ? capa.querySelector('img') : null;
+    if (!img || (img.complete && img.naturalWidth)) return Promise.resolve();
+    return Promise.race([new Promise((ok) => { img.addEventListener('load', ok, { once: true }); img.addEventListener('error', ok, { once: true }); }), new Promise((ok) => setTimeout(ok, 2500))]);
+  }
+  setTimeout(tirarAbertura, 8000);   // segurança: nunca fica presa na abertura
+
   carregar().then((dados) => {
-    if (!dados || !dados.publicado) { $('estado').textContent = 'Este catálogo não está disponível no momento.'; return; }
+    if (!dados || !dados.publicado) { $('estado').textContent = 'Este catálogo não está disponível no momento.'; tirarAbertura(); return; }
     cat = { ...dados, produtos: dados.produtos || [] };
     if (cat.entrega === false) $('f-entrega-bloco').hidden = true;
     try { const c = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || '{}'); $('f-nome').value = c.nome || ''; $('f-endereco').value = c.endereco || ''; $('f-fone').value = c.fone || ''; } catch (e) { /* ignora */ }
@@ -856,8 +877,10 @@
     desenharGrade();
     lerSacola();
     atualizarContadores();
+    quandoCapaPronta().then(tirarAbertura);
   }).catch((e) => {
     console.error(e);
+    tirarAbertura();
     $('estado').textContent = 'Não foi possível abrir o catálogo. Confira a internet e tente de novo.';
   });
 })();
