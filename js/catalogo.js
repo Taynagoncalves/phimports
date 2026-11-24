@@ -140,14 +140,6 @@
     seta: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
   };
   function desenharExtras() {
-    // Vantagens
-    const itens = [
-      cat.entrega === false ? [ICONES_EXTRA.loja, 'Retire na loja', 'Separamos o seu pedido'] : [ICONES_EXTRA.caminhao, 'Enviamos para todo o Brasil', 'Ou retire na loja'],
-      [ICONES_EXTRA.cartao, 'Pix ou cartão', 'Pagamento combinado com a loja'],
-      [ICONES_EXTRA.conversa, 'Atendimento pelo WhatsApp', 'Tire dúvidas antes de comprar'],
-      [ICONES_EXTRA.estrela, 'Peças selecionadas', 'Estilo de rua, escolhido a dedo']
-    ];
-    $('vantagens').innerHTML = itens.map(([i, t, s]) => `<div class="vantagem">${i}<div><strong>${esc(t)}</strong><span>${esc(s)}</span></div></div>`).join('');
 
     // Categorias (com foto da 1ª peça que tiver, senão o "pôster")
     const porCat = new Map();
