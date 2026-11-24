@@ -99,7 +99,7 @@
     $('anuncio').hidden = t.faixa === false;
     const l1 = (t.frase1 || '').trim() || 'Sua presença fala,';
     const l2 = (t.frase2 || '').trim() || 'seu estilo confirma';
-    $('hero-titulo').innerHTML = `${esc(l1)}<br><em>${esc(l2)}</em>`;
+    $('hero-titulo').innerHTML = `<span class="linha"><span>${esc(l1)}</span></span><span class="linha"><span><em>${esc(l2)}</em></span></span>`;
     const frase = document.querySelector('.rodape-frase');
     if (frase) frase.innerHTML = `${esc(l1)} <em>${esc(l2)}</em>`;
   }
@@ -129,7 +129,11 @@
     document.title = `${cat.nome} — Catálogo`;
     if (cat.logo) $('logo-topo').src = cat.logo;
     $('logo-topo').alt = cat.nome;
-    $('hero-sobre').textContent = cat.nome;
+    $('hero-sobre').textContent = `${cat.nome} · Coleção ${new Date().getFullYear()}`;
+    // Faixa gigante: nome da loja e categorias, alternando cheio e contorno
+    const palavras = [cat.nome, 'Streetwear', ...new Set(cat.produtos.map((p) => p.categoria).filter(Boolean))].slice(0, 6);
+    const voltaFaixa = palavras.map((w) => `<span>${esc(w)}</span><i>✦</i>`).join('');
+    $('faixa-grande').innerHTML = voltaFaixa + voltaFaixa;
     $('hero-selos').innerHTML = [
       cat.entrega === false ? [ICONES_SELO.loja, 'Retire na loja'] : [ICONES_SELO.caminhao, 'Enviamos para todo o Brasil'],
       [ICONES_SELO.conversa, 'Atendimento pelo WhatsApp'],
@@ -165,6 +169,21 @@
         ${cat.endereco ? `<p class="rodape-endereco">${esc(cat.endereco)}</p>` : ''}
       </div>
       <small>© ${new Date().getFullYear()} ${esc(cat.nome)}${cat.instagram ? ` · @${esc(cat.instagram)}` : ''}</small>`;
+  }
+
+  /* ---------- Abertura de cinema: fotos das peças passando ao fundo ---------- */
+  function desenharFundoCinema() {
+    const fotos = cat.produtos.filter((p) => p.foto && !esgotada(p)).map((p) => foto(p.foto, 420));
+    const el = $('cine-fundo');
+    if (fotos.length < 3) { el.innerHTML = ''; return; }
+    // 3 faixas, cada uma com as fotos em ordem diferente (repetidas para nunca acabar)
+    const faixa = (desloc) => {
+      let lista = fotos.map((_, i) => fotos[(i + desloc) % fotos.length]);
+      while (lista.length < 8) lista = lista.concat(lista);
+      const imgs = lista.map((f) => `<img src="${esc(f)}" alt="" loading="lazy">`).join('');
+      return `<div class="cine-faixa">${imgs}${imgs}</div>`;
+    };
+    el.innerHTML = faixa(0) + faixa(Math.ceil(fotos.length / 3)) + faixa(Math.ceil((2 * fotos.length) / 3));
   }
 
   /* ---------- Cards ---------- */
@@ -790,6 +809,7 @@
     try { const c = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || '{}'); $('f-nome').value = c.nome || ''; $('f-endereco').value = c.endereco || ''; $('f-fone').value = c.fone || ''; } catch (e) { /* ignora */ }
     desenharMarca();
     aplicarTema(temaPrevia || cat.tema || {});
+    desenharFundoCinema();
     desenharVitrines();
     desenharCategorias();
     desenharGrade();

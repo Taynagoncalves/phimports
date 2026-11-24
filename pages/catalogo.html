@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <link rel="icon" type="image/png" href="../img/favicon.png">
   <link rel="apple-touch-icon" href="../img/app-192.png">
-  <meta name="theme-color" content="#F1F1EE">
+  <meta name="theme-color" content="#070707">
   <title>PH Imports — Catálogo</title>
   <!-- Prévia do link no WhatsApp / Instagram -->
   <meta name="description" content="Escolha suas peças, monte a sacola e envie o pedido para a loja.">
@@ -51,13 +51,20 @@
 
   <main id="inicio">
     <!-- Abertura -->
-    <section class="hero" id="hero">
-      <span class="sr-only" id="hero-sobre"></span>
-      <h1 id="hero-titulo">Sua presença fala,<br><em>seu estilo confirma</em></h1>
-      <div class="hero-pe">
-        <ul class="hero-selos" id="hero-selos"></ul>
-        <a href="#colecao" class="hero-ver">Ver as peças<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+    <section class="hero cinema" id="hero">
+      <div class="cine-luzes" aria-hidden="true"></div>
+      <div class="cine-fundo" id="cine-fundo" aria-hidden="true"></div>
+      <div class="cine-vinheta" aria-hidden="true"></div>
+      <div class="cine-grao" aria-hidden="true"></div>
+      <div class="cine-conteudo">
+        <span class="cine-rotulo" id="hero-sobre">Coleção</span>
+        <h1 id="hero-titulo"><span class="linha"><span>Sua presença fala,</span></span><span class="linha"><span><em>seu estilo confirma</em></span></span></h1>
+        <div class="hero-pe">
+          <ul class="hero-selos" id="hero-selos"></ul>
+          <a href="#colecao" class="hero-ver">Ver as peças<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
+        </div>
       </div>
+      <a href="#colecao" class="cine-rolar" aria-hidden="true" tabindex="-1">Role</a>
     </section>
 
     <!-- Vitrines -->
@@ -69,6 +76,9 @@
       <div class="secao-cabeca"><h2>Promoções</h2><span class="secao-sub">Por tempo limitado</span></div>
       <div class="trilho" id="trilho-promo"></div>
     </section>
+
+    <!-- Faixa gigante -->
+    <div class="faixa-grande" aria-hidden="true"><div class="faixa-grande-trilho" id="faixa-grande"></div></div>
 
     <!-- Coleção -->
     <section class="colecao" id="colecao">
