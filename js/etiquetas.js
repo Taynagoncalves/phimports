@@ -288,6 +288,7 @@ App.aoIniciar(async () => {
     const op = opcoes();
     $('campo-inicio').classList.toggle('oculto', op.modelo !== 'pimaco');
     $('etq-ajustes').classList.toggle('oculto', op.modelo !== 'termica');
+    $('dica-etiqueta').classList.toggle('oculto', op.modelo !== 'termica');
     $('campo-colunas').classList.toggle('oculto', op.modelo !== 'recibo');
     document.querySelectorAll('[data-colunas-rec]').forEach((b) => b.setAttribute('aria-checked', String(Number(b.dataset.colunasRec) === colunasRecibo)));
     $('rec-tam').value = tamRecibo;
