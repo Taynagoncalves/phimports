@@ -168,7 +168,7 @@
     $('manifesto').innerHTML = `
       <div class="manifesto-dentro">
         <span class="cine-rotulo">${esc(cat.nome)}</span>
-        <h2>Feito pra rua.<br><em>Escolhido a dedo.</em></h2>
+        <h2>Estilo não se explica.<br><em>Se veste.</em></h2>
         <p>Peças streetwear selecionadas para quem veste atitude. Ficou com dúvida de tamanho ou quer ver mais fotos? Chama a gente.</p>
         <div class="manifesto-botoes">
           ${cat.whatsapp ? `<a class="manifesto-btn cheio" href="${linkWhats(`Olá! Vim pelo catálogo da ${cat.nome}.`)}" target="_blank" rel="noopener">${ICONE_WHATS}Falar no WhatsApp</a>` : ''}
