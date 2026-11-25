@@ -1957,3 +1957,67 @@ a.aba { text-decoration: none; display: inline-block; }
   .ped-acoes > .btn-primario, .ped-acoes > [data-confirmar] { flex: 1; }
   .ped-valor strong { font-size: 18px; }
 }
+
+/* ==========================================================================
+   Produtos — resumo, situação, grade de estoque e lista compacta no celular
+   ========================================================================== */
+.prod-resumo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: var(--esp-5); }
+@media (max-width: 900px) { .prod-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.prod-kpi { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px 16px; border: 1px solid var(--cor-borda); border-radius: var(--raio); background: var(--cor-superficie); color: var(--cor-texto); font: inherit; text-align: left; min-width: 0; }
+button.prod-kpi { cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+button.prod-kpi:hover { border-color: var(--cor-borda-forte); box-shadow: 0 6px 18px -10px rgba(16, 24, 40, .25); }
+.prod-kpi span { font-size: var(--fs-xs); font-weight: 600; color: var(--cor-texto-3); }
+.prod-kpi strong { font-size: 22px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prod-kpi small { font-size: var(--fs-xs); color: var(--cor-texto-3); }
+.prod-kpi.atencao strong, .prod-kpi.atencao small { color: var(--cor-alerta); }
+.prod-kpi.perigo strong, .prod-kpi.perigo small { color: var(--cor-perigo); }
+@media (max-width: 520px) { .prod-kpi { padding: 12px; } .prod-kpi strong { font-size: 18px; } }
+
+.prod-situacao { display: flex; gap: 6px; margin-top: var(--esp-3); overflow-x: auto; scrollbar-width: none; }
+.prod-situacao::-webkit-scrollbar { display: none; }
+.prod-sit { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--cor-borda); border-radius: 999px; background: var(--cor-superficie); color: var(--cor-texto-2); font: inherit; font-size: var(--fs-sm); font-weight: 500; cursor: pointer; }
+.prod-sit span { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--cor-fundo-2, var(--cor-fundo)); font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.prod-sit:hover { border-color: var(--cor-borda-forte); color: var(--cor-texto); }
+.prod-sit.ativo { background: var(--cor-texto); border-color: var(--cor-texto); color: var(--cor-superficie); }
+.prod-sit.ativo span { background: rgba(255, 255, 255, .2); color: inherit; }
+
+.estoque-mini-texto { display: inline-flex; align-items: center; gap: 4px; }
+.prod-abrir { display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--cor-texto-3); cursor: pointer; }
+.prod-abrir:hover { background: var(--cor-fundo); color: var(--cor-texto); }
+.prod-abrir svg { width: 15px; height: 15px; transition: transform .2s; }
+.prod-abrir[aria-expanded="true"] svg { transform: rotate(180deg); }
+.tabela-produtos tr.aberto td { border-bottom-color: transparent; }
+.tabela-produtos tr.prod-detalhe > td { padding-top: 0; background: none; }
+.prod-grade { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; padding: 12px 14px; border-radius: var(--raio-sm); background: var(--cor-fundo); }
+.prod-grade-tab { display: grid; align-items: center; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.prod-grade-tab > * { padding: 5px 10px; text-align: center; font-style: normal; }
+.prod-grade-tab > b { font-size: var(--fs-xs); font-weight: 700; color: var(--cor-texto-3); }
+.prod-grade-tab > i { font-weight: 700; border-left: 1px solid var(--cor-borda); }
+.prod-grade-tab .prod-grade-cor { display: inline-flex; align-items: center; gap: 6px; padding-left: 0; text-align: left; white-space: nowrap; font-weight: 500; }
+.prod-grade-tab .zero { color: var(--cor-perigo); }
+.prod-grade-tab .pouco { color: var(--cor-alerta); }
+.prod-grade-tab .vazio { color: var(--cor-texto-3); font-weight: 400; }
+.prod-grade .btn { margin-left: auto; min-height: 36px; }
+.produto-cartao .prod-grade { padding: 10px; overflow-x: auto; }
+.produto-cartao .prod-grade .btn { margin-left: 0; }
+
+/* Celular: cada produto numa linha compacta (foto, nome, preço e estoque) */
+@media (max-width: 767px) {
+  .tabela-produtos tbody tr:not(.prod-detalhe) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; padding: 12px 14px; }
+  .tabela-produtos tbody tr.aberto { border-bottom: 0; padding-bottom: 6px; }
+  .tabela-produtos td.cel-principal { grid-column: 1 / -1; padding-bottom: 4px; }
+  .tabela-produtos td[data-label="Categoria"], .tabela-produtos td[data-label="Tamanhos e cores"], .tabela-produtos td[data-label="NCM"] { display: none !important; }
+  .tabela-produtos td[data-label="Preço"], .tabela-produtos td[data-label="Estoque"] { padding: 0 0 0 56px !important; justify-content: flex-start !important; }
+  .tabela-produtos td[data-label="Preço"]::before, .tabela-produtos td[data-label="Estoque"]::before { display: none; }
+  .tabela-produtos td[data-label="Preço"] .preco-bloco { align-items: flex-start; }
+  .tabela-produtos td[data-label="Estoque"] { grid-row: 2; grid-column: 2; padding-left: 0 !important; }
+  .tabela-produtos td[data-label="Estoque"] .estoque-mini { align-items: flex-end; min-width: 0; }
+  .tabela-produtos td[data-label="Estoque"] .nivel-barra { width: 64px; }
+  .tabela-produtos td.col-acoes { grid-column: 1 / -1; padding-top: 4px !important; gap: 2px; }
+  .tabela-produtos td.col-acoes .btn-icone { width: 38px !important; height: 38px !important; }
+  .tabela-produtos tr.prod-detalhe { padding: 0 14px 14px; }
+  .tabela-produtos tr.prod-detalhe > td { display: block; padding: 0 !important; }
+  .tabela-produtos tr.prod-detalhe > td::before { display: none; }
+  .prod-grade { overflow-x: auto; }
+  .prod-grade .btn { margin-left: 0; }
+}

@@ -9,6 +9,7 @@ App.aoIniciar(async () => {
   const form = document.getElementById('form-produto');
   const corpoGrade = document.getElementById('grade');
   const idEdicao = App.parametroUrl('id');
+  const idCopia = idEdicao ? '' : App.parametroUrl('copiar');   // "Duplicar" na lista de produtos
 
   // Estado da grade
   const selecionados = { tamanhos: new Set(), cores: new Set() };
@@ -458,14 +459,15 @@ App.aoIniciar(async () => {
   /* ==================================================================
      EDIÇÃO: carrega produto existente
      ================================================================== */
-  if (idEdicao) {
+  if (idEdicao || idCopia) {
     try {
-      produtoOriginal = await Data.obterProduto(idEdicao);
-      document.getElementById('titulo-form').textContent = 'Editar produto';
-      document.body.dataset.tituloAba = 'Editar produto';
+      const p = await Data.obterProduto(idEdicao || idCopia);
+      if (idEdicao) produtoOriginal = p;
+      const titulo = idEdicao ? 'Editar produto' : 'Novo produto (cópia)';
+      document.getElementById('titulo-form').textContent = titulo;
+      document.body.dataset.tituloAba = titulo;
       App.aplicarMarcaLoja(await Data.obterLoja());
-      const p = produtoOriginal;
-      form.produtoId.value = p.id;
+      if (idEdicao) form.produtoId.value = p.id;
       form.nome.value = p.nome;
       form.marca.value = p.marca;
       form.categoria.value = p.categoria;
@@ -480,9 +482,11 @@ App.aoIniciar(async () => {
       mostrarFoto(p.foto);
       fotosCores = { ...(p.fotosCores || {}) };
       fotosExtras = [...(p.fotosExtras || [])];
-      variacoes = p.variacoes.map((v) => ({ ...v }));
-      variacoes.forEach((v) => { selecionados.tamanhos.add(v.tamanho); selecionados.cores.add(v.cor); if (!tamanhos.includes(v.tamanho)) tamanhos.push(v.tamanho); });
-      document.getElementById('btn-salvar-outro').hidden = true;
+      // Cópia: mesmos tamanhos e cores, mas códigos novos e estoque zerado
+      variacoes = idEdicao ? p.variacoes.map((v) => ({ ...v })) : [];
+      p.variacoes.forEach((v) => { selecionados.tamanhos.add(v.tamanho); selecionados.cores.add(v.cor); if (!tamanhos.includes(v.tamanho)) tamanhos.push(v.tamanho); });
+      if (idEdicao) document.getElementById('btn-salvar-outro').hidden = true;
+      else { App.toast('Cópia pronta: troque o nome, a cor ou o que precisar e informe as quantidades.'); setTimeout(() => { form.nome.focus(); form.nome.select(); }, 50); }
       if (p.colecao || p.fornecedorId || p.ncm) document.getElementById('pf-mais').open = true;
     } catch (e) {
       App.toast('Produto não encontrado.', 'erro');
@@ -518,6 +522,13 @@ App.aoIniciar(async () => {
     const codigos = variacoes.map((v) => v.codigoBarras).filter(Boolean);
     if (new Set(codigos).size !== codigos.length) return App.toast('Há códigos de barras repetidos na grade.', 'erro');
 
+    if (!idEdicao) {
+      const pref = prefixoSku();
+      for (const v of variacoes) {
+        let k = 2;
+        while (await Data.buscarPorCodigo(v.sku) && k < 100) { v.sku = `${pref}${k}-${v.tamanho}-${sigla(v.cor)}`; k++; }
+      }
+    }
     const dados = App.lerFormulario(form);
     if (envioFoto) {
       App.toast('Terminando de enviar a foto…');

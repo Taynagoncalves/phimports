@@ -479,6 +479,10 @@ App.aoIniciar(async () => {
   await atualizarIndicadores();
   App.preencherSelect(form.produtoId, produtos.map((p) => ({ valor: p.id, texto: p.nome })), { vazio: 'Todos os produtos' });
   form.dataInicio.value = App.diasAtras(30);
+  // Vindo de Produtos ("Ajustar estoque"): já mostra só aquele produto
+  const produtoUrl = App.parametroUrl('produto');
+  const prodUrl = produtos.find((p) => p.id === produtoUrl);
+  if (prodUrl) { form.produtoId.value = prodUrl.id; if (pBusca) pBusca.value = prodUrl.nome; }
   form.dataFim.value = App.dataInput();
 
   form.addEventListener('submit', (e) => e.preventDefault());

@@ -7,8 +7,11 @@ App.aoIniciar(async () => {
   let pagina = 1;
   let produtos = [];
   let visao = 'lista';
+  let situacao = '';      // '', 'baixo', 'esgotado', 'semfoto', 'promo'
+  let todos = [];         // todos os produtos (para o resumo e as contagens)
+  const abertos = new Set(); // produtos com a grade de estoque aberta
   try { visao = localStorage.getItem(CHAVE_VISAO) === 'cartoes' ? 'cartoes' : 'lista'; } catch (e) { /* ignora */ }
-  const porPagina = () => (visao === 'cartoes' ? 12 : 10);
+  const porPagina = () => (visao === 'cartoes' ? 12 : 20);
 
   const form = document.getElementById('filtros');
   const corpo = document.getElementById('lista-produtos');
@@ -35,7 +38,8 @@ App.aoIniciar(async () => {
 
   /* ---------- Abas de categoria (com contagem) ---------- */
   async function desenharAbas() {
-    const todos = await Data.listarProdutos();
+    todos = await Data.listarProdutos();
+    desenharResumo();
     const contar = (c) => todos.filter((p) => !c || p.categoria === c).length;
     const el = document.getElementById('abas-categorias');
     el.innerHTML = ['', ...categorias].map((c) => `
@@ -47,6 +51,60 @@ App.aoIniciar(async () => {
       el.querySelectorAll('[data-cat]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
       carregar();
     }));
+  }
+
+  /* ---------- Resumo do estoque e filtros de situação ---------- */
+  const SITUACOES = [
+    ['', 'Todos', () => true],
+    ['baixo', 'Estoque baixo', (p) => p.estoqueTotal > 0 && p.estoqueBaixo],
+    ['esgotado', 'Esgotados', (p) => p.estoqueTotal === 0],
+    ['semfoto', 'Sem foto', (p) => !p.foto],
+    ['promo', 'Em promoção', (p) => !!(p.precoPromocional || p.promocao)]
+  ];
+  const filtroSituacao = (s) => (SITUACOES.find((x) => x[0] === s) || SITUACOES[0])[2];
+
+  function desenharResumo() {
+    const pecas = todos.reduce((s, p) => s + (p.estoqueTotal || 0), 0);
+    const venda = todos.reduce((s, p) => s + (p.estoqueTotal || 0) * (p.precoPromocional || p.preco || 0), 0);
+    const custo = todos.reduce((s, p) => s + (p.estoqueTotal || 0) * (p.custo || 0), 0);
+    const baixo = todos.filter(filtroSituacao('baixo')).length;
+    const esgotado = todos.filter(filtroSituacao('esgotado')).length;
+    const card = (rot, valor, sub, acao = '', classe = '') => `<${acao ? 'button type="button"' : 'div'} class="prod-kpi ${classe}" ${acao ? `data-ir-situacao="${acao}"` : ''}><span>${rot}</span><strong>${valor}</strong><small>${sub}</small></${acao ? 'button' : 'div'}>`;
+    document.getElementById('prod-resumo').innerHTML = [
+      card('Produtos', todos.length, `${pecas} peça${pecas === 1 ? '' : 's'} na loja`),
+      card('Valor em estoque', App.formatarMoeda(venda), custo && App.pode('gerenciar-produtos') ? `custou ${App.formatarMoeda(custo)}` : 'pelo preço de venda'),
+      card('Estoque baixo', baixo, baixo ? 'ver quais repor →' : 'tudo em dia', baixo ? 'baixo' : '', baixo ? 'atencao' : ''),
+      card('Esgotados', esgotado, esgotado ? 'ver quais →' : 'nenhum', esgotado ? 'esgotado' : '', esgotado ? 'perigo' : '')
+    ].join('');
+    document.querySelectorAll('[data-ir-situacao]').forEach((b) => b.addEventListener('click', () => { situacao = b.dataset.irSituacao; carregar(); document.getElementById('prod-situacao').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }));
+    desenharSituacoes();
+  }
+  function desenharSituacoes() {
+    const el = document.getElementById('prod-situacao');
+    el.innerHTML = SITUACOES.map(([v, t, f]) => {
+      const n = v ? todos.filter(f).length : todos.length;
+      return `<button type="button" class="prod-sit${v === situacao ? ' ativo' : ''}" data-situacao="${v}" aria-pressed="${v === situacao}">${t}<span>${n}</span></button>`;
+    }).join('');
+    el.querySelectorAll('[data-situacao]').forEach((b) => b.addEventListener('click', () => { situacao = b.dataset.situacao; carregar(); }));
+  }
+
+  /* ---------- Grade de estoque (cor × tamanho) que abre na linha ---------- */
+  function htmlGradeEstoque(p) {
+    const tams = [...new Set(p.variacoes.map((v) => v.tamanho))];
+    const crs = [...new Set(p.variacoes.map((v) => v.cor))];
+    const q = (t, c) => p.variacoes.find((v) => v.tamanho === t && v.cor === c);
+    return `<div class="prod-grade">
+      <div class="prod-grade-tab" style="grid-template-columns:auto repeat(${tams.length}, minmax(38px, auto))">
+        <span></span>${tams.map((t) => `<b>${App.escapeHtml(t)}</b>`).join('')}
+        ${crs.map((c) => `<span class="prod-grade-cor">${App.bolinhaCor(c)}${App.escapeHtml(c)}</span>${tams.map((t) => {
+          const v = q(t, c);
+          if (!v) return '<i class="vazio">—</i>';
+          const n = Number(v.estoque) || 0;
+          return `<i class="${n === 0 ? 'zero' : n <= 1 ? 'pouco' : ''}" title="${App.escapeHtml(v.sku)}">${n}</i>`;
+        }).join('')}`).join('')}
+      </div>
+      ${App.pode('movimentar-estoque') && App.podeAcessar('estoque') ? `<a class="btn btn-secundario" href="estoque.html?produto=${encodeURIComponent(p.id)}"><i data-lucide="arrow-left-right"></i>Ajustar estoque</a>` : ''}
+    </div>`;
   }
 
   /* ---------- NCM (ncmEfetivo/ncmOrigem vêm calculados de data.js) ---------- */
@@ -82,23 +140,26 @@ App.aoIniciar(async () => {
     if (form.tamanho.value) ativos.push(['tamanho', `Tamanho: ${form.tamanho.value}`]);
     if (form.cor.value) ativos.push(['cor', `Cor: ${form.cor.value}`]);
     if (form.ncm.value) ativos.push(['ncm', rotulosNcm[form.ncm.value]]);
+    if (situacao) ativos.push(['situacao', (SITUACOES.find((x) => x[0] === situacao) || [])[1]]);
     const el = document.getElementById('filtros-ativos');
     el.innerHTML = ativos.length ? ativos.map(([campo, texto]) => `
       <button type="button" class="filtro-ativo" data-limpar="${campo}" aria-label="Remover filtro ${App.escapeHtml(texto)}">${App.escapeHtml(texto)}<i data-lucide="x"></i></button>`).join('')
       + '<button type="button" class="btn btn-fantasma" id="limpar-tudo" style="min-height:30px">Limpar filtros</button>' : '';
-    el.querySelectorAll('[data-limpar]').forEach((b) => b.addEventListener('click', () => { form[b.dataset.limpar].value = ''; carregar(); }));
+    el.querySelectorAll('[data-limpar]').forEach((b) => b.addEventListener('click', () => { if (b.dataset.limpar === 'situacao') situacao = ''; else form[b.dataset.limpar].value = ''; carregar(); }));
     document.getElementById('limpar-tudo')?.addEventListener('click', () => { limparFiltros(true); carregar(); });
   }
   function limparFiltros(manterCategoria) {
     const cat = form.categoria.value;
     form.reset();
+    situacao = '';
     form.categoria.value = manterCategoria ? cat : '';
     if (!manterCategoria) document.querySelectorAll('#abas-categorias [data-cat]').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.cat === '')));
   }
 
   /* ---------- Carregar e desenhar ---------- */
   async function carregar() {
-    produtos = await Data.listarProdutos(App.lerFormulario(form));
+    produtos = (await Data.listarProdutos(App.lerFormulario(form))).filter(filtroSituacao(situacao));
+    desenharSituacoes();
     ordenar();
     pagina = 1;
     desenhar();
@@ -144,18 +205,19 @@ App.aoIniciar(async () => {
     const nivel = Math.max(4, Math.min(100, Math.round((p.estoqueTotal / ref) * 100)));
     const texto = sit === 'zerado' ? 'Esgotado' : `${p.estoqueTotal} un.`;
     return `<div class="estoque-mini ${sit}" title="Mínimo: ${p.estoqueMinimo || 0}">
-      <span class="estoque-mini-texto">${texto}</span>
+      <span class="estoque-mini-texto">${texto}${p.variacoes.length > 1 ? `<button type="button" class="prod-abrir" data-abrir="${p.id}" aria-expanded="${abertos.has(p.id)}" aria-label="Ver estoque por tamanho e cor de ${App.escapeHtml(p.nome)}" title="Ver por tamanho e cor"><i data-lucide="chevron-down"></i></button>` : ''}</span>
       <span class="nivel-barra ${sit}"><span style="width:${sit === 'zerado' ? 0 : nivel}%"></span></span>
     </div>`;
   }
   function htmlAcoes(p) {
     return `<a href="etiquetas.html?produto=${p.id}" class="btn-icone" aria-label="Etiquetas de ${App.escapeHtml(p.nome)}" title="Imprimir etiquetas"><i data-lucide="tag"></i></a>
-      ${podeGerenciar ? `<a href="produto-form.html?id=${p.id}" class="btn-icone" aria-label="Editar ${App.escapeHtml(p.nome)}" title="Editar"><i data-lucide="pencil"></i></a>
+      ${podeGerenciar ? `<a href="produto-form.html?copiar=${p.id}" class="btn-icone" aria-label="Duplicar ${App.escapeHtml(p.nome)}" title="Duplicar (cadastrar outro parecido)"><i data-lucide="copy-plus"></i></a>
+      <a href="produto-form.html?id=${p.id}" class="btn-icone" aria-label="Editar ${App.escapeHtml(p.nome)}" title="Editar"><i data-lucide="pencil"></i></a>
       <button type="button" class="btn-icone perigo" data-excluir="${p.id}" aria-label="Excluir ${App.escapeHtml(p.nome)}" title="Excluir"><i data-lucide="trash-2"></i></button>` : ''}`;
   }
 
   function htmlVazio() {
-    const temFiltro = Object.values(App.lerFormulario(form)).some(Boolean);
+    const temFiltro = !!situacao || Object.values(App.lerFormulario(form)).some(Boolean);
     const somenteSemNcm = form.ncm.value === 'sem' && !Object.entries(App.lerFormulario(form)).some(([k, v]) => k !== 'ncm' && v);
     return somenteSemNcm
       ? App.estadoVazio({ icone: 'circle-check', titulo: 'Nenhum produto sem NCM', texto: 'Todos os produtos têm NCM (próprio ou da categoria) e podem sair na NFC-e.', acao: '<button type="button" class="btn btn-secundario" data-limpar-vazio>Ver todos os produtos</button>' })
@@ -186,7 +248,7 @@ App.aoIniciar(async () => {
 
     if (visao === 'lista') {
       corpo.innerHTML = pag.itens.map((p) => `
-        <tr>
+        <tr class="${abertos.has(p.id) ? 'aberto' : ''}">
           <td class="cel-principal">
             <a class="produto-cel produto-link" ${podeGerenciar ? `href="produto-form.html?id=${p.id}"` : ''}>
               ${App.thumb(p)}
@@ -202,7 +264,7 @@ App.aoIniciar(async () => {
           <td data-label="Preço" class="num"><div class="preco-bloco">${htmlPreco(p)}</div></td>
           <td data-label="Estoque">${htmlEstoque(p)}</td>
           <td class="col-acoes">${htmlAcoes(p)}</td>
-        </tr>`).join('');
+        </tr>${abertos.has(p.id) ? `<tr class="prod-detalhe"><td colspan="7">${htmlGradeEstoque(p)}</td></tr>` : ''}`).join('');
     } else {
       cartoes.innerHTML = pag.itens.map((p) => `
         <article class="produto-cartao">
@@ -218,6 +280,7 @@ App.aoIniciar(async () => {
             </div>
             <div class="preco-bloco preco-cartao">${htmlPreco(p)}</div>
             ${htmlGrade(p)}
+            ${abertos.has(p.id) ? htmlGradeEstoque(p) : ''}
             <div class="produto-cartao-rodape">
               ${htmlEstoque(p)}
               <span class="produto-cartao-acoes">${htmlAcoes(p)}</span>
@@ -225,6 +288,13 @@ App.aoIniciar(async () => {
           </div>
         </article>`).join('');
     }
+
+    document.querySelectorAll('[data-abrir]').forEach((b) => b.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const id = b.dataset.abrir;
+      abertos.has(id) ? abertos.delete(id) : abertos.add(id);
+      desenhar();
+    }));
 
     // Exclusão com confirmação
     document.querySelectorAll('[data-excluir]').forEach((b) => b.addEventListener('click', async () => {
@@ -238,6 +308,7 @@ App.aoIniciar(async () => {
       desenharAbas();
       atualizarAvisoNcm();
     }));
+
 
     const alvoPag = visao === 'lista' ? 'paginacao' : 'paginacao-cartoes';
     document.getElementById('paginacao-cartoes-card').hidden = visao !== 'cartoes' || produtos.length <= porPagina();
