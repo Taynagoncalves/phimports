@@ -2083,7 +2083,7 @@ button.pd-kpi:hover { border-color: var(--cor-borda-forte); box-shadow: 0 8px 22
 .pd-busca svg { position: absolute; left: 12px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--cor-texto-3); pointer-events: none; }
 .pd-busca .input { padding-left: 36px; min-height: 40px; }
 .pd-ordem { min-height: 36px; font-size: var(--fs-sm); }
-.pd-filtros { display: flex; gap: 6px; padding: 10px 12px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--cor-borda); }
+.pd-filtros { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--cor-borda); }
 .pd-filtros::-webkit-scrollbar { display: none; }
 .pd-filtros button { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--cor-borda); border-radius: 999px; background: none; color: var(--cor-texto-2); font: inherit; font-size: var(--fs-xs); font-weight: 600; cursor: pointer; }
 .pd-filtros button span { min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--cor-fundo); font-size: 10.5px; line-height: 17px; text-align: center; }
