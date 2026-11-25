@@ -624,7 +624,7 @@ App.aoIniciar(async () => {
     btnAdd.disabled = !parcial;
     $('texto-add-pagamento').textContent = parcial
       ? `Lançar ${App.formatarMoeda(atualP.valor)} no ${App.FORMAS_CURTAS[atualP.forma] || 'pagamento'} e pagar o resto com outra forma`
-      : atualP ? 'Este valor completa o pagamento — é só finalizar (F9)'
+      : atualP ? 'Este valor completa o pagamento — é só apertar Enter para finalizar'
       : (formaPagamento ? 'Digite o valor desta parte' : 'Escolha a forma desta parte');
     App.icones();
   }
@@ -889,7 +889,7 @@ App.aoIniciar(async () => {
   $('form-busca').addEventListener('submit', async (e) => {
     e.preventDefault();
     const termo = inputBusca.value.trim();
-    if (!termo) return;
+    if (!termo) { if (carrinho.length) finalizarPeloEnter(); return; }
     const achado = await Data.buscarPorCodigo(termo);
     inputBusca.value = '';
     if (achado) { lerCodigo(achado); return; }
@@ -899,6 +899,8 @@ App.aoIniciar(async () => {
     else abrirConsulta(termo);
   });
   $('btn-consultar').addEventListener('click', () => abrirConsulta(inputBusca.value.trim()));
+  // O formulário tem dois campos e nenhum botão de enviar: o navegador não envia sozinho no Enter
+  inputBusca.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.defaultPrevented) { e.preventDefault(); $('form-busca').requestSubmit(); } });
 
   /* ==================================================================
      LEITOR DE CÓDIGO DE BARRAS EM QUALQUER LUGAR DA TELA
@@ -1084,12 +1086,7 @@ App.aoIniciar(async () => {
         inputBusca.focus();
         return true;
       case 'F9':
-        if (!btnFinalizar.disabled) finalizar();
-        else {
-          const motivo = $('motivo-bloqueio').textContent || 'Escolha a forma de pagamento.';
-          App.toast(motivo, 'aviso');
-          if (carrinho.length && !formaPagamento && !pagamentos.length) focarNoPainel(document.querySelector('[data-forma]'));
-        }
+        finalizarPeloEnter(true);
         return true;
     }
     return false;
@@ -1102,6 +1099,32 @@ App.aoIniciar(async () => {
     if (['F2', 'F3', 'F4', 'F8', 'F9', 'Delete'].includes(e.key) && executarTecla(e.key)) e.preventDefault();
   });
   document.querySelectorAll('[data-tecla]').forEach((b) => b.addEventListener('click', () => executarTecla(b.dataset.tecla)));
+
+  /* ---------- Enter para finalizar ----------
+     Vale quando o pagamento está completo e o Enter não é de um código lido
+     (campo do código vazio, ou cursor fora dos campos / nos botões de pagamento). */
+  let ultimoEnterFinalizar = 0;
+  function finalizarPeloEnter(avisar = false) {
+    if (Date.now() - ultimoEnterFinalizar < 1500) return;   // Enter repetido não finaliza duas vezes
+    if (!btnFinalizar.disabled) { ultimoEnterFinalizar = Date.now(); finalizar(); return; }
+    if (!avisar && !carrinho.length) return;
+    App.toast($('motivo-bloqueio').textContent || 'Escolha a forma de pagamento.', 'aviso');
+    if (carrinho.length && !formaPagamento && !pagamentos.length) focarNoPainel(document.querySelector('[data-forma]'));
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey) return;
+    if (document.querySelector('.modal-overlay')) return;
+    const alvo = e.target instanceof Element ? e.target : document.body;
+    // Campos e botões cuidam do próprio Enter; exceções: desconto, botões de forma de pagamento e R$/%
+    const livre = alvo === document.body || alvo === document.documentElement
+      || alvo === inputDesconto || alvo.matches('[data-forma], [data-desc], #cliente');
+    if (!livre) return;
+    if (!carrinho.length) return;
+    // Nos botões de pagamento, o Enter só finaliza com tudo pago (senão o botão faz o dele)
+    if (alvo.matches('[data-forma], [data-desc]') && btnFinalizar.disabled) return;
+    e.preventDefault();
+    finalizarPeloEnter();
+  });
 
   /* ==================================================================
      FINALIZAR VENDA
