@@ -199,7 +199,25 @@
             <label><input type="radio" name="entrega" value="entregar"><span>Enviar para mim</span></label>
           </div>
         </div>
-        <label class="campo" id="f-endereco-bloco" hidden><span>Endereço completo <small>· enviamos para todo o Brasil</small></span><input id="f-endereco" autocomplete="street-address" maxlength="160" placeholder="Rua, número, bairro, cidade/UF e CEP"></label>
+        <div class="endereco" id="f-endereco-bloco" hidden>
+          <span class="endereco-titulo">Endereço de entrega <small>· enviamos para todo o Brasil</small></span>
+          <div class="endereco-cep">
+            <label class="campo"><span>CEP</span><input id="f-cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000"></label>
+            <a class="nao-sei-cep" href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" rel="noopener">Não sei meu CEP</a>
+          </div>
+          <p class="cep-status" id="f-cep-status" aria-live="polite"></p>
+          <label class="campo"><span>Rua</span><input id="f-rua" autocomplete="address-line1" maxlength="80" placeholder="Nome da rua"></label>
+          <div class="endereco-dupla">
+            <label class="campo"><span>Número</span><input id="f-numero" inputmode="text" maxlength="10" placeholder="Ex.: 87"></label>
+            <label class="campo"><span>Complemento <small>· opcional</small></span><input id="f-compl" maxlength="40" placeholder="Apto, bloco…"></label>
+          </div>
+          <label class="campo"><span>Bairro</span><input id="f-bairro" maxlength="50"></label>
+          <div class="endereco-dupla cidade">
+            <label class="campo"><span>Cidade</span><input id="f-cidade" autocomplete="address-level2" maxlength="50"></label>
+            <label class="campo"><span>UF</span><input id="f-uf" autocomplete="address-level1" maxlength="2"></label>
+          </div>
+          <input type="hidden" id="f-endereco">
+        </div>
         <label class="campo"><span>Observação <small>· opcional</small></span><input id="f-obs" maxlength="140" placeholder="Ex.: é para presente"></label>
 
         <div class="envio">

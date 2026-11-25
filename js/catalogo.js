@@ -979,7 +979,51 @@
   document.querySelectorAll('input[name=entrega]').forEach((r) => r.addEventListener('change', () => {
     $('f-endereco-bloco').hidden = document.querySelector('input[name=entrega]:checked').value !== 'entregar';
   }));
-  ['f-nome', 'f-fone', 'f-endereco'].forEach((id) => $(id).addEventListener('input', () => $(id).classList.remove('erro')));
+  ['f-nome', 'f-fone', 'f-cep', 'f-rua', 'f-numero', 'f-bairro', 'f-cidade', 'f-uf'].forEach((id) => $(id).addEventListener('input', () => $(id).classList.remove('erro')));
+
+  /* ---------- Endereço: digita o CEP e o resto aparece sozinho ---------- */
+  const CAMPOS_END = ['f-cep', 'f-rua', 'f-numero', 'f-compl', 'f-bairro', 'f-cidade', 'f-uf'];
+  function montarEndereco() {
+    const v = (id) => $(id).value.trim();
+    const cep = digitos(v('f-cep'));
+    const linha1 = [v('f-rua'), v('f-numero')].filter(Boolean).join(', ') + (v('f-compl') ? ` - ${v('f-compl')}` : '');
+    const cidade = [v('f-cidade'), v('f-uf').toUpperCase()].filter(Boolean).join('/');
+    $('f-endereco').value = [linha1, v('f-bairro'), cidade, cep.length === 8 ? `CEP ${cep.slice(0, 5)}-${cep.slice(5)}` : ''].filter(Boolean).join(' — ').slice(0, 160);
+  }
+  CAMPOS_END.forEach((id) => $(id).addEventListener('input', montarEndereco));
+  let ultimoCep = '';
+  async function buscarCep() {
+    const cep = digitos($('f-cep').value);
+    const st = $('f-cep-status');
+    if (cep.length !== 8) { st.textContent = ''; st.className = 'cep-status'; ultimoCep = ''; return; }
+    if (cep === ultimoCep) return;
+    ultimoCep = cep;
+    st.textContent = 'Buscando endereço…'; st.className = 'cep-status';
+    try {
+      const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const d = await resp.json();
+      if (digitos($('f-cep').value) !== cep) return;          // digitou outro CEP enquanto buscava
+      if (!resp.ok || d.erro) { st.textContent = 'CEP não encontrado. Confira o número ou preencha o endereço abaixo.'; st.className = 'cep-status erro'; return; }
+      if (d.logradouro) $('f-rua').value = d.logradouro;
+      if (d.bairro) $('f-bairro').value = d.bairro;
+      $('f-cidade').value = d.localidade || '';
+      $('f-uf').value = d.uf || '';
+      st.textContent = `✓ ${[d.localidade, d.uf].filter(Boolean).join('/')}`; st.className = 'cep-status ok';
+      ['f-rua', 'f-bairro', 'f-cidade', 'f-uf'].forEach((id) => $(id).classList.remove('erro'));
+      montarEndereco();
+      // CEP de rua: falta só o número. CEP da cidade toda: falta a rua.
+      (d.logradouro ? $('f-numero') : $('f-rua')).focus();
+    } catch (e) {
+      st.textContent = 'Não deu para buscar o CEP agora. Preencha o endereço abaixo.'; st.className = 'cep-status erro';
+      ultimoCep = '';
+    }
+  }
+  $('f-cep').addEventListener('input', () => {
+    const d = digitos($('f-cep').value).slice(0, 8);
+    $('f-cep').value = d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+    buscarCep();
+  });
+  $('f-uf').addEventListener('input', () => { $('f-uf').value = $('f-uf').value.replace(/[^a-z]/gi, '').toUpperCase(); montarEndereco(); });
   $('form-pedido').addEventListener('submit', (ev) => ev.preventDefault());
 
   const digitos = (t) => String(t || '').replace(/\D/g, '');
@@ -995,8 +1039,14 @@
     const obs = $('f-obs').value.trim();
     if (!nome) return marcarErro('f-nome', 'Informe seu nome.');
     if (modo === 'loja' && digitos(fone).length < 10) return marcarErro('f-fone', 'Informe seu WhatsApp com DDD para a loja te chamar.');
-    if (entrega === 'entregar' && !endereco) return marcarErro('f-endereco', 'Informe o endereço com CEP.');
-    try { localStorage.setItem(CHAVE_CLIENTE, JSON.stringify({ nome, endereco, fone })); } catch (e) { /* ignora */ }
+    if (entrega === 'entregar') {
+      if (digitos($('f-cep').value).length !== 8) return marcarErro('f-cep', 'Informe o CEP.');
+      if (!$('f-rua').value.trim()) return marcarErro('f-rua', 'Informe a rua.');
+      if (!$('f-numero').value.trim()) return marcarErro('f-numero', 'Informe o número (ou "s/n").');
+      if (!$('f-bairro').value.trim()) return marcarErro('f-bairro', 'Informe o bairro.');
+      if (!$('f-cidade').value.trim() || $('f-uf').value.trim().length !== 2) return marcarErro($('f-cidade').value.trim() ? 'f-uf' : 'f-cidade', 'Informe a cidade e o estado (UF).');
+    }
+    try { localStorage.setItem(CHAVE_CLIENTE, JSON.stringify({ nome, endereco, fone, end: Object.fromEntries(CAMPOS_END.map((id) => [id, $(id).value.trim()])) })); } catch (e) { /* ignora */ }
     const codigo = codigoPedido();
     return {
       id: 'ped' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
@@ -1137,7 +1187,7 @@
     if (!dados || !dados.publicado) { $('estado').textContent = 'Este catálogo não está disponível no momento.'; tirarAbertura(); return; }
     cat = { ...dados, produtos: dados.produtos || [] };
     if (cat.entrega === false) $('f-entrega-bloco').hidden = true;
-    try { const c = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || '{}'); $('f-nome').value = c.nome || ''; $('f-endereco').value = c.endereco || ''; $('f-fone').value = c.fone || ''; } catch (e) { /* ignora */ }
+    try { const c = JSON.parse(localStorage.getItem(CHAVE_CLIENTE) || '{}'); $('f-nome').value = c.nome || ''; $('f-fone').value = c.fone || ''; if (c.end) { CAMPOS_END.forEach((id) => { $(id).value = c.end[id] || ''; }); ultimoCep = digitos(c.end['f-cep']); montarEndereco(); } else if (c.endereco) { $('f-rua').value = c.endereco.slice(0, 80); montarEndereco(); } } catch (e) { /* ignora */ }
     desenharMarca();
     aplicarTema(temaPrevia || cat.tema || {});
     desenharFundoCinema();
