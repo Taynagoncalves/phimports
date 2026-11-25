@@ -124,7 +124,7 @@ App.aoIniciar(async () => {
 
   /* ---------- Zerar dados (antes de entregar a loja) ---------- */
   const GRUPOS_ZERAR = [
-    ['vendas', 'Vendas e trocas', 'Vendas, trocas, vales-troca, crediário, caixas e notas. Dashboard e relatórios voltam a zero e as vendas recomeçam no nº 1001.', ['vendas', 'notas', 'creditos', 'caixas', 'contasReceber', 'ajustesPontos']],
+    ['vendas', 'Vendas, trocas e pedidos online', 'Vendas, trocas, vales-troca, crediário, caixas, notas e pedidos do catálogo. Dashboard e relatórios voltam a zero e as vendas recomeçam no nº 1001.', ['vendas', 'notas', 'creditos', 'caixas', 'contasReceber', 'ajustesPontos', 'pedidos']],
     ['produtos', 'Produtos e estoque', 'Produtos, estoque, entradas, movimentações, inventários e promoções.', ['produtos', 'movimentacoes', 'entradas', 'inventarios', 'promocoes']],
     ['clientes', 'Clientes e fornecedores', 'Todos os clientes e fornecedores cadastrados.', ['clientes', 'fornecedores']],
     ['financeiro', 'Contas a pagar', 'Contas a pagar lançadas no Financeiro.', ['contasPagar']]
@@ -142,8 +142,12 @@ App.aoIniciar(async () => {
               <span><strong class="texto-sm">${titulo}</strong><br><span class="texto-xs texto-3">${texto}</span></span>
             </label>`).join('')}
         </div>
-        <div class="alerta mt-4" style="align-items:flex-start"><i data-lucide="triangle-alert"></i>
-          <span>Antes de apagar, o sistema <strong>baixa um backup</strong> no seu computador (dá para desfazer em "Backup → Restaurar").</span></div>
+        <label class="flex gap-3 mt-4" style="align-items:flex-start;padding:12px;border:1px solid var(--cor-borda);border-radius:10px;cursor:pointer">
+          <input type="checkbox" id="zr-backup" checked style="margin-top:3px">
+          <span><strong class="texto-sm">Baixar backup antes de apagar</strong><br><span class="texto-xs texto-3">Guarda uma cópia no seu computador (dá para desfazer em "Backup → Restaurar"). Desmarque para apagar direto, sem cópia.</span></span>
+        </label>
+        <div class="alerta mt-4" style="align-items:flex-start" id="zr-aviso"><i data-lucide="triangle-alert"></i>
+          <span id="zr-aviso-texto">Antes de apagar, o sistema <strong>baixa um backup</strong> no seu computador.</span></div>
         <div class="campo mt-4">
           <label for="zr-confirma">Para confirmar, digite o nome da loja: <strong>${App.escapeHtml(l.nome)}</strong></label>
           <input class="input" id="zr-confirma" autocomplete="off">
@@ -154,6 +158,18 @@ App.aoIniciar(async () => {
       ]
     });
     App.icones();
+    // Com ou sem backup: o texto do aviso e do botão acompanham
+    const chkBackup = el.querySelector('#zr-backup');
+    const botaoZerar = [...el.querySelectorAll('button')].find((b) => b.textContent.includes('zerar'));
+    function atualizarBackup() {
+      const com = chkBackup.checked;
+      el.querySelector('#zr-aviso-texto').innerHTML = com
+        ? 'Antes de apagar, o sistema <strong>baixa um backup</strong> no seu computador.'
+        : '<strong>Sem backup:</strong> o que for apagado <strong>não tem como recuperar</strong>.';
+      el.querySelector('#zr-aviso').classList.toggle('perigo', !com);
+      if (botaoZerar) botaoZerar.lastChild.textContent = com ? 'Baixar backup e zerar' : 'Zerar sem backup';
+    }
+    chkBackup.addEventListener('change', atualizarBackup);
 
     async function zerar(_, botao) {
       const grupos = [...el.querySelectorAll('[data-grupo]')].filter((c) => c.checked).map((c) => c.dataset.grupo);
@@ -161,11 +177,16 @@ App.aoIniciar(async () => {
       const digitado = el.querySelector('#zr-confirma').value.trim().toLowerCase();
       if (digitado !== String(l.nome).trim().toLowerCase()) return App.toast('Digite o nome da loja exatamente como aparece.', 'erro');
       const colecoes = GRUPOS_ZERAR.filter((g) => grupos.includes(g[0])).flatMap((g) => g[3]);
+      const comBackup = el.querySelector('#zr-backup').checked;
+      if (!comBackup) {
+        const ok = await App.confirmar({ titulo: 'Apagar sem backup?', mensagem: `Os dados marcados de ${l.nome} serão apagados para sempre, sem cópia. Não tem como desfazer.`, textoConfirmar: 'Apagar sem backup', perigo: true });
+        if (!ok) return;
+      }
       botao.disabled = true;
       try {
-        await baixarBackup(l);
+        if (comBackup) await baixarBackup(l);
         const n = await Data.admin.zerarLoja(l.id, colecoes);
-        App.toast(`Pronto! ${n} registro(s) apagado(s). O backup foi baixado antes.`, 'sucesso', 8000);
+        App.toast(`Pronto! ${n} registro(s) apagado(s).${comBackup ? ' O backup foi baixado antes.' : ''}`, 'sucesso', 8000);
         fechar(); carregar();
       } catch (er) { App.toast(er.message, 'erro', 7000); botao.disabled = false; }
     }

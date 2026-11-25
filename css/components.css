@@ -2269,3 +2269,5 @@ button.pd-kpi:hover { border-color: var(--cor-borda-forte); box-shadow: 0 8px 22
   .pd-qtd { font-size: var(--fs-xs); }
   .pd-rodape:has(> .btn:only-child) { justify-content: center; }
 }
+
+.alerta.perigo { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
