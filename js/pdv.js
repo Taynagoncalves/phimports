@@ -775,7 +775,8 @@ App.aoIniciar(async () => {
     const vendas = await Data.listarVendas();
     proximoNumero = vendas.reduce((m, v) => Math.max(m, Number(v.numero) || 0), 0) + 1;
     const aviso = $('aviso-caixa');
-    const operador = App.usuario ? App.usuario.nome : '';
+    // O dono aparece como "Dono(a)"; vendedor aparece pelo nome
+    const operador = !App.usuario ? '' : App.usuario.perfil === 'dono' ? 'Dono(a)' : App.usuario.nome;
     if (!caixa) {
       aviso.innerHTML = `<div class="caixa-status fechado">
         <span class="caixa-luz" aria-hidden="true"></span>

@@ -1276,7 +1276,6 @@
         ${op.cliente ? `<div class="c-centro">Cliente: ${e(venda.clienteNome || 'Consumidor final')}</div>
         ${venda.clienteDocumento ? `<div class="c-centro">CPF/CNPJ: ${e(venda.clienteDocumento)}</div>` : ''}
         ${venda.clienteTelefone ? `<div class="c-centro">Telefone: ${e(venda.clienteTelefone)}</div>` : ''}` : ''}
-        ${op.vendedor ? `<div class="c-centro">Vendedor(a): ${e(/^admin$/i.test(String(venda.vendedorNome || '').trim()) ? loja.nome : (venda.vendedorNome || '—'))}</div>` : ''}
         ${venda.parcelasCrediario && venda.parcelasCrediario.length ? `
           <div class="c-sep"></div>
           <div class="c-centro c-negrito">CREDIÁRIO — PARCELAS</div>
