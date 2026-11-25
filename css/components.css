@@ -2052,3 +2052,5 @@ button.prod-kpi:hover { border-color: var(--cor-borda-forte); box-shadow: 0 6px 
 .cupons-vazio svg { width: 28px; height: 28px; margin-bottom: 4px; stroke-width: 1.5; }
 .cupons-vazio strong { color: var(--cor-texto); }
 .cupons-vazio span { max-width: 460px; }
+
+.pt-campo-curto { width: 84px; text-align: center; font-weight: 700; }

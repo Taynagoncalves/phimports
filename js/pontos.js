@@ -13,7 +13,7 @@ App.aoIniciar(async () => {
   let filtro = 'todos';
   let mostrarExtrato = 50;
 
-  const fid = () => ({ ativo: false, reaisPorPonto: 1, valorPonto: 0.05, minimoResgate: 100, validadeMeses: 0, bonusPrimeiraCompra: 0, campanha: {}, ...(loja.fidelidade || {}) });
+  const fid = () => ({ ativo: false, reaisPorPonto: 1, pontosPorVez: 1, valorPonto: 0.05, minimoResgate: 100, validadeMeses: 0, bonusPrimeiraCompra: 0, campanha: {}, ...(loja.fidelidade || {}) });
 
   async function carregar() {
     [painel, loja] = await Promise.all([Data.painelPontos(), Data.obterLoja()]);
@@ -220,6 +220,7 @@ App.aoIniciar(async () => {
     const f = fid();
     const bloco = Number(f.blocoPontos) || 100;
     $('r-reais').value = fmt(f.reaisPorPonto);
+    $('r-pontos').value = Math.max(1, Math.floor(Number(f.pontosPorVez) || 1));
     $('r-bloco').value = bloco;
     $('r-desconto').value = fmt(f.descontoBloco ?? Math.round(f.valorPonto * bloco * 100) / 100);
     $('r-minimo').value = f.minimoResgate;
@@ -239,6 +240,7 @@ App.aoIniciar(async () => {
     return {
       ativo: !!fid().ativo,
       reaisPorPonto: lerNum($('r-reais').value),
+      pontosPorVez: Math.max(1, Math.min(1000, Math.floor(Number($('r-pontos').value) || 1))),
       blocoPontos: bloco, descontoBloco: desconto,
       valorPonto: bloco ? desconto / bloco : 0,
       minimoResgate: Math.max(0, Math.floor(Number($('r-minimo').value) || 0)),
@@ -255,15 +257,16 @@ App.aoIniciar(async () => {
       ['ex-pontos', 'ex-desconto'].forEach((id) => { $(id).textContent = '—'; });
       $('ex-volta').textContent = 'Preencha os valores';
     } else {
-      const pontos = Math.floor(200 / r.reaisPorPonto + 1e-9);
+      const pontos = Math.floor(200 / r.reaisPorPonto + 1e-9) * r.pontosPorVez;
       $('ex-pontos').textContent = `${n(pontos)} pontos`;
       $('ex-desconto').textContent = r$(pontos * r.valorPonto);
-      $('ex-volta').textContent = `${(r.valorPonto / r.reaisPorPonto * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% de volta`;
+      $('ex-volta').textContent = `${(r.valorPonto * r.pontosPorVez / r.reaisPorPonto * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% de volta`;
     }
     textosIntro(r);
   }
   function textosIntro(r = lerRegras()) {
-    $('pi-1').textContent = r.reaisPorPonto ? `A cada ${r$(r.reaisPorPonto)} ganha 1 ponto` : '—';
+    $('r-pontos-txt').textContent = r.pontosPorVez === 1 ? 'ponto.' : 'pontos.';
+    $('pi-1').textContent = r.reaisPorPonto ? `A cada ${r$(r.reaisPorPonto)} ganha ${n(r.pontosPorVez)} ponto${r.pontosPorVez === 1 ? '' : 's'}` : '—';
     $('pi-3').textContent = r.blocoPontos && r.descontoBloco ? `${n(r.blocoPontos)} pontos = ${r$(r.descontoBloco)}` : '—';
   }
   document.querySelectorAll('#form-regras input, #form-regras select').forEach((i) => {
@@ -274,7 +277,7 @@ App.aoIniciar(async () => {
     ev.preventDefault();
     const r = lerRegras();
     if (r.reaisPorPonto <= 0 || r.valorPonto <= 0) return App.toast('Preencha os valores das regras.', 'erro');
-    if (r.valorPonto / r.reaisPorPonto > 0.3) return App.toast('Mais de 30% de volta? Confira os valores.', 'erro');
+    if (r.valorPonto * r.pontosPorVez / r.reaisPorPonto > 0.3) return App.toast('Mais de 30% de volta? Confira os valores.', 'erro');
     if (r.campanha.multiplicador && (!r.campanha.inicio || !r.campanha.fim || r.campanha.fim < r.campanha.inicio)) return App.toast('Informe as datas dos pontos em dobro (o fim depois do início).', 'erro');
     if ($('x-bonus').checked && !r.bonusPrimeiraCompra) return App.toast('Informe quantos pontos de boas-vindas.', 'erro');
     try {

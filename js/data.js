@@ -507,6 +507,7 @@
     const camp = f.campanha || {};
     return {
       reaisPorPonto: Math.max(0.01, Number(f.reaisPorPonto) || 1),
+      pontosPorVez: Math.max(1, Math.floor(Number(f.pontosPorVez) || 1)),
       valorPonto: Math.max(0.001, Number(f.valorPonto) || 0.05),
       minimoResgate: Math.max(0, Math.floor(Number(f.minimoResgate ?? 100) || 0)),
       validadeMeses: Math.max(0, Math.floor(Number(f.validadeMeses) || 0)),
@@ -528,7 +529,7 @@
     const liquido = valorLiquido(v);
     if (liquido <= 0) return 0;                       // devolvida inteira: perde também o bônus
     const base = Math.max(0, liquido - (v.pontos.valorUsado || 0));
-    return Math.floor(base / (v.pontos.reaisPorPonto || 1) + 1e-9) * (v.pontos.mult || 1) + (v.pontos.bonus || 0);
+    return Math.floor(base / (v.pontos.reaisPorPonto || 1) + 1e-9) * (v.pontos.porVez || 1) * (v.pontos.mult || 1) + (v.pontos.bonus || 0);
   }
   const pontosUsadosDa = (v) => (v.pontos && v.status !== 'cancelada' ? (v.pontos.usados || 0) : 0);
 
@@ -1541,7 +1542,7 @@
       pagamentos,
       // Fidelidade: regra do dia da venda (os pontos ganhos são recalculados se houver troca)
       pontos: dados.clienteId && regraP ? {
-        reaisPorPonto: regraP.reaisPorPonto, valorPonto: regraP.valorPonto, usados: pontosUsados, valorUsado: valorPontos,
+        reaisPorPonto: regraP.reaisPorPonto, porVez: regraP.pontosPorVez, valorPonto: regraP.valorPonto, usados: pontosUsados, valorUsado: valorPontos,
         mult: (campanhaPontosHoje(regraP) || {}).multiplicador || 1,
         bonus: regraP.bonusPrimeiraCompra && !db.vendas.some((x) => x.clienteId === dados.clienteId && x.status !== 'cancelada') ? regraP.bonusPrimeiraCompra : 0
       } : null,

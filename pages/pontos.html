@@ -99,7 +99,9 @@
                   <span class="pt-icone"><i data-lucide="shopping-bag"></i></span>
                   <span>A cada</span>
                   <div class="input-grupo pt-campo"><span class="prefixo">R$</span><input class="input" id="r-reais" inputmode="decimal" aria-label="Valor em compras para 1 ponto"></div>
-                  <span>em compras, a cliente ganha <strong>1 ponto</strong>.</span>
+                  <span>em compras, a cliente ganha</span>
+                  <input class="input pt-campo-curto" id="r-pontos" type="number" min="1" max="1000" step="1" inputmode="numeric" value="1" aria-label="Quantos pontos a cliente ganha">
+                  <span id="r-pontos-txt">ponto.</span>
                 </div>
                 <div class="pt-frase">
                   <span class="pt-icone"><i data-lucide="badge-percent"></i></span>
