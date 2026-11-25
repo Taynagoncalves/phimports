@@ -534,7 +534,10 @@ body.fonte-urbana .hero.cinema h1 em { font-style: normal; color: transparent; -
 .abertura-barra i { position: absolute; top: 0; bottom: 0; left: 0; width: 40%; background: #F4F4F0; animation: aberturaLinha 1.1s cubic-bezier(.6, 0, .4, 1) infinite; }
 .abertura.saindo { opacity: 0; visibility: hidden; }
 .abertura.saindo img { transform: scale(1.06); transition: transform .8s ease; }
-@keyframes aberturaLogo { to { opacity: 1; transform: none; } }
+@keyframes aberturaLogo { to { opacity: 1; transform: translateX(-9%); } }
+/* A "asa" puxa o desenho para a esquerda: compensa para as letras PH IMPORTS ficarem no centro */
+.abertura img { transform: translateX(-9%) scale(.94); }
+.abertura.saindo img { transform: translateX(-9%) scale(1.06); }
 @keyframes aberturaSome { to { opacity: 1; } }
 @keyframes aberturaLinha { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
 body.carregando { overflow: hidden; }
@@ -542,7 +545,7 @@ body.carregando { overflow: hidden; }
 body.carregando .hero.cinema h1 .linha > span, body.carregando .hero.cinema .hero-pe { animation: none; }
 body.carregando .hero.cinema h1 .linha > span { transform: translateY(105%); }
 body.carregando .hero.cinema .hero-pe { opacity: 0; }
-@media (prefers-reduced-motion: reduce) { .abertura img, .abertura-barra { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .abertura img, .abertura-barra { opacity: 1; } .abertura img { transform: translateX(-9%); } }
 
 /* ==========================================================================
    Vantagens, categorias e bloco da marca

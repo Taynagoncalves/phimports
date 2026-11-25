@@ -910,7 +910,9 @@
 
 /* Logo do menu: centralizada; a "asa" puxa o desenho para a esquerda,
    então compensa um pouco para as letras PH ficarem no centro */
-.sidebar .sidebar-logo-img img { transform: translateX(-7%); }
+.sidebar .sidebar-logo-img { justify-content: center; }
+.sidebar .sidebar-logo-img img { transform: translateX(-9%); }
+@media (max-width: 767px) { .sidebar .sidebar-logo { justify-content: center; } }
 @media (min-width: 1024px) {
   .sidebar:hover .sidebar-logo, .sidebar:focus-within .sidebar-logo { justify-content: center; padding: 0 var(--esp-3); }
   .sidebar:hover .sidebar-logo-img, .sidebar:focus-within .sidebar-logo-img { justify-content: center; }
