@@ -6,6 +6,8 @@
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  // Prévia dentro de Aparência: sem barras de rolagem
+  if (new URLSearchParams(location.search).get('previa')) document.documentElement.classList.add('previa');
   const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const normalizar = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
