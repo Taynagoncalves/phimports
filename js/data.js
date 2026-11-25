@@ -2754,16 +2754,29 @@
     return p ? responder(p) : falhar('Pedido não encontrado.');
   }
   /** Muda o status (confirmar ou cancelar). Concluir é feito pela venda. */
-  function atualizarPedido(id, { status, observacaoLoja }) {
+  /**
+   * Atualiza o pedido: situação, anotação da loja e o andamento
+   * (peças separadas, pagamento combinado, pronto/enviado).
+   */
+  function atualizarPedido(id, { status, observacaoLoja, separados, pago, pronto }) {
     const p = (db.pedidos || []).find((x) => x.id === id);
     if (!p) return falhar('Pedido não encontrado.');
     if (status && !['novo', 'confirmado', 'cancelado'].includes(status)) return falhar('Situação inválida.');
     if (p.status === 'concluido') return falhar('Este pedido já virou venda.');
-    if (status) {
-      p.status = status;
-      p.historico = [...(p.historico || []), { status, data: new Date().toISOString(), usuario: usuarioLogado().nome || '' }];
-    }
+    const agora = new Date().toISOString();
+    const quem = usuarioLogado().nome || '';
+    const anotar = (evento) => { p.historico = [...(p.historico || []), { ...evento, data: agora, usuario: quem }]; };
+    if (status) { p.status = status; anotar({ status }); }
     if (observacaoLoja !== undefined) p.observacaoLoja = String(observacaoLoja).slice(0, 200);
+    if (Array.isArray(separados)) p.separados = (p.itens || []).map((_, i) => !!separados[i]);
+    if (pago !== undefined) {
+      p.pago = pago ? { forma: String(pago.forma || '').slice(0, 20), data: agora, usuario: quem } : null;
+      anotar({ status: pago ? 'pago' : 'pago-desfeito' });
+    }
+    if (pronto !== undefined) {
+      p.pronto = pronto ? { data: agora, usuario: quem } : null;
+      anotar({ status: pronto ? (p.entrega === 'entregar' ? 'enviado' : 'pronto') : 'pronto-desfeito' });
+    }
     persistir();
     return responder(p);
   }
