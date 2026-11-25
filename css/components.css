@@ -1878,3 +1878,82 @@ a.aba { text-decoration: none; display: inline-block; }
   .pf .upload { max-width: 220px; }
   .pf-previa-card { display: none; }
 }
+
+/* ==========================================================================
+   Pedidos online — resumo, busca e cartões
+   ========================================================================== */
+.ped-resumo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: var(--esp-5); }
+@media (max-width: 900px) { .ped-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ped-kpi { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border: 1px solid var(--cor-borda); border-radius: var(--raio); background: var(--cor-superficie); min-width: 0; }
+.ped-kpi span { font-size: var(--fs-xs); font-weight: 600; color: var(--cor-texto-3); }
+.ped-kpi strong { font-size: 22px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ped-kpi small { font-size: var(--fs-xs); color: var(--cor-texto-3); }
+.ped-kpi.destaque { background: var(--cor-texto); border-color: var(--cor-texto); }
+.ped-kpi.destaque span, .ped-kpi.destaque small { color: var(--cor-superficie); opacity: .7; }
+.ped-kpi.destaque strong { color: var(--cor-superficie); }
+.ped-kpi.atencao small { color: var(--cor-perigo); font-weight: 600; }
+@media (max-width: 520px) { .ped-kpi { padding: 12px; } .ped-kpi strong { font-size: 18px; } }
+
+.ped-barra { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: var(--esp-4); border-bottom: 1px solid var(--cor-borda); }
+.ped-barra .abas { border-bottom: 0; margin-bottom: -1px; }
+.ped-busca { position: relative; flex: 0 1 320px; margin-bottom: 8px; }
+.ped-busca svg { position: absolute; left: 12px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--cor-texto-3); pointer-events: none; }
+.ped-busca .input { padding-left: 36px; min-height: 40px; }
+@media (max-width: 700px) { .ped-busca { flex: 1 1 100%; order: -1; } }
+
+.pedidos-lista { grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); align-items: start; }
+.ped { display: flex; flex-direction: column; overflow: visible; }
+.ped.parado { border-color: var(--cor-perigo); box-shadow: 0 0 0 1px var(--cor-perigo-suave); }
+.ped-topo { display: flex; justify-content: space-between; gap: 16px; padding: 18px 20px 14px; }
+.ped-quem { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.ped-codigo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 700; color: var(--cor-texto-2); font-variant-numeric: tabular-nums; }
+.ped-nome { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.ped-nome strong { font-size: var(--fs-lg, 18px); font-weight: 700; }
+.ped-nome span { font-size: var(--fs-sm); color: var(--cor-texto-3); font-variant-numeric: tabular-nums; }
+.ped-linha { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-sm); color: var(--cor-texto-2); }
+.ped-linha svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; color: var(--cor-texto-3); }
+.ped-obs { font-style: italic; }
+.ped-valor { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; flex-shrink: 0; }
+.ped-valor strong { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ped-valor span { font-size: var(--fs-xs); color: var(--cor-texto-3); white-space: nowrap; }
+
+.ped-itens { list-style: none; margin: 0 20px; padding: 10px 0; border-top: 1px solid var(--cor-borda); display: grid; gap: 10px; }
+.ped-itens li { display: flex; align-items: center; gap: 12px; }
+.ped-foto { flex-shrink: 0; display: grid; place-items: center; width: 48px; height: 56px; overflow: hidden; border-radius: 6px; background: var(--cor-fundo); color: var(--cor-texto-3); }
+.ped-foto img { width: 100%; height: 100%; object-fit: cover; }
+.ped-foto svg { width: 20px; height: 20px; stroke-width: 1.5; }
+.ped-item { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ped-item strong { font-size: var(--fs-sm); font-weight: 600; }
+.ped-item small { font-size: var(--fs-xs); color: var(--cor-texto-3); }
+.ped-preco { font-size: var(--fs-sm); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.ped-nota { position: relative; margin: 0 20px; padding-top: 10px; border-top: 1px solid var(--cor-borda); }
+.ped-nota svg { position: absolute; left: 11px; top: calc(10px + 50% - 5px); width: 15px; height: 15px; transform: translateY(-50%); color: var(--cor-texto-3); pointer-events: none; }
+.ped-nota .input { padding-left: 34px; min-height: 38px; font-size: var(--fs-sm); background: var(--cor-fundo); border-style: dashed; }
+.ped-nota .input:focus { background: var(--cor-superficie); border-style: solid; }
+.ped-hist { display: flex; align-items: flex-start; gap: 6px; margin: 10px 20px 0; font-size: var(--fs-xs); color: var(--cor-texto-3); }
+.ped-hist svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 1px; }
+
+.ped-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 20px 18px; }
+.ped-acoes .btn { min-height: 40px; }
+.ped-espaco { flex: 1; }
+.ped-cancelar:hover { color: var(--cor-perigo); }
+.ped-whats { position: relative; display: inline-flex; }
+.ped-whats > a { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.ped-whats-mais { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -1px; padding: 0 8px; }
+.ped-whats-mais svg { width: 16px; height: 16px; transition: transform .2s; }
+.ped-whats-mais[aria-expanded="true"] svg { transform: rotate(180deg); }
+.ped-menu { position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 40; min-width: 220px; padding: 6px; border: 1px solid var(--cor-borda); border-radius: var(--raio-sm); background: var(--cor-superficie); box-shadow: 0 16px 40px -12px rgba(16, 24, 40, .3); display: grid; }
+.ped-menu[hidden] { display: none; }
+.ped-menu::before { content: 'Mensagens prontas'; padding: 6px 10px 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--cor-texto-3); }
+.ped-menu button { padding: 9px 10px; border: 0; border-radius: 6px; background: none; color: var(--cor-texto); font: inherit; font-size: var(--fs-sm); text-align: left; cursor: pointer; }
+.ped-menu button:hover, .ped-menu button:focus-visible { background: var(--cor-fundo); outline: none; }
+@media (max-width: 520px) {
+  .ped-topo { padding: 14px 14px 12px; }
+  .ped-itens, .ped-nota { margin: 0 14px; }
+  .ped-hist { margin: 10px 14px 0; }
+  .ped-acoes { padding: 12px 14px 14px; }
+  .ped-acoes .ped-espaco { flex-basis: 100%; height: 0; }
+  .ped-acoes > .btn-primario, .ped-acoes > [data-confirmar] { flex: 1; }
+  .ped-valor strong { font-size: 18px; }
+}

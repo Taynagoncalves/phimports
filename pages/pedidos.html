@@ -32,18 +32,26 @@
         <div class="pagina-cabecalho">
           <div>
             <h1>Pedidos online</h1>
-            <p>Pedidos feitos no catálogo. As peças ficam reservadas até o pedido virar venda ou ser cancelado.</p>
+            <p>Pedidos feitos no catálogo. As peças ficam reservadas até virar venda ou ser cancelado.</p>
           </div>
           <div class="pagina-acoes">
             <a class="btn btn-secundario" id="btn-catalogo" target="_blank" rel="noopener"><i data-lucide="external-link"></i>Ver catálogo</a>
           </div>
         </div>
 
-        <div class="abas" role="tablist" aria-label="Situação" id="abas-ped" style="margin-bottom:var(--esp-4)">
+        <div class="ped-resumo" id="ped-resumo" aria-live="polite"></div>
+
+        <div class="ped-barra">
+        <div class="abas" role="tablist" aria-label="Situação" id="abas-ped">
           <button type="button" role="tab" class="aba" data-status="novo" aria-selected="true">Novos <span class="aba-contagem" data-cont="novo">0</span></button>
           <button type="button" role="tab" class="aba" data-status="confirmado" aria-selected="false">Confirmados <span class="aba-contagem" data-cont="confirmado">0</span></button>
           <button type="button" role="tab" class="aba" data-status="concluido" aria-selected="false">Viraram venda <span class="aba-contagem" data-cont="concluido">0</span></button>
           <button type="button" role="tab" class="aba" data-status="cancelado" aria-selected="false">Cancelados <span class="aba-contagem" data-cont="cancelado">0</span></button>
+        </div>
+        <label class="ped-busca">
+          <i data-lucide="search"></i>
+          <input class="input" type="search" id="busca-pedidos" placeholder="Buscar cliente, telefone, peça ou #código" aria-label="Buscar pedidos">
+        </label>
         </div>
 
         <section id="lista-pedidos" class="pedidos-lista" aria-live="polite"></section>
