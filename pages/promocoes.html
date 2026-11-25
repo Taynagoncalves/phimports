@@ -51,6 +51,42 @@
             </table>
           </div>
         </section>
+
+        <!-- Cupons do catálogo online -->
+        <section class="card cupons-card" id="cupons">
+          <div class="card-cabecalho">
+            <div>
+              <h2>Cupons do catálogo</h2>
+              <p class="texto-sm texto-3">A cliente digita o código na sacola do catálogo e o desconto já vai no pedido (e entra sozinho no caixa ao virar venda).</p>
+            </div>
+          </div>
+          <form class="cupom-form" id="form-cupom" novalidate>
+            <div class="campo">
+              <label for="cp-codigo">Código</label>
+              <input class="input mono" id="cp-codigo" maxlength="20" placeholder="Ex.: PH10" autocomplete="off" required>
+            </div>
+            <div class="campo">
+              <span class="rotulo">Desconto</span>
+              <div class="cupom-valor">
+                <div class="alternar-visao" role="group" aria-label="Tipo de desconto">
+                  <button type="button" data-tipo-cupom="percentual" aria-pressed="true">%</button>
+                  <button type="button" data-tipo-cupom="valor" aria-pressed="false">R$</button>
+                </div>
+                <div class="input-grupo"><span class="prefixo" id="cp-prefixo">%</span><input class="input" id="cp-valor" inputmode="decimal" placeholder="10" aria-label="Valor do desconto"></div>
+              </div>
+            </div>
+            <div class="campo">
+              <label for="cp-minimo">Compra mínima <small class="texto-3">(opcional)</small></label>
+              <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="cp-minimo" inputmode="decimal" data-mascara="moeda" placeholder="0,00"></div>
+            </div>
+            <div class="campo">
+              <label for="cp-validade">Vale até <small class="texto-3">(opcional)</small></label>
+              <input class="input" id="cp-validade" type="date">
+            </div>
+            <button type="submit" class="btn btn-primario"><i data-lucide="plus"></i>Criar cupom</button>
+          </form>
+          <div class="cupons-lista" id="cupons-lista"></div>
+        </section>
       </main>
     </div>
   </div>
@@ -66,5 +102,6 @@
   <script src="../js/data.js"></script>
   <script src="../js/app.js"></script>
   <script src="../js/promocoes.js"></script>
+  <script src="../js/cupons.js"></script>
 </body>
 </html>

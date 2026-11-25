@@ -72,7 +72,7 @@ service cloud.firestore {
       // Pedidos online: a cliente do catálogo (sem login) só pode CRIAR um pedido novo,
       // com campos conferidos. Ler e mudar o pedido é só para quem trabalha na loja.
       match /pedidos/{pedidoId} {
-        allow create: if request.resource.data.keys().hasOnly(['id', 'codigo', 'status', 'origem', 'criadoEm', 'cliente', 'entrega', 'endereco', 'obs', 'itens', 'total'])
+        allow create: if request.resource.data.keys().hasOnly(['id', 'codigo', 'status', 'origem', 'criadoEm', 'cliente', 'entrega', 'endereco', 'obs', 'itens', 'total', 'subtotal', 'cupom'])
           && request.resource.data.status == 'novo'
           && request.resource.data.origem == 'catalogo'
           && request.resource.data.id == pedidoId

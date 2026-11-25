@@ -2817,7 +2817,10 @@
       instagram: String(loja.instagram || '').replace(/^@/, '').trim(), mensagem: c.mensagem || '',
       endereco: String(loja.endereco || '').slice(0, 160), entrega: c.entrega !== false,
       tema: c.tema && typeof c.tema === 'object' ? c.tema : {},
-      mostrarPrecos: precos, produtos, atualizadoEm: new Date().toISOString()
+      mostrarPrecos: precos, produtos, atualizadoEm: new Date().toISOString(),
+      // Cupons: vai só o hash do código (ninguém descobre o código olhando o catálogo)
+      cupons: precos ? (c.cupons || []).filter((x) => x && x.ativo !== false && x.hash && (!x.validade || x.validade >= new Date().toISOString().slice(0, 10)))
+        .map((x) => ({ h: x.hash, tipo: x.tipo === 'valor' ? 'valor' : 'percentual', valor: Number(x.valor) || 0, minimo: Number(x.minimo) || 0, ate: x.validade || '' })).slice(0, 30) : []
     };
   }
 

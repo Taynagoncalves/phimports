@@ -135,6 +135,7 @@ App.aoIniciar(async () => {
           <span class="ped-preco">${r$((Number(i.preco) || 0) * (Number(i.qtd) || 0))}</span>
         </li>`;
       }).join('')}</ul>
+      ${p.cupom ? `<div class="ped-cupom">${App.icone('ticket-percent')}Cupom <strong>${e(p.cupom.codigo)}</strong><span>−${r$(p.cupom.desconto)}</span></div>` : ''}
 
       <div class="ped-nota">
         ${App.icone('notebook-pen')}

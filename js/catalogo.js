@@ -20,6 +20,7 @@
       <strong class="poster-nome">${esc(p.nome)}</strong>
       <span class="poster-pe">Foto em breve</span>
     </div>`;
+  const ICONE_CORACAO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.6-4.6-7.6-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.6 2.5c0 5.6-7.6 10.2-7.6 10.2Z"/></svg>';
   const ICONE_MAIS = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
   const ICONE_WHATS = '<svg viewBox="0 0 24 24" class="cheio" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>';
   const ICONE_INSTA = '<svg viewBox="0 0 24 24" class="cheio" aria-hidden="true"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/></svg>';
@@ -34,6 +35,12 @@
   let aberta = null;        // peça aberta
   let escolha = { c: '', t: '', qtd: 1 };
   let sacola = [];          // [{ id, c, t, qtd }]
+  const CHAVE_FAV = `catalogo:favoritos:${lojaId || 'local'}`;
+  const CHAVE_CUPOM = `catalogo:cupom:${lojaId || 'local'}`;
+  let favoritos = new Set();
+  try { favoritos = new Set(JSON.parse(localStorage.getItem(CHAVE_FAV) || '[]')); } catch (e) { /* ignora */ }
+  let soFavoritos = false;
+  let cupom = null;         // { codigo, tipo: 'percentual'|'valor', valor, minimo }
 
   /* ---------- Dados ---------- */
   async function carregar() {
@@ -318,6 +325,7 @@
         <div class="card-foto">
           ${p.foto ? fotosCardHtml(p) : posterHtml(p)}
           ${selo}
+          <span class="card-fav" role="button" data-fav="${esc(p.id)}" aria-pressed="${favoritos.has(p.id)}" aria-label="Favoritar ${esc(p.nome)}" title="Favoritar">${ICONE_CORACAO}</span>
           <span class="card-ver" aria-hidden="true">${n <= 0 ? 'Avise-me quando chegar' : tams.length ? tams.map(esc).join('  ·  ') : 'Ver peça'}</span>
         </div>
         <div class="card-nome">${esc(p.nome)}</div>
@@ -333,7 +341,7 @@
     ? new IntersectionObserver((itens) => itens.forEach((it) => { if (it.isIntersecting) { it.target.classList.add('visivel'); revelar.unobserve(it.target); } }), { rootMargin: '0px 0px -40px 0px' })
     : null;
   const ligarCards = (raiz) => { ligarFotosCard(raiz); raiz.querySelectorAll('[data-peca]').forEach((b, i) => {
-    b.addEventListener('click', () => abrirPeca(b.dataset.peca));
+    b.addEventListener('click', (e) => { const f = e.target.closest('[data-fav]'); if (f) { alternarFavorito(f.dataset.fav); return; } abrirPeca(b.dataset.peca); });
     if (revelar) { b.classList.add('revelar'); b.style.transitionDelay = `${(i % 4) * 60}ms`; revelar.observe(b); }
   }); };
 
@@ -346,27 +354,30 @@
 
   function desenharCategorias() {
     const cats = [...new Set(cat.produtos.map((p) => p.categoria).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    $('categorias').innerHTML = cats.length > 1
-      ? ['', ...cats].map((c) => `<button type="button" data-cat="${esc(c)}" aria-pressed="${c === categoria}">${c ? esc(c) : 'Tudo'}</button>`).join('') : '';
-    $('categorias').querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { categoria = b.dataset.cat; desenharCategorias(); desenharGrade(); }));
+    const favs = [...favoritos].filter((id) => acharPeca(id)).length;
+    $('categorias').innerHTML = (cats.length > 1
+      ? ['', ...cats].map((c) => `<button type="button" data-cat="${esc(c)}" aria-pressed="${!soFavoritos && c === categoria}">${c ? esc(c) : 'Tudo'}</button>`).join('') : '')
+      + (favs ? `<button type="button" class="chip-fav" data-favs aria-pressed="${soFavoritos}">${ICONE_CORACAO}Favoritos · ${favs}</button>` : '');
+    $('categorias').querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { categoria = b.dataset.cat; soFavoritos = false; desenharCategorias(); desenharGrade(); }));
+    $('categorias').querySelector('[data-favs]')?.addEventListener('click', () => { soFavoritos = !soFavoritos; categoria = ''; desenharCategorias(); desenharGrade(); });
     $('topo-nav').innerHTML = cats.length > 1 ? ['', ...cats].map((c) => `<button type="button" data-nav="${esc(c)}" aria-current="${c === categoria}">${c ? esc(c) : 'Tudo'}</button>`).join('') : '';
     $('topo-nav').querySelectorAll('[data-nav]').forEach((b) => b.addEventListener('click', () => {
-      categoria = b.dataset.nav; desenharCategorias(); desenharGrade();
+      categoria = b.dataset.nav; soFavoritos = false; desenharCategorias(); desenharGrade();
       $('colecao').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }));
   }
 
   function desenharGrade() {
     const q = normalizar($('q').value);
-    let lista = cat.produtos.filter((p) => (!categoria || p.categoria === categoria)
+    let lista = cat.produtos.filter((p) => (!soFavoritos || favoritos.has(p.id)) && (soFavoritos || !categoria || p.categoria === categoria)
       && (!q || normalizar(`${p.nome} ${p.categoria} ${p.marca} ${p.variacoes.map((v) => v.c).join(' ')}`).includes(q)));
     const ordem = $('ordem').value;
     if (ordem !== 'novos') lista = [...lista].sort((a, b) => esgotada(a) - esgotada(b) || ((precoDe(a) ?? 0) - (precoDe(b) ?? 0)) * (ordem === 'menor' ? 1 : -1));
-    $('contagem').textContent = `${categoria || 'Todas as peças'} · ${lista.length} peça${lista.length === 1 ? '' : 's'}`;
+    $('contagem').textContent = `${soFavoritos ? 'Seus favoritos' : categoria || 'Todas as peças'} · ${lista.length} peça${lista.length === 1 ? '' : 's'}`;
     $('grade').innerHTML = lista.map(cardHtml).join('');
     ligarCards($('grade'));
     $('estado').hidden = !!lista.length;
-    $('estado').textContent = cat.produtos.length ? 'Nenhuma peça encontrada.' : 'Novidades chegando em breve.';
+    $('estado').textContent = soFavoritos ? 'Toque no ♡ das peças que você gostar.' : cat.produtos.length ? 'Nenhuma peça encontrada.' : 'Novidades chegando em breve.';
   }
 
   /* ---------- Trocar a cor da roupa na foto (sem foto de cada cor) ----------
@@ -610,7 +621,7 @@
   })();
 
   /* ---------- Peça (escolher cor, tamanho e quantidade) ---------- */
-  function abrirPeca(id) {
+  function abrirPeca(id, trocar = false) {
     aberta = acharPeca(id);
     if (!aberta) return;
     const p = aberta;
@@ -636,8 +647,110 @@
     $('p-aviso').textContent = '';
     desenharEscolha();
     mostrarCorNaFoto();
+    marcarFavoritoPeca();
+    $('p-share-menu').hidden = true; $('p-compartilhar').setAttribute('aria-expanded', 'false');
+    desenharLook(p);
     abrirCamada('camada-peca');
-    history.pushState({ camada: 'peca' }, '');
+    document.querySelector('.folha.peca').scrollTop = 0;
+    const info = document.querySelector('.peca-info'); if (info) info.scrollTop = 0;
+    if (trocar) history.replaceState({ camada: 'peca' }, ''); else history.pushState({ camada: 'peca' }, '');
+  }
+
+  /* ---------- Favoritos (ficam guardados no celular da cliente) ---------- */
+  function salvarFavoritos() {
+    try { localStorage.setItem(CHAVE_FAV, JSON.stringify([...favoritos])); } catch (e) { /* ignora */ }
+    const n = [...favoritos].filter((id) => acharPeca(id)).length;
+    $('contador-fav').hidden = !n; $('contador-fav').textContent = n;
+  }
+  function alternarFavorito(id) {
+    const tinha = favoritos.has(id);
+    tinha ? favoritos.delete(id) : favoritos.add(id);
+    salvarFavoritos();
+    document.querySelectorAll(`[data-fav="${CSS.escape(id)}"]`).forEach((el) => el.setAttribute('aria-pressed', String(!tinha)));
+    if (aberta && aberta.id === id) marcarFavoritoPeca();
+    desenharCategorias();
+    if (soFavoritos) desenharGrade();
+    aviso(tinha ? 'Removida dos favoritos' : 'Salva nos favoritos ♥');
+  }
+  function marcarFavoritoPeca() {
+    const sim = favoritos.has(aberta.id);
+    $('p-fav').setAttribute('aria-pressed', String(sim));
+    $('p-fav').querySelector('span').textContent = sim ? 'Nos favoritos' : 'Favoritar';
+  }
+  $('p-fav').addEventListener('click', () => aberta && alternarFavorito(aberta.id));
+  $('btn-favs').addEventListener('click', () => {
+    if (!favoritos.size) return aviso('Toque no ♡ das peças que você gostar para salvar aqui.');
+    soFavoritos = true; categoria = ''; desenharCategorias(); desenharGrade();
+    $('colecao').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  /* ---------- Compartilhar a peça (link que abre direto nela) ---------- */
+  function linkDaPeca(p) {
+    const u = new URL(location.href);
+    u.searchParams.delete('previa');
+    u.searchParams.set('peca', p.id);
+    u.hash = '';
+    return u.toString();
+  }
+  function textoDaPeca(p) {
+    const preco = precoDe(p);
+    return `${p.nome}${preco !== null ? ' — ' + moeda(preco) : ''} · ${cat.nome}`;
+  }
+  $('p-compartilhar').addEventListener('click', async () => {
+    const p = aberta; if (!p) return;
+    const url = linkDaPeca(p);
+    // Celular: abre o compartilhar do sistema (WhatsApp, Instagram, Direct…)
+    if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+      try { await navigator.share({ title: p.nome, text: textoDaPeca(p), url }); } catch (e) { /* cancelou */ }
+      return;
+    }
+    const menu = $('p-share-menu');
+    menu.hidden = !menu.hidden;
+    $('p-compartilhar').setAttribute('aria-expanded', String(!menu.hidden));
+    $('p-share-whats').href = `https://wa.me/?text=${encodeURIComponent(textoDaPeca(p) + '\n' + url)}`;
+  });
+  $('p-share-copiar').addEventListener('click', async () => {
+    const url = linkDaPeca(aberta);
+    try { await navigator.clipboard.writeText(url); aviso('Link copiado! É só colar onde quiser.'); } catch (e) { aviso(url); }
+    $('p-share-menu').hidden = true; $('p-compartilhar').setAttribute('aria-expanded', 'false');
+  });
+  $('p-share-whats').addEventListener('click', () => { $('p-share-menu').hidden = true; $('p-compartilhar').setAttribute('aria-expanded', 'false'); });
+
+  /* ---------- Complete o look: peças de outras categorias que combinam ---------- */
+  function desenharLook(p) {
+    const minhasCores = new Set(coresDe(p).map(([c]) => normalizar(c)));
+    const neutras = ['preto', 'branco', 'off-white', 'cinza', 'cinza mescla', 'bege', 'areia', 'jeans'];
+    const pontos = (o) => {
+      let s = 0;
+      if (o.categoria && o.categoria !== p.categoria) s += 4;
+      if (o.marca && o.marca === p.marca) s += 1;
+      if (coresDe(o).some(([c]) => minhasCores.has(normalizar(c)) || neutras.includes(normalizar(c)))) s += 2;
+      if (o.foto) s += 1;
+      if (o.novo) s += 0.5;
+      return s;
+    };
+    // Varia um pouco a cada peça, mas sempre igual para a mesma peça
+    const semente = [...p.id].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+    const lista = cat.produtos
+      .filter((o) => o.id !== p.id && !esgotada(o))
+      .map((o, i) => ({ o, s: pontos(o) + (((semente * 31 + i * 17) % 10) / 20) }))
+      .sort((a, b) => b.s - a.s);
+    const escolhidas = [];
+    const usadas = new Set();
+    for (const { o } of lista) {   // no máximo 1 peça por categoria
+      if (escolhidas.length >= 4) break;
+      if (o.categoria === p.categoria || usadas.has(o.categoria)) continue;
+      escolhidas.push(o); usadas.add(o.categoria);
+    }
+    for (const { o } of lista) { if (escolhidas.length >= 4) break; if (!escolhidas.includes(o)) escolhidas.push(o); }
+    $('p-look').hidden = escolhidas.length < 2;
+    $('p-look-grade').innerHTML = escolhidas.map((o) => `
+      <button type="button" class="look-item" data-look="${esc(o.id)}">
+        <span class="look-foto">${o.foto ? `<img src="${esc(foto(o.foto, 300))}" alt="" loading="lazy">` : posterHtml(o)}</span>
+        <span class="look-nome">${esc(o.nome)}</span>
+        <span class="look-preco">${precoDe(o) === null ? 'Consulte' : moeda(precoDe(o))}</span>
+      </button>`).join('');
+    $('p-look-grade').querySelectorAll('[data-look]').forEach((b) => b.addEventListener('click', () => abrirPeca(b.dataset.look, true)));
   }
   function maxDisponivel() {
     const p = aberta;
@@ -706,12 +819,20 @@
   }
   const totalSacola = () => sacola.reduce((s, i) => s + (precoDe(acharPeca(i.id)) || 0) * i.qtd, 0);
   const pecasSacola = () => sacola.reduce((s, i) => s + i.qtd, 0);
+  const dinheiro = (v) => Math.round(v * 100) / 100;
+  function descontoCupom(sub = totalSacola()) {
+    if (!cupom || sub <= 0) return 0;
+    if (cupom.minimo && sub < cupom.minimo) return 0;
+    const d = cupom.tipo === 'percentual' ? sub * Math.min(100, cupom.valor) / 100 : cupom.valor;
+    return dinheiro(Math.min(sub, Math.max(0, d)));
+  }
+  const totalFinal = () => dinheiro(totalSacola() - descontoCupom());
   function atualizarContadores() {
     const n = pecasSacola();
     $('contador').hidden = !n; $('contador').textContent = n;
     $('barra-sacola').hidden = !n || !$('camada-sacola').hidden || !$('camada-peca').hidden;
     $('barra-qtd').textContent = `${n} peça${n === 1 ? '' : 's'}`;
-    $('barra-total').textContent = moeda(totalSacola());
+    $('barra-total').textContent = moeda(totalFinal());
   }
   function desenharSacola() {
     const el = $('s-itens');
@@ -733,7 +854,8 @@
         <div class="item-dir"><strong>${preco === null ? '—' : moeda(preco * i.qtd)}</strong><button type="button" class="remover" data-remover="${idx}">Remover</button></div>
       </div>`;
     }).join('');
-    $('s-total').textContent = sacola.some((i) => precoDe(acharPeca(i.id)) === null) ? `${moeda(totalSacola())} + a consultar` : moeda(totalSacola());
+    desenharCupom();
+    $('s-total').textContent = sacola.some((i) => precoDe(acharPeca(i.id)) === null) ? `${moeda(totalFinal())} + a consultar` : moeda(totalFinal());
     el.querySelectorAll('[data-menos]').forEach((b) => b.addEventListener('click', () => { const i = sacola[b.dataset.menos]; i.qtd--; if (i.qtd <= 0) sacola.splice(b.dataset.menos, 1); salvarSacola(); }));
     el.querySelectorAll('[data-mais]').forEach((b) => b.addEventListener('click', () => {
       const i = sacola[b.dataset.mais]; const v = variacao(acharPeca(i.id), i.c, i.t);
@@ -749,6 +871,63 @@
     history.pushState({ camada: 'sacola' }, '');
   }
 
+  /* ---------- Cupom de desconto ---------- */
+  const normalizarCupom = (t) => String(t || '').trim().toUpperCase().replace(/\s+/g, '');
+  async function hashCupom(codigo) {
+    const dados = new TextEncoder().encode(`cupom:${normalizarCupom(codigo)}`);
+    const h = await crypto.subtle.digest('SHA-256', dados);
+    return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  const hojeLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  async function acharCupom(codigo) {
+    if (!codigo || !(cat.cupons || []).length || !window.crypto || !crypto.subtle) return null;
+    const h = await hashCupom(codigo);
+    const c = cat.cupons.find((x) => x.h === h);
+    if (!c || (c.ate && c.ate < hojeLocal())) return null;
+    return { codigo: normalizarCupom(codigo), tipo: c.tipo === 'valor' ? 'valor' : 'percentual', valor: Number(c.valor) || 0, minimo: Number(c.minimo) || 0 };
+  }
+  function desenharCupom() {
+    const tem = (cat.cupons || []).length && cat.mostrarPrecos !== false;
+    $('s-cupom').hidden = !tem;
+    const sub = totalSacola();
+    const d = descontoCupom(sub);
+    $('cupom-ok').hidden = !cupom;
+    $('cupom-abrir').hidden = !!cupom || !$('cupom-campo').hidden;
+    if (cupom) {
+      $('cupom-nome').textContent = cupom.codigo;
+      $('cupom-msg').textContent = cupom.minimo && sub < cupom.minimo ? `Vale para compras a partir de ${moeda(cupom.minimo)}. Faltam ${moeda(cupom.minimo - sub)}.` : '';
+    }
+    $('s-sub-bloco').hidden = !d; $('s-desc-bloco').hidden = !d;
+    $('s-subtotal').textContent = moeda(sub);
+    $('s-desconto').textContent = '−' + moeda(d);
+    $('s-desc-rotulo').textContent = cupom ? `Cupom ${cupom.codigo}${cupom.tipo === 'percentual' ? ` (${String(cupom.valor).replace('.', ',')}%)` : ''}` : 'Desconto';
+  }
+  $('cupom-abrir').addEventListener('click', () => { $('cupom-campo').hidden = false; $('cupom-abrir').hidden = true; $('cupom-codigo').focus(); });
+  async function aplicarCupom() {
+    const codigo = $('cupom-codigo').value;
+    if (!normalizarCupom(codigo)) { $('cupom-msg').textContent = 'Digite o código do cupom.'; return; }
+    $('cupom-aplicar').disabled = true;
+    try {
+      const c = await acharCupom(codigo);
+      if (!c) { $('cupom-msg').textContent = 'Cupom inválido ou vencido.'; return; }
+      cupom = c;
+      try { localStorage.setItem(CHAVE_CUPOM, c.codigo); } catch (e) { /* ignora */ }
+      $('cupom-campo').hidden = true; $('cupom-codigo').value = '';
+      salvarSacola();
+      desenharSacola();
+      aviso(`Cupom ${c.codigo} aplicado ✓`);
+    } finally { $('cupom-aplicar').disabled = false; }
+  }
+  $('cupom-aplicar').addEventListener('click', aplicarCupom);
+  $('cupom-codigo').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); aplicarCupom(); } });
+  $('cupom-codigo').addEventListener('input', () => { $('cupom-msg').textContent = ''; });
+  $('cupom-tirar').addEventListener('click', () => {
+    cupom = null;
+    try { localStorage.removeItem(CHAVE_CUPOM); } catch (e) { /* ignora */ }
+    $('cupom-msg').textContent = '';
+    salvarSacola(); desenharSacola();
+  });
+
   /* ---------- Pedido online (cai na aba "Pedidos online" do sistema) ---------- */
   function codigoPedido() {
     const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -759,7 +938,14 @@
   function gravarPedido(pedido) {
     const cfg = window.FIREBASE_CONFIG;
     if (cfg && cfg.apiKey && lojaId && window.firebase) {
-      return firebase.firestore().collection('lojas').doc(lojaId).collection('pedidos').doc(pedido.id).set(pedido);
+      const ref = firebase.firestore().collection('lojas').doc(lojaId).collection('pedidos').doc(pedido.id);
+      return ref.set(pedido).catch((e) => {
+        if (!pedido.cupom) throw e;
+        const simples = { ...pedido };
+        delete simples.cupom; delete simples.subtotal;
+        simples.obs = `Cupom ${pedido.cupom.codigo} (−${moeda(pedido.cupom.desconto)})${pedido.obs ? ' · ' + pedido.obs : ''}`.slice(0, 200);
+        return ref.set(simples);
+      });
     }
     // Teste no computador (sem nuvem): grava no banco local do sistema
     try {
@@ -821,7 +1007,8 @@
         const p = acharPeca(i.id); const v = variacao(p, i.c, i.t) || {};
         return { produtoId: p.id, sku: v.s || '', nome: p.nome, cor: i.c || '', tamanho: i.t || '', qtd: i.qtd, preco: precoDe(p) || 0 };
       }),
-      total: Math.round(totalSacola() * 100) / 100
+      total: totalFinal(),
+      ...(descontoCupom() > 0 ? { subtotal: dinheiro(totalSacola()), cupom: { codigo: cupom.codigo, desconto: descontoCupom() } } : {})
     };
   }
 
@@ -836,6 +1023,7 @@
       '',
       ...linhas,
       '',
+      ...(pedido.cupom ? [`Subtotal: ${moeda(pedido.subtotal)}`, `Cupom ${pedido.cupom.codigo}: −${moeda(pedido.cupom.desconto)}`] : []),
       `*Total: ${moeda(pedido.total)}*${pedido.itens.some((i) => !i.preco) ? ' + itens a consultar' : ''}`,
       `Nome: ${pedido.cliente.nome}`,
       pedido.entrega === 'entregar' ? `Enviar para: ${pedido.endereco}` : 'Vou retirar na loja',
@@ -846,6 +1034,8 @@
   }
 
   function pedidoConcluido(pedido, modo) {
+    cupom = null;
+    try { localStorage.removeItem(CHAVE_CUPOM); } catch (e) { /* ignora */ }
     sacola = [];
     salvarSacola();
     $('f-obs').value = '';
@@ -956,8 +1146,17 @@
     desenharExtras();
     desenharGrade();
     lerSacola();
+    favoritos = new Set([...favoritos].filter((id) => acharPeca(id)));
+    salvarFavoritos();
     atualizarContadores();
-    quandoCapaPronta().then(tirarAbertura);
+    // Cupom que a cliente já tinha aplicado (confere de novo: pode ter vencido)
+    try { const guardado = localStorage.getItem(CHAVE_CUPOM); if (guardado) acharCupom(guardado).then((c) => { cupom = c; if (!c) localStorage.removeItem(CHAVE_CUPOM); atualizarContadores(); }).catch(() => {}); } catch (e) { /* ignora */ }
+    quandoCapaPronta().then(() => {
+      tirarAbertura();
+      // Link compartilhado de uma peça: abre direto nela
+      const pecaLink = params.get('peca');
+      if (pecaLink && acharPeca(pecaLink)) setTimeout(() => abrirPeca(pecaLink), 950);
+    });
   }).catch((e) => {
     console.error(e);
     tirarAbertura();

@@ -550,7 +550,8 @@ App.aoIniciar(async () => {
     });
     el('form-catalogo').addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      const novo = { ativo: el('ct-ativo').checked, mostrarPrecos: el('ct-precos').checked, entrega: el('ct-entrega').checked, whatsapp: el('ct-whats').value.trim(), mensagem: el('ct-msg').value.trim() };
+      const anterior = (await Data.obterLoja()).catalogo || {};
+      const novo = { ...anterior, ativo: el('ct-ativo').checked, mostrarPrecos: el('ct-precos').checked, entrega: el('ct-entrega').checked, whatsapp: el('ct-whats').value.trim(), mensagem: el('ct-msg').value.trim() };
       const botao = ev.submitter || el('form-catalogo').querySelector('[type=submit]');
       botao.disabled = true;
       try {

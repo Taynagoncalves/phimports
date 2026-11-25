@@ -82,7 +82,7 @@ App.aoIniciar(async () => {
     const botao = ev.submitter || $('form-ap-cat').querySelector('[type=submit]');
     botao.disabled = true;
     try {
-      loja = await Data.salvarLoja({ catalogo: { ...(loja.catalogo || {}), tema: { ...tema, frase1: (tema.frase1 || '').trim(), frase2: (tema.frase2 || '').trim() } } });
+      loja = await Data.salvarLoja({ catalogo: { ...((await Data.obterLoja()).catalogo || {}), tema: { ...tema, frase1: (tema.frase1 || '').trim(), frase2: (tema.frase2 || '').trim() } } });
       await Data.publicarCatalogo(true);
       $('ap-status').textContent = '✓ Publicado no catálogo';
       try { iframe.contentWindow.location.reload(); } catch (e) { /* ignora */ }
