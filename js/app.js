@@ -973,6 +973,32 @@
     imprimirNavegador(html, cssPagina);
   }
 
+  /**
+   * Imprime numa TIRA ÚNICA: a página tem exatamente a altura do conteúdo,
+   * então nunca quebra em duas páginas (pedido online / folha de separação).
+   */
+  async function imprimirTira(html) {
+    const aj = ajustesImpressora();
+    const bobina = /max-width:\s*48mm/.test(html) ? 58 : 80;
+    const area = Math.max(30, Math.min(bobina, Number(bobina === 58 ? aj.area58 : aj.area80) || (bobina === 58 ? 48 : 72)));
+    const largura = area - 2;
+    const esquerda = Math.max(0, 1 + (Number(aj.mover) || 0));
+    // Mede o conteúdo do jeito que vai ser impresso (mesma largura, sem borda)
+    const medida = document.createElement('div');
+    medida.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
+    medida.innerHTML = html;
+    document.body.appendChild(medida);
+    const cupom = medida.querySelector('.cupom');
+    if (cupom) Object.assign(cupom.style, { width: largura + 'mm', maxWidth: largura + 'mm', margin: '0', padding: '2mm 1mm 8mm', border: '0', boxShadow: 'none' });
+    const imagens = [...medida.querySelectorAll('img')].map((img) => (img.complete ? Promise.resolve() : new Promise((ok) => { img.onload = ok; img.onerror = ok; })));
+    await Promise.race([Promise.all(imagens), new Promise((ok) => setTimeout(ok, 2500))]);
+    const alturaMm = Math.ceil(((cupom || medida).getBoundingClientRect().height * 25.4) / 96) + 6;
+    medida.remove();
+    imprimirNavegador(html, `@page { size: ${bobina}mm ${alturaMm}mm; margin: 0; }
+      html, body { margin: 0 !important; padding: 0 !important; }
+      .area-impressao .cupom { width: ${largura}mm !important; max-width: ${largura}mm !important; margin: 0 0 0 ${esquerda}mm !important; padding: 2mm 1mm 8mm !important; }`);
+  }
+
   function imprimirNavegador(html, cssPagina = '') {
     const area = document.createElement('div');
     area.className = 'area-impressao';
@@ -1113,19 +1139,13 @@
           <div class="c-linha"><span>${it.qtd} UN x ${m(it.preco)}</span><span>${m((Number(it.qtd) || 0) * (Number(it.preco) || 0))}</span></div>
         </div>`).join('')}
       <div class="c-sep"></div>
-      <div class="c-linha"><span>Qtd. total de itens</span><span>${qtdTotal}</span></div>
-      <div class="c-linha"><span>Valor total R$</span><span>${m(subtotal)}</span></div>
+      ${cupom ? `<div class="c-linha"><span>Valor total R$ (${qtdTotal} ${qtdTotal === 1 ? 'peça' : 'peças'})</span><span>${m(subtotal)}</span></div>` : ''}
       ${cupom ? `<div class="c-linha"><span>Cupom ${e(cupom.codigo)}</span><span>-${m(cupom.desconto)}</span></div>` : ''}
       <div class="c-linha c-negrito"><span>Valor a pagar R$</span><span>${m(pedido.total)}</span></div>
-      <div class="c-linha c-negrito mt-2"><span>PAGAMENTO</span><span>${pedido.pago ? e(formas[pedido.pago.forma] || pedido.pago.forma || 'Pago') : 'A COMBINAR'}</span></div>
-      ${pedido.pago ? `<div class="c-linha"><span>Pago em</span><span>${formatarDataHora(pedido.pago.data)}</span></div>` : ''}
+      <div class="c-linha c-negrito"><span>PAGAMENTO</span><span>${pedido.pago ? e(formas[pedido.pago.forma] || pedido.pago.forma || 'Pago') : 'A COMBINAR'}</span></div>
       ${pedido.observacaoLoja ? `<div class="c-sep"></div><div>Anotação: ${e(pedido.observacaoLoja)}</div>` : ''}
       <div class="c-sep"></div>
-      <div class="c-linha mt-2" style="align-items:flex-end"><span>Separado por:</span><span style="flex:1;border-bottom:1px solid #000;margin-left:6px;height:1em"></span></div>
-      <div class="c-linha mt-2" style="align-items:flex-end"><span>Conferido por:</span><span style="flex:1;border-bottom:1px solid #000;margin-left:6px;height:1em"></span></div>
-      <div class="c-sep"></div>
-      <div class="c-centro">Pedido feito pelo catálogo online</div>
-      <div class="c-centro">Documento sem valor fiscal</div>
+      <div class="c-centro">Pedido do catálogo online · sem valor fiscal</div>
     </div>`;
   }
 
@@ -1511,7 +1531,7 @@
     // gráficos
     corCss, paletaGrafico,
     // impressão / cupom
-    imprimir, htmlPedidoOnline, imprimirPdf, carregarJsPdf, ajustesImpressora, salvarAjustesImpressora, htmlCupom, gerarCupom, gerarVale, opcoesImpressao, IMPRESSAO_PADRAO,
+    imprimir, imprimirTira, htmlPedidoOnline, imprimirPdf, carregarJsPdf, ajustesImpressora, salvarAjustesImpressora, htmlCupom, gerarCupom, gerarVale, opcoesImpressao, IMPRESSAO_PADRAO,
     // app instalável
     instalarApp, get podeInstalar() { return !!pedidoInstalacao; }, get appInstalado() { return appInstalado(); },
     // troca/devolução (telas Vendas e Trocas)

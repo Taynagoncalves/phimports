@@ -450,7 +450,7 @@ App.aoIniciar(async () => {
 
   /* ---------- Folha de separação (impressora de recibo) ---------- */
   function imprimirPedido(p) {
-    App.imprimir(App.htmlPedidoOnline({ loja, pedido: p }));
+    App.imprimirTira(App.htmlPedidoOnline({ loja, pedido: p }));
   }
 
   /* ---------- Eventos ---------- */
