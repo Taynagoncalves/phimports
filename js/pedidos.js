@@ -15,6 +15,7 @@ App.aoIniciar(async () => {
 
   let pedidos = [];
   let fotos = new Map();          // produtoId → foto
+  let precos = new Map();         // produtoId → preço atual (o menor entre normal e promocional)
   let filtro = 'abertos';         // abertos | novo | confirmado | concluido | cancelado | todos
   let busca = '';
   let selecionado = App.parametroUrl('pedido') || '';
@@ -103,8 +104,9 @@ App.aoIniciar(async () => {
   /* ---------- Carregar ---------- */
   async function carregar() {
     const [lista, produtos] = await Promise.all([Data.listarPedidos(), Data.listarProdutos().catch(() => [])]);
-    pedidos = lista;
+    pedidos = lista.map(App.limparPedido);
     fotos = new Map(produtos.filter((p) => p.foto).map((p) => [p.id, p.foto]));
+    precos = new Map(produtos.map((p) => [p.id, Math.min(Number(p.preco) || 0, Number(p.precoPromocional) || Infinity)]));
     avisarNovos();
     desenharResumo();
     desenharFiltros();
@@ -272,6 +274,23 @@ App.aoIniciar(async () => {
   const achar = (id) => pedidos.find((p) => p.id === id);
   const NOMES_EVENTO = { novo: 'Pedido recebido', confirmado: 'Confirmado', cancelado: 'Cancelado', concluido: 'Virou venda', pago: 'Pagamento recebido', 'pago-desfeito': 'Pagamento desmarcado', pronto: 'Pronto para retirar', enviado: 'Enviado', 'pronto-desfeito': 'Voltou para separação' };
 
+  /** Confere se o pedido bate com a loja (o pedido vem de fora, sem login) */
+  function conferencia(p) {
+    const avisos = [];
+    const subtotal = (p.itens || []).reduce((s, i) => s + i.preco * i.qtd, 0);
+    const cupom = App.cupomDoPedido(p);
+    if (cupom) {
+      const c = App.conferirCupom(cupom, loja, subtotal);
+      if (!c.ok) avisos.push(`O cupom <strong>${e(cupom.codigo)}</strong> ${e(c.motivo)}.`);
+      else if (cupom.desconto > c.desconto + 0.05) avisos.push(`O desconto do cupom deveria ser ${r$(c.desconto)}, mas o pedido diz ${r$(cupom.desconto)}.`);
+    }
+    const baratos = (p.itens || []).filter((i) => precos.has(i.produtoId) && i.preco < precos.get(i.produtoId) - 0.009);
+    if (baratos.length) avisos.push(`Preço no pedido menor que o da loja: ${baratos.map((i) => `${e(i.nome)} (${r$(i.preco)} × loja ${r$(precos.get(i.produtoId))})`).join(', ')}.`);
+    const esperado = subtotal - (cupom ? cupom.desconto : 0);
+    if (Math.abs(esperado - p.total) > 0.05) avisos.push(`O total do pedido (${r$(p.total)}) não bate com as peças (${r$(esperado)}).`);
+    return avisos;
+  }
+
   function proximoPasso(p) {
     if (p.status === 'cancelado') return { titulo: 'Pedido cancelado', texto: 'As peças foram liberadas para o catálogo e o caixa.', acoes: `<button type="button" class="btn btn-secundario" data-acao="reabrir">${App.icone('rotate-ccw')}Reabrir pedido</button>` };
     if (p.status === 'concluido') return { titulo: 'Pedido finalizado', texto: `Virou a venda #${e(p.numeroVenda || '')}.`, acoes: p.vendaId ? `<a class="btn btn-secundario" href="vendas.html?venda=${encodeURIComponent(p.vendaId)}">${App.icone('receipt')}Ver venda</a>` : '' };
@@ -353,6 +372,7 @@ App.aoIniciar(async () => {
         </section>
       </div>
 
+      ${ABERTO.includes(p.status) && conferencia(p).length ? `<div class="alerta perigo pd-conferir">${App.icone('shield-alert')}<span><strong>Confira antes de cobrar:</strong> ${conferencia(p).join(' ')} No caixa vale o preço da loja.</span></div>` : ''}
       ${obs ? `<div class="pd-obs">${App.icone('quote')}<span>${e(obs)}</span></div>` : ''}
 
       <section class="pd-bloco">

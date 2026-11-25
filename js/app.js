@@ -231,6 +231,47 @@
    * antes da regra do banco aceitar o cupom, escrito na observação:
    * "Cupom PH10 (−R$ 11,00) · resto da observação".
    */
+  /**
+   * O pedido do catálogo é escrito por qualquer pessoa (sem login): antes de usar,
+   * garante números nos números e textos curtos nos textos.
+   */
+  function limparPedido(p) {
+    if (!p || typeof p !== 'object') return p;
+    const txt = (v, max) => String(v ?? '').slice(0, max);
+    const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+    const limpo = {
+      ...p,
+      codigo: txt(p.codigo, 12),
+      cliente: { nome: txt(p.cliente && p.cliente.nome, 60), telefone: txt(p.cliente && p.cliente.telefone, 20) },
+      endereco: txt(p.endereco, 200), obs: txt(p.obs, 220),
+      entrega: p.entrega === 'entregar' ? 'entregar' : 'retirar',
+      total: num(p.total),
+      itens: (Array.isArray(p.itens) ? p.itens : []).slice(0, 40).map((i) => ({
+        produtoId: txt(i && i.produtoId, 60), sku: txt(i && i.sku, 40), nome: txt(i && i.nome, 120),
+        cor: txt(i && i.cor, 40), tamanho: txt(i && i.tamanho, 12),
+        qtd: Math.max(0, Math.min(999, Math.floor(num(i && i.qtd)))), preco: num(i && i.preco)
+      }))
+    };
+    if (p.subtotal !== undefined) limpo.subtotal = num(p.subtotal);
+    if (p.cupom) limpo.cupom = { codigo: txt(p.cupom.codigo, 20).toUpperCase().replace(/[^A-Z0-9_-]/g, ''), desconto: num(p.cupom.desconto) };
+    return limpo;
+  }
+
+  /**
+   * Confere o cupom do pedido com os cupons cadastrados na loja e recalcula
+   * o desconto pela regra do cupom sobre o valor informado (nunca confia no
+   * número que veio no pedido). Devolve { ok, codigo, desconto, motivo }.
+   */
+  function conferirCupom(cupom, loja, subtotal) {
+    if (!cupom) return null;
+    const c = ((loja && loja.catalogo && loja.catalogo.cupons) || []).find((x) => x && x.codigo === cupom.codigo);
+    if (!c) return { ok: false, codigo: cupom.codigo, desconto: 0, motivo: 'não existe nos cupons da loja' };
+    if (c.minimo && subtotal < Number(c.minimo) - 0.001) return { ok: false, codigo: cupom.codigo, desconto: 0, motivo: `vale só acima de ${formatarMoeda(c.minimo)}` };
+    const regra = c.tipo === 'valor' ? Number(c.valor) || 0 : subtotal * Math.min(100, Number(c.valor) || 0) / 100;
+    const desconto = Math.round(Math.max(0, Math.min(subtotal, regra, Number(cupom.desconto) || regra)) * 100) / 100;
+    return { ok: true, codigo: cupom.codigo, desconto, motivo: '' };
+  }
+
   function cupomDoPedido(p) {
     if (!p) return null;
     if (p.cupom && Number(p.cupom.desconto) > 0) return { codigo: p.cupom.codigo, desconto: Number(p.cupom.desconto), obs: p.obs || '' };
@@ -1103,7 +1144,8 @@
   }
 
   /** Pedido online impresso no mesmo estilo do recibo de compra (folha de separação) */
-  function htmlPedidoOnline({ loja, pedido }) {
+  function htmlPedidoOnline({ loja, pedido: pedidoBruto }) {
+    const pedido = limparPedido(pedidoBruto);
     const op = opcoesImpressao(loja);
     const m = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const e = escapeHtml;
@@ -1523,7 +1565,7 @@
     formatarMoeda, formatarNumero, formatarPercentual, formatarData, formatarDataHora, dataInput, diasAtras, lerNumero, formatarValorInput,
     escapeHtml, iniciais, debounce, parametroUrl,
     // visuais
-    cupomDoPedido, icones, icone, badgeStatus, nomePagamento, FORMAS_PAGAMENTO, corHex, bolinhaCor, thumb,
+    cupomDoPedido, limparPedido, conferirCupom, icones, icone, badgeStatus, nomePagamento, FORMAS_PAGAMENTO, corHex, bolinhaCor, thumb,
     // componentes
     toast, abrirModal, confirmar, estadoVazio, paginar, renderPaginacao,
     // formulários

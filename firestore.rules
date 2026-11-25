@@ -44,13 +44,8 @@ service cloud.firestore {
     match /acessos/{uid} {
       allow read: if superAdmin() || (request.auth != null
         && (request.auth.uid == uid || dono(resource.data.lojaId)));
-      // Primeiro acesso: o próprio usuário cria a loja dele (como dono de uma loja nova),
-      // o dono cadastra um usuário para a loja dele, ou o suporte cria
-      allow create: if superAdmin() || (request.auth != null && (
-        (request.auth.uid == uid
-          && request.resource.data.perfil == 'dono'
-          && !exists(/databases/$(database)/documents/lojas/$(request.resource.data.lojaId)))
-        || dono(request.resource.data.lojaId)));
+      // Lojas novas só pelo suporte (painel). O dono cadastra usuários da própria loja.
+      allow create: if superAdmin() || dono(request.resource.data.lojaId);
       // Só o dono altera ou remove acessos da própria loja (e não muda a loja de ninguém)
       allow update: if superAdmin() || (dono(resource.data.lojaId)
         && request.resource.data.lojaId == resource.data.lojaId);
@@ -60,10 +55,7 @@ service cloud.firestore {
     match /lojas/{lojaId} {
       // O membro lê o cabeçalho mesmo bloqueado (para ver o aviso de bloqueio)
       allow read: if superAdmin() || membro(lojaId);
-      allow create: if superAdmin() || (request.auth != null
-        && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.lojaId == lojaId
-        && request.resource.data.donoUid == request.auth.uid
-        && request.resource.data.get('bloqueada', false) == false);
+      allow create: if superAdmin();
       // O dono não pode mexer no bloqueio
       allow update: if superAdmin() || (dono(lojaId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['bloqueada', 'motivoBloqueio']));
@@ -79,6 +71,22 @@ service cloud.firestore {
           && request.resource.data.itens is list
           && request.resource.data.itens.size() > 0 && request.resource.data.itens.size() <= 40
           && request.resource.data.total is number
+          && request.resource.data.total >= 0 && request.resource.data.total <= 1000000
+          // Tamanho dos campos (o pedido vem de qualquer pessoa, sem login)
+          && request.resource.data.codigo is string && request.resource.data.codigo.size() <= 12
+          && request.resource.data.criadoEm is string && request.resource.data.criadoEm.size() <= 40
+          && request.resource.data.entrega in ['retirar', 'entregar']
+          && request.resource.data.cliente is map
+          && request.resource.data.cliente.keys().hasOnly(['nome', 'telefone'])
+          && request.resource.data.cliente.nome is string && request.resource.data.cliente.nome.size() <= 60
+          && request.resource.data.cliente.get('telefone', '') is string && request.resource.data.cliente.get('telefone', '').size() <= 20
+          && request.resource.data.get('endereco', '') is string && request.resource.data.get('endereco', '').size() <= 200
+          && request.resource.data.get('obs', '') is string && request.resource.data.get('obs', '').size() <= 220
+          && (!('subtotal' in request.resource.data) || (request.resource.data.subtotal is number && request.resource.data.subtotal >= 0))
+          && (!('cupom' in request.resource.data) || (request.resource.data.cupom is map
+            && request.resource.data.cupom.keys().hasOnly(['codigo', 'desconto'])
+            && request.resource.data.cupom.codigo is string && request.resource.data.cupom.codigo.size() <= 20
+            && request.resource.data.cupom.desconto is number && request.resource.data.cupom.desconto >= 0))
           && exists(/databases/$(database)/documents/catalogos/$(lojaId))
           && get(/databases/$(database)/documents/catalogos/$(lojaId)).data.publicado == true;
       }

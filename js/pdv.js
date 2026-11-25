@@ -1310,7 +1310,7 @@ App.aoIniciar(async () => {
   // Veio de "Virar venda": coloca as peças do pedido no carrinho
   if (pedidoId) {
     try {
-      pedidoAtual = await Data.obterPedido(pedidoId);
+      pedidoAtual = App.limparPedido(await Data.obterPedido(pedidoId));
       if (!['novo', 'confirmado'].includes(pedidoAtual.status)) { App.toast('Este pedido não está mais em aberto.', 'aviso'); pedidoAtual = null; }
     } catch (e) { App.toast(e.message, 'erro'); pedidoAtual = null; }
     if (pedidoAtual) {
@@ -1322,13 +1322,16 @@ App.aoIniciar(async () => {
       });
       const nome = (pedidoAtual.cliente && pedidoAtual.cliente.nome) || '';
       if (nome) { $('cliente-nome').value = nome; atualizarClienteAvulso(); }
-      // Cupom do catálogo: já entra como desconto em R$
-      const cupomPedido = App.cupomDoPedido(pedidoAtual);
-      if (cupomPedido) { document.querySelector('[data-desc=valor]')?.click(); inputDesconto.value = App.formatarValorInput(cupomPedido.desconto); }
+      // Cupom do catálogo: confere com os cupons da loja e recalcula sobre os preços reais do caixa
+      const lojaCupom = await Data.obterLoja().catch(() => ({}));
+      const subtotalReal = carrinho.reduce((s, i) => s + i.preco * i.qtd, 0);
+      const conferido = App.conferirCupom(App.cupomDoPedido(pedidoAtual), lojaCupom, subtotalReal);
+      const cupomPedido = conferido && conferido.ok ? conferido : null;
+      if (cupomPedido && cupomPedido.desconto > 0) { document.querySelector('[data-desc=valor]')?.click(); inputDesconto.value = App.formatarValorInput(cupomPedido.desconto); }
       const aviso = document.createElement('div');
       aviso.id = 'aviso-pedido';
       aviso.className = 'alerta info mb-4';
-      aviso.innerHTML = `<i data-lucide="shopping-basket"></i><span>Atendendo o <strong>pedido online #${App.escapeHtml(pedidoAtual.codigo)}</strong>${nome ? ' de ' + App.escapeHtml(nome) : ''}. ${cupomPedido ? ` Cupom <strong>${App.escapeHtml(cupomPedido.codigo)}</strong> (−${App.formatarMoeda(cupomPedido.desconto)}) já está no desconto.` : ''} Confira as peças, receba o pagamento e finalize.${faltou ? ` <strong>${faltou} item(ns) não foram encontrados no estoque.</strong>` : ''}</span>`;
+      aviso.innerHTML = `<i data-lucide="shopping-basket"></i><span>Atendendo o <strong>pedido online #${App.escapeHtml(pedidoAtual.codigo)}</strong>${nome ? ' de ' + App.escapeHtml(nome) : ''}. ${cupomPedido ? ` Cupom <strong>${App.escapeHtml(cupomPedido.codigo)}</strong> (−${App.formatarMoeda(cupomPedido.desconto)}) já está no desconto.` : ''} ${conferido && !conferido.ok ? ` <strong>⚠ O cupom ${App.escapeHtml(conferido.codigo)} ${App.escapeHtml(conferido.motivo)} — o desconto NÃO foi aplicado.</strong>` : ''} Confira as peças, receba o pagamento e finalize.${faltou ? ` <strong>${faltou} item(ns) não foram encontrados no estoque.</strong>` : ''}</span>`;
       document.querySelector('.caixa-venda')?.prepend(aviso);
       App.icones();
     }
