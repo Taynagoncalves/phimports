@@ -1076,6 +1076,59 @@
     return `max-width:${largura}mm;font-size:${fonte}px`;
   }
 
+  /** Pedido online impresso no mesmo estilo do recibo de compra (folha de separação) */
+  function htmlPedidoOnline({ loja, pedido }) {
+    const op = opcoesImpressao(loja);
+    const m = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const e = escapeHtml;
+    const itens = pedido.itens || [];
+    const qtdTotal = itens.reduce((s, i) => s + (Number(i.qtd) || 0), 0);
+    const subtotal = itens.reduce((s, i) => s + (Number(i.preco) || 0) * (Number(i.qtd) || 0), 0);
+    const cupom = cupomDoPedido(pedido);
+    const obs = cupom ? cupom.obs : pedido.obs;
+    const retirar = pedido.entrega !== 'entregar';
+    const formas = { pix: 'Pix', cartao: 'Cartão', dinheiro: 'Dinheiro', outro: 'Outro' };
+    const cli = pedido.cliente || {};
+    return `<div class="cupom" style="${estiloPapel(op)}">
+      ${op.logo ? `<div class="c-logo"><img src="${e(logoDoRecibo(loja))}" alt="${e(loja.nome)}"></div>` : ''}
+      <div class="c-centro c-negrito" style="font-size:15px;letter-spacing:.02em">${e(loja.nome || '').toUpperCase()}</div>
+      ${loja.endereco && op.endereco ? `<div class="c-centro">${e(loja.endereco)}</div>` : ''}
+      ${loja.telefone && op.telefone ? `<div class="c-centro">Tel./WhatsApp: ${e(loja.telefone)}</div>` : ''}
+      ${usuarioInstagram(loja) && op.instagram ? `<div class="c-centro">Instagram: @${e(usuarioInstagram(loja))}</div>` : ''}
+      <div class="c-sep"></div>
+      <div class="c-centro c-negrito" style="font-size:14px">PEDIDO ONLINE #${e(pedido.codigo || '')}</div>
+      <div class="c-centro">${formatarDataHora(pedido.criadoEm)}</div>
+      <div class="c-sep"></div>
+      <div class="c-linha"><span>Cliente</span><span class="c-negrito">${e(cli.nome || '—')}</span></div>
+      ${cli.telefone ? `<div class="c-linha"><span>WhatsApp</span><span>${e(cli.telefone)}</span></div>` : ''}
+      <div class="c-linha"><span>Entrega</span><span class="c-negrito">${retirar ? 'RETIRADA NA LOJA' : 'ENVIAR'}</span></div>
+      ${!retirar && pedido.endereco ? `<div>${e(pedido.endereco)}</div>` : ''}
+      ${obs ? `<div class="mt-2">Obs.: ${e(obs)}</div>` : ''}
+      <div class="c-sep"></div>
+      <div class="c-linha c-negrito"><span>PRODUTOS</span><span>VL TOTAL</span></div>
+      ${itens.map((it, i) => `
+        <div class="c-item">
+          ${op.codigo && it.sku ? `<div>${String(i + 1).padStart(3, '0')} ${e(it.sku)}</div>` : ''}
+          <div>[ &nbsp;] ${op.codigo && it.sku ? '' : `${String(i + 1).padStart(2, '0')} `}${e(it.nome)} ${e(it.tamanho || '')}${it.cor ? '/' + e(it.cor) : ''}</div>
+          <div class="c-linha"><span>${it.qtd} UN x ${m(it.preco)}</span><span>${m((Number(it.qtd) || 0) * (Number(it.preco) || 0))}</span></div>
+        </div>`).join('')}
+      <div class="c-sep"></div>
+      <div class="c-linha"><span>Qtd. total de itens</span><span>${qtdTotal}</span></div>
+      <div class="c-linha"><span>Valor total R$</span><span>${m(subtotal)}</span></div>
+      ${cupom ? `<div class="c-linha"><span>Cupom ${e(cupom.codigo)}</span><span>-${m(cupom.desconto)}</span></div>` : ''}
+      <div class="c-linha c-negrito"><span>Valor a pagar R$</span><span>${m(pedido.total)}</span></div>
+      <div class="c-linha c-negrito mt-2"><span>PAGAMENTO</span><span>${pedido.pago ? e(formas[pedido.pago.forma] || pedido.pago.forma || 'Pago') : 'A COMBINAR'}</span></div>
+      ${pedido.pago ? `<div class="c-linha"><span>Pago em</span><span>${formatarDataHora(pedido.pago.data)}</span></div>` : ''}
+      ${pedido.observacaoLoja ? `<div class="c-sep"></div><div>Anotação: ${e(pedido.observacaoLoja)}</div>` : ''}
+      <div class="c-sep"></div>
+      <div class="c-linha mt-2" style="align-items:flex-end"><span>Separado por:</span><span style="flex:1;border-bottom:1px solid #000;margin-left:6px;height:1em"></span></div>
+      <div class="c-linha mt-2" style="align-items:flex-end"><span>Conferido por:</span><span style="flex:1;border-bottom:1px solid #000;margin-left:6px;height:1em"></span></div>
+      <div class="c-sep"></div>
+      <div class="c-centro">Pedido feito pelo catálogo online</div>
+      <div class="c-centro">Documento sem valor fiscal</div>
+    </div>`;
+  }
+
   function htmlCupom({ loja, fiscal = null, venda, nota = null }) {
     const op = opcoesImpressao(loja);
     const m = (v) => (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1458,7 +1511,7 @@
     // gráficos
     corCss, paletaGrafico,
     // impressão / cupom
-    imprimir, imprimirPdf, carregarJsPdf, ajustesImpressora, salvarAjustesImpressora, htmlCupom, gerarCupom, gerarVale, opcoesImpressao, IMPRESSAO_PADRAO,
+    imprimir, htmlPedidoOnline, imprimirPdf, carregarJsPdf, ajustesImpressora, salvarAjustesImpressora, htmlCupom, gerarCupom, gerarVale, opcoesImpressao, IMPRESSAO_PADRAO,
     // app instalável
     instalarApp, get podeInstalar() { return !!pedidoInstalacao; }, get appInstalado() { return appInstalado(); },
     // troca/devolução (telas Vendas e Trocas)

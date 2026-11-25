@@ -450,26 +450,7 @@ App.aoIniciar(async () => {
 
   /* ---------- Folha de separação (impressora de recibo) ---------- */
   function imprimirPedido(p) {
-    const cupom = App.cupomDoPedido(p);
-    const obs = cupom ? cupom.obs : p.obs;
-    const html = `<div class="cupom">
-      <div class="c-centro c-negrito" style="font-size:15px">${e(loja.nome || '').toUpperCase()}</div>
-      <div class="c-centro c-negrito" style="font-size:14px;margin-top:4px">PEDIDO ONLINE #${e(p.codigo || '')}</div>
-      <div class="c-centro">${App.formatarDataHora(p.criadoEm)}</div>
-      <div class="c-sep"></div>
-      <div class="c-negrito">${e(nomeDe(p))}</div>
-      ${p.cliente && p.cliente.telefone ? `<div>${e(p.cliente.telefone)}</div>` : ''}
-      <div>${retirar(p) ? 'RETIRADA NA LOJA' : `ENTREGA: ${e(p.endereco || '')}`}</div>
-      ${obs ? `<div>Obs.: ${e(obs)}</div>` : ''}
-      <div class="c-sep"></div>
-      ${(p.itens || []).map((i) => `<div class="c-item"><div class="c-linha"><span>[  ] ${i.qtd}x ${e(i.nome)}</span><span>${r$((Number(i.preco) || 0) * (Number(i.qtd) || 0))}</span></div><div>&nbsp;&nbsp;&nbsp;&nbsp;${e([i.cor, i.tamanho && 'Tam. ' + i.tamanho].filter(Boolean).join(' · '))}${i.sku ? ` · ${e(i.sku)}` : ''}</div></div>`).join('')}
-      <div class="c-sep"></div>
-      ${cupom ? `<div class="c-linha"><span>Cupom ${e(cupom.codigo)}</span><span>-${r$(cupom.desconto)}</span></div>` : ''}
-      <div class="c-linha c-negrito" style="font-size:14px"><span>TOTAL</span><span>${r$(p.total)}</span></div>
-      ${p.pago ? `<div>Pago: ${e(nomeForma(p.pago.forma))}</div>` : '<div>Pagamento: a combinar</div>'}
-      ${p.observacaoLoja ? `<div class="c-sep"></div><div>Anotação: ${e(p.observacaoLoja)}</div>` : ''}
-    </div>`;
-    App.imprimir(html);
+    App.imprimir(App.htmlPedidoOnline({ loja, pedido: p }));
   }
 
   /* ---------- Eventos ---------- */
