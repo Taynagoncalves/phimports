@@ -1300,7 +1300,7 @@ App.aoIniciar(async () => {
       const nome = (pedidoAtual.cliente && pedidoAtual.cliente.nome) || '';
       if (nome) { $('cliente-nome').value = nome; atualizarClienteAvulso(); }
       // Cupom do catálogo: já entra como desconto em R$
-      const cupomPedido = pedidoAtual.cupom && Number(pedidoAtual.cupom.desconto) > 0 ? pedidoAtual.cupom : null;
+      const cupomPedido = App.cupomDoPedido(pedidoAtual);
       if (cupomPedido) { document.querySelector('[data-desc=valor]')?.click(); inputDesconto.value = App.formatarValorInput(cupomPedido.desconto); }
       const aviso = document.createElement('div');
       aviso.id = 'aviso-pedido';

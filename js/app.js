@@ -226,6 +226,20 @@
   }
 
   /** Miniatura do produto (foto ou ícone) */
+  /**
+   * Cupom do pedido do catálogo. Vem em pedido.cupom ou, em pedidos feitos
+   * antes da regra do banco aceitar o cupom, escrito na observação:
+   * "Cupom PH10 (−R$ 11,00) · resto da observação".
+   */
+  function cupomDoPedido(p) {
+    if (!p) return null;
+    if (p.cupom && Number(p.cupom.desconto) > 0) return { codigo: p.cupom.codigo, desconto: Number(p.cupom.desconto), obs: p.obs || '' };
+    const m = String(p.obs || '').match(/^Cupom ([A-Z0-9_-]+) \(\s*[−-]\s*R\$\s*([\d.]*\d(?:,\d{1,2})?)\)\s*(?:·\s*)?/);
+    if (!m) return null;
+    const desconto = Number(m[2].replace(/\./g, '').replace(',', '.'));
+    return desconto > 0 ? { codigo: m[1], desconto, obs: String(p.obs).slice(m[0].length) } : null;
+  }
+
   function thumb(produto, classe = 'thumb') {
     return produto && produto.foto
       ? `<div class="${classe}"><img src="${produto.foto}" alt=""></div>`
@@ -1436,7 +1450,7 @@
     formatarMoeda, formatarNumero, formatarPercentual, formatarData, formatarDataHora, dataInput, diasAtras, lerNumero, formatarValorInput,
     escapeHtml, iniciais, debounce, parametroUrl,
     // visuais
-    icones, icone, badgeStatus, nomePagamento, FORMAS_PAGAMENTO, corHex, bolinhaCor, thumb,
+    cupomDoPedido, icones, icone, badgeStatus, nomePagamento, FORMAS_PAGAMENTO, corHex, bolinhaCor, thumb,
     // componentes
     toast, abrirModal, confirmar, estadoVazio, paginar, renderPaginacao,
     // formulários

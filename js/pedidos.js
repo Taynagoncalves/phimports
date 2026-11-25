@@ -116,13 +116,15 @@ App.aoIniciar(async () => {
     const aberto = ABERTO.includes(p.status);
     const parado = aberto && horasDesde(p.criadoEm) > HORAS_PARADO;
     const hist = (p.historico || []).filter((h) => h.status !== 'novo');
+    const cupom = App.cupomDoPedido(p);
+    const obs = cupom ? cupom.obs : p.obs;
     return `<article class="card ped${parado ? ' parado' : ''}" data-id="${e(p.id)}">
       <div class="ped-topo">
         <div class="ped-quem">
           <div class="ped-codigo">#${e(p.codigo || p.id)} ${badge(p)}${parado ? `<span class="badge badge-perigo">Esperando ${quando(p.criadoEm)}</span>` : ''}</div>
           <div class="ped-nome"><strong>${e(nome)}</strong>${p.cliente && p.cliente.telefone ? `<span>${e(p.cliente.telefone)}</span>` : ''}</div>
           <div class="ped-linha">${p.entrega === 'entregar' ? `${App.icone('truck')}Enviar para: ${e(p.endereco || '—')}` : `${App.icone('store')}Vai retirar na loja`}</div>
-          ${p.obs ? `<div class="ped-linha ped-obs">${App.icone('message-square')}“${e(p.obs)}”</div>` : ''}
+          ${obs ? `<div class="ped-linha ped-obs">${App.icone('message-square')}“${e(obs)}”</div>` : ''}
         </div>
         <div class="ped-valor"><strong>${r$(p.total)}</strong><span>${pecasDe(p)} peça${pecasDe(p) === 1 ? '' : 's'} · ${quando(p.criadoEm)}</span></div>
       </div>
@@ -135,7 +137,7 @@ App.aoIniciar(async () => {
           <span class="ped-preco">${r$((Number(i.preco) || 0) * (Number(i.qtd) || 0))}</span>
         </li>`;
       }).join('')}</ul>
-      ${p.cupom ? `<div class="ped-cupom">${App.icone('ticket-percent')}Cupom <strong>${e(p.cupom.codigo)}</strong><span>−${r$(p.cupom.desconto)}</span></div>` : ''}
+      ${cupom ? `<div class="ped-cupom">${App.icone('ticket-percent')}Cupom <strong>${e(cupom.codigo)}</strong><span>−${r$(cupom.desconto)}</span></div>` : ''}
 
       <div class="ped-nota">
         ${App.icone('notebook-pen')}
