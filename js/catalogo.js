@@ -270,6 +270,40 @@
     if (precoDe(p) === null) return '<span class="consulte">Consulte o preço</span>';
     return temPromo(p) ? `<s>${moeda(p.preco)}</s><strong class="em-promo">${moeda(p.promo)}</strong>` : `<strong>${moeda(p.preco)}</strong>`;
   }
+  // Fotos do card: com mais de uma, passa ao mover o mouse (computador) ou deslizando (celular)
+  function fotosCardHtml(p) {
+    const fotos = [p.foto, ...(p.fotosExtras || [])].filter(Boolean).slice(0, 6);
+    if (fotos.length < 2) return `<img src="${esc(foto(p.foto, 600))}" alt="" loading="lazy">`;
+    return `<div class="card-fotos" data-fotos="${fotos.length}">${fotos.map((f, i) => `<img src="${esc(foto(f, 600))}" alt=""${i ? ' class="extra"' : ' class="ativa"'} loading="lazy">`).join('')}</div>
+      <span class="card-pontos" aria-hidden="true">${fotos.map((f, i) => `<i${i ? '' : ' class="on"'}></i>`).join('')}</span>`;
+  }
+  function mostrarFotoCard(caixa, i) {
+    const imgs = caixa.querySelectorAll('.card-fotos img');
+    imgs.forEach((im, k) => im.classList.toggle('ativa', k === i));
+    caixa.querySelectorAll('.card-pontos i').forEach((d, k) => d.classList.toggle('on', k === i));
+  }
+  const comMouse = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  function ligarFotosCard(raiz) {
+    raiz.querySelectorAll('.card-fotos').forEach((galeria) => {
+      const caixa = galeria.parentElement;
+      const n = Number(galeria.dataset.fotos);
+      if (comMouse) {
+        // A posição do mouse (esquerda → direita) escolhe a foto
+        caixa.addEventListener('mousemove', (ev) => {
+          const r = caixa.getBoundingClientRect();
+          mostrarFotoCard(caixa, Math.min(n - 1, Math.max(0, Math.floor(((ev.clientX - r.left) / r.width) * n))));
+        });
+        caixa.addEventListener('mouseleave', () => mostrarFotoCard(caixa, 0));
+      } else {
+        // Celular: desliza para o lado; os pontinhos acompanham
+        galeria.addEventListener('scroll', () => {
+          const i = Math.round(galeria.scrollLeft / Math.max(1, galeria.clientWidth));
+          caixa.querySelectorAll('.card-pontos i').forEach((d, k) => d.classList.toggle('on', k === i));
+        }, { passive: true });
+      }
+    });
+  }
+
   function cardHtml(p) {
     const cores = coresDe(p).filter(([, h]) => h).slice(0, 5);
     const n = estoqueDe(p);
@@ -280,7 +314,7 @@
     return `
       <button type="button" class="card${n <= 0 ? ' esgotado' : ''}" data-peca="${esc(p.id)}" aria-label="${esc(p.nome)} — ${esc(textoEstoque(n))}">
         <div class="card-foto">
-          ${p.foto ? `<img src="${esc(foto(p.foto, 600))}" alt="" loading="lazy">${p.fotosExtras && p.fotosExtras[0] ? `<img class="card-foto-2" src="${esc(foto(p.fotosExtras[0], 600))}" alt="" loading="lazy">` : ''}` : posterHtml(p)}
+          ${p.foto ? fotosCardHtml(p) : posterHtml(p)}
           ${selo}
           <span class="card-ver" aria-hidden="true">${n <= 0 ? 'Avise-me quando chegar' : tams.length ? tams.map(esc).join('  ·  ') : 'Ver peça'}</span>
         </div>
@@ -296,10 +330,10 @@
   const revelar = 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ? new IntersectionObserver((itens) => itens.forEach((it) => { if (it.isIntersecting) { it.target.classList.add('visivel'); revelar.unobserve(it.target); } }), { rootMargin: '0px 0px -40px 0px' })
     : null;
-  const ligarCards = (raiz) => raiz.querySelectorAll('[data-peca]').forEach((b, i) => {
+  const ligarCards = (raiz) => { ligarFotosCard(raiz); raiz.querySelectorAll('[data-peca]').forEach((b, i) => {
     b.addEventListener('click', () => abrirPeca(b.dataset.peca));
     if (revelar) { b.classList.add('revelar'); b.style.transitionDelay = `${(i % 4) * 60}ms`; revelar.observe(b); }
-  });
+  }); };
 
   function desenharVitrines() {
     const promo = cat.produtos.filter((p) => temPromo(p) && !esgotada(p)).slice(0, 12);
