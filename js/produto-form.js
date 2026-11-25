@@ -10,8 +10,6 @@ App.aoIniciar(async () => {
   const corpoGrade = document.getElementById('grade');
   const idEdicao = App.parametroUrl('id');
 
-  const LETRAS = ['PP', 'P', 'M', 'G', 'GG'];
-
   // Estado da grade
   const selecionados = { tamanhos: new Set(), cores: new Set() };
   let variacoes = []; // [{tamanho, cor, sku, codigoBarras, estoque}]
@@ -22,6 +20,8 @@ App.aoIniciar(async () => {
   const enviosExtras = new Set();
   const enviosCores = new Map(); // cor → envio em andamento
   let produtoOriginal = null;
+  let sujo = false;          // tem alteração não salva
+  let salvarOutro = false;   // "Salvar e cadastrar outro"
 
   /* ---------- Carrega listas auxiliares ---------- */
   const [categorias, marcas, colecoes, fornecedores, tamanhos] = await Promise.all([
@@ -86,21 +86,39 @@ App.aoIniciar(async () => {
     const preco = App.lerNumero(form.preco.value);
     const box = document.getElementById('box-margem');
     const texto = document.getElementById('texto-margem');
+    const [eLucro, eMargem, eMarkup] = ['m-lucro', 'm-margem', 'm-markup'].map((id) => document.getElementById(id));
+    box.classList.remove('bom', 'medio', 'ruim');
     if (!custo || !preco) {
-      box.className = 'alerta info';
-      texto.textContent = 'Informe custo e preço para calcular a margem.';
+      eLucro.textContent = eMargem.textContent = eMarkup.textContent = '—';
+      texto.textContent = 'Informe custo e preço para ver o lucro.';
+      desenharPrevia();
       return;
     }
     const lucro = preco - custo;
     const margem = (lucro / preco) * 100;   // margem sobre o preço de venda
-    const markup = (preco / custo);          // multiplicador
-    box.className = 'alerta';
-    box.style.background = margem >= 40 ? 'var(--cor-sucesso-suave)' : margem >= 20 ? 'var(--cor-alerta-suave)' : 'var(--cor-perigo-suave)';
-    box.style.color = margem >= 40 ? 'var(--cor-sucesso)' : margem >= 20 ? 'var(--cor-alerta)' : 'var(--cor-perigo)';
-    texto.innerHTML = `Margem de <strong>${App.formatarPercentual(margem)}</strong> · lucro de <strong>${App.formatarMoeda(lucro)}</strong> por peça · markup ${markup.toFixed(2).replace('.', ',')}x`;
+    const markup = preco / custo;           // multiplicador
+    box.classList.add(margem >= 40 ? 'bom' : margem >= 20 ? 'medio' : 'ruim');
+    eLucro.textContent = App.formatarMoeda(lucro);
+    eMargem.textContent = App.formatarPercentual(margem);
+    eMarkup.textContent = markup.toFixed(2).replace('.', ',') + '×';
+    texto.textContent = margem >= 40 ? 'Boa margem.' : margem >= 20 ? 'Margem apertada — confira se cobre as despesas da loja.' : lucro < 0 ? 'Você está vendendo abaixo do custo.' : 'Margem baixa.';
+    document.querySelectorAll('#chips-markup [data-markup]').forEach((b) => b.setAttribute('aria-pressed', String(Math.abs(markup - Number(b.dataset.markup)) < 0.06)));
+    desenharPrevia();
   }
   form.custo.addEventListener('input', atualizarMargem);
   form.preco.addEventListener('input', atualizarMargem);
+
+  // Sugere o preço multiplicando o custo (2×, 2,5×…), terminando em ,90 se marcado
+  document.querySelectorAll('#chips-markup [data-markup]').forEach((b) => b.addEventListener('click', () => {
+    const custo = App.lerNumero(form.custo.value);
+    if (!custo) { form.custo.focus(); return App.toast('Informe o custo primeiro.', 'erro'); }
+    let preco = custo * Number(b.dataset.markup);
+    preco = document.getElementById('terminar-90').checked ? Math.max(1, Math.ceil(preco)) - 0.10 : Math.round(preco * 100) / 100;
+    form.preco.value = App.formatarValorInput(preco);
+    form.preco.classList.remove('invalido');
+    sujo = true;
+    atualizarMargem();
+  }));
 
   /* ==================================================================
      FOTO (preview)
@@ -116,6 +134,7 @@ App.aoIniciar(async () => {
     preview.classList.toggle('oculto', !foto);
     placeholder.classList.toggle('oculto', !!foto);
     btnRemover.classList.toggle('oculto', !foto);
+    desenharPrevia();
   }
   inputFoto.addEventListener('change', () => {
     const arquivo = inputFoto.files[0];
@@ -208,18 +227,21 @@ App.aoIniciar(async () => {
     return base + ((10 - (soma % 10)) % 10);
   }
 
-  // Bolinha de cor usando a paleta local (inclui cores recém-adicionadas)
-  const bolinha = (nome) => `<span class="cor-bolinha" style="background:${(cores.find((c) => c.nome === nome) || {}).hex || '#CCCCCC'}" aria-hidden="true"></span>`;
+  const hexDaCor = (nome) => (cores.find((c) => c.nome === nome) || {}).hex || '#CCCCCC';
+  const bolinha = (nome) => `<span class="cor-bolinha" style="background:${hexDaCor(nome)}" aria-hidden="true"></span>`;
 
-  // Ordena tamanhos conforme a lista oficial (PP, P, M… 36, 38…)
+  // Ordena tamanhos conforme a lista (PP, P, M… 36, 38… e os que você criou no fim)
   const ordemTamanho = (t) => { const i = tamanhos.indexOf(t); return i < 0 ? 999 : i; };
+  const ehNumero = (t) => /^\d+$/.test(t);
+  const tamanhosEscolhidos = () => [...selecionados.tamanhos].sort((a, b) => ordemTamanho(a) - ordemTamanho(b));
+  const coresEscolhidas = () => [...selecionados.cores];
 
   /** Desenha os chips de tamanhos e cores */
   function desenharChips() {
     const chip = (valor, grupo, extra = '') => `
       <button type="button" class="chip" data-grupo="${grupo}" data-valor="${App.escapeHtml(valor)}" aria-pressed="${selecionados[grupo].has(valor)}">${extra}${App.escapeHtml(valor)}</button>`;
-    document.getElementById('chips-letras').innerHTML = tamanhos.filter((t) => LETRAS.includes(t)).map((t) => chip(t, 'tamanhos')).join('');
-    document.getElementById('chips-numeros').innerHTML = tamanhos.filter((t) => !LETRAS.includes(t)).map((t) => chip(t, 'tamanhos')).join('');
+    document.getElementById('chips-letras').innerHTML = tamanhos.filter((t) => !ehNumero(t)).map((t) => chip(t, 'tamanhos')).join('');
+    document.getElementById('chips-numeros').innerHTML = tamanhos.filter(ehNumero).map((t) => chip(t, 'tamanhos')).join('');
     document.getElementById('chips-cores').innerHTML = cores.map((c) => chip(c.nome, 'cores', `<span class="cor-bolinha" style="background:${c.hex}" aria-hidden="true"></span>`)).join('');
 
     document.querySelectorAll('.chip[data-grupo]').forEach((b) => b.addEventListener('click', () => {
@@ -227,22 +249,46 @@ App.aoIniciar(async () => {
       const v = b.dataset.valor;
       conjunto.has(v) ? conjunto.delete(v) : conjunto.add(v);
       b.setAttribute('aria-pressed', String(conjunto.has(v)));
+      sujo = true;
       gerarGrade();
     }));
   }
 
+  // Atalhos de tamanhos (P ao GG, 38 ao 44…)
+  document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => {
+    const lista = b.dataset.preset ? b.dataset.preset.split(',') : [];
+    selecionados.tamanhos = new Set(lista.filter((t) => tamanhos.includes(t)));
+    sujo = true;
+    desenharChips();
+    gerarGrade();
+  }));
+
+  // Tamanho que não está na lista (XG, Único, 34…)
+  function adicionarTamanho() {
+    const campo = document.getElementById('novo-tamanho');
+    const t = campo.value.trim().toUpperCase().replace(/^UNICO$|^ÚNICO$/, 'Único');
+    if (!t) return App.toast('Digite o tamanho.', 'erro');
+    if (!tamanhos.includes(t)) tamanhos.push(t);
+    selecionados.tamanhos.add(t);
+    campo.value = '';
+    sujo = true;
+    desenharChips();
+    gerarGrade();
+  }
+  document.getElementById('btn-add-tamanho').addEventListener('click', adicionarTamanho);
+  document.getElementById('novo-tamanho').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); adicionarTamanho(); } });
+
   /**
-   * Gera a tabela tamanho × cor.
+   * Gera as variações tamanho × cor.
    * Mantém SKU/código/estoque já digitados para combinações que continuam existindo.
    */
   function gerarGrade() {
     lerGradeDaTela();
     const anteriores = new Map(variacoes.map((v) => [v.tamanho + '|' + v.cor, v]));
     const lista = [];
-    [...selecionados.tamanhos].sort((a, b) => ordemTamanho(a) - ordemTamanho(b)).forEach((tam) => {
-      [...selecionados.cores].forEach((cor) => {
-        const anterior = anteriores.get(tam + '|' + cor);
-        lista.push(anterior || {
+    tamanhosEscolhidos().forEach((tam) => {
+      coresEscolhidas().forEach((cor) => {
+        lista.push(anteriores.get(tam + '|' + cor) || {
           tamanho: tam,
           cor,
           sku: `${prefixoSku()}-${tam}-${sigla(cor)}`,
@@ -256,27 +302,67 @@ App.aoIniciar(async () => {
     desenharFotosCores();
   }
 
-  /** Lê os valores digitados na tabela para o array de variações */
+  /** Lê o que foi digitado (quantidades na matriz, SKU/código na tabela) */
   function lerGradeDaTela() {
+    document.querySelectorAll('#matriz-estoque [data-mat]').forEach((inp) => {
+      const v = variacoes[Number(inp.dataset.mat)];
+      if (v) v.estoque = Math.max(0, parseInt(inp.value, 10) || 0);
+    });
     corpoGrade.querySelectorAll('tr[data-i]').forEach((tr) => {
       const v = variacoes[Number(tr.dataset.i)];
       if (!v) return;
       v.sku = tr.querySelector('[data-campo=sku]').value.trim().toUpperCase();
       v.codigoBarras = tr.querySelector('[data-campo=codigoBarras]').value.trim();
-      v.estoque = Math.max(0, parseInt(tr.querySelector('[data-campo=estoque]').value, 10) || 0);
     });
   }
 
   function desenharGrade() {
+    const matriz = document.getElementById('matriz-estoque');
     const ferramentas = document.getElementById('ferramentas-grade');
+    const codigos = document.getElementById('pf-codigos');
     if (!variacoes.length) {
       ferramentas.classList.add('oculto');
-      corpoGrade.innerHTML = `<tr><td colspan="5">${App.estadoVazio({ icone: 'grid-3x3', titulo: 'Nenhuma variação ainda', texto: 'Selecione ao menos um tamanho e uma cor acima para gerar a grade.' })}</td></tr>`;
-      document.getElementById('resumo-grade').textContent = '';
+      codigos.classList.add('oculto');
+      const falta = !selecionados.tamanhos.size && !selecionados.cores.size ? 'os tamanhos e as cores'
+        : !selecionados.tamanhos.size ? 'pelo menos um tamanho' : 'pelo menos uma cor';
+      matriz.innerHTML = `<div class="pf-vazio">${App.icone('grid-3x3')}<strong>Falta escolher ${falta}</strong><span>Marque na etapa 3 e a tabela de quantidades aparece aqui.</span></div>`;
+      corpoGrade.innerHTML = '';
+      atualizarResumoGrade();
       App.icones();
       return;
     }
     ferramentas.classList.remove('oculto');
+    codigos.classList.remove('oculto');
+
+    // Matriz: cores nas linhas, tamanhos nas colunas
+    const tams = tamanhosEscolhidos();
+    const cs = coresEscolhidas();
+    const indice = new Map(variacoes.map((v, i) => [v.tamanho + '|' + v.cor, i]));
+    matriz.innerHTML = `
+      <table class="pf-matriz">
+        <thead><tr><th class="pf-matriz-cor">Cor</th>${tams.map((t) => `<th>${App.escapeHtml(t)}</th>`).join('')}<th class="pf-matriz-soma">Total</th></tr></thead>
+        <tbody>${cs.map((cor, ci) => `
+          <tr>
+            <th class="pf-matriz-cor" scope="row"><span>${bolinha(cor)}${App.escapeHtml(cor)}</span></th>
+            ${tams.map((t) => { const i = indice.get(t + '|' + cor); return `<td><input class="input" type="number" min="0" inputmode="numeric" data-mat="${i}" value="${variacoes[i].estoque || ''}" placeholder="0" aria-label="Quantidade ${App.escapeHtml(cor)} tamanho ${App.escapeHtml(t)}"></td>`; }).join('')}
+            <td class="pf-matriz-soma" data-soma-linha="${ci}">0</td>
+          </tr>`).join('')}
+        </tbody>
+        ${cs.length > 1 ? `<tfoot><tr><th class="pf-matriz-cor">Total</th>${tams.map((t, ti) => `<td data-soma-col="${ti}">0</td>`).join('')}<td class="pf-matriz-soma" data-soma-geral>0</td></tr></tfoot>` : ''}
+      </table>`;
+    const entradas = [...matriz.querySelectorAll('[data-mat]')];
+    entradas.forEach((inp, k) => {
+      inp.addEventListener('input', atualizarResumoGrade);
+      inp.addEventListener('focus', () => inp.select());
+      // Enter pula para a próxima casa (em vez de salvar o formulário)
+      inp.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        (entradas[k + 1] || document.getElementById('estoqueMinimo')).focus();
+      });
+    });
+
+    // Tabela de SKUs e códigos
     corpoGrade.innerHTML = variacoes.map((v, i) => {
       const rotulo = `${v.tamanho} / ${v.cor}`;
       return `
@@ -285,42 +371,50 @@ App.aoIniciar(async () => {
         <td data-label="Cor"><span class="flex items-center gap-2" style="justify-content:inherit">${bolinha(v.cor)}${App.escapeHtml(v.cor)}</span></td>
         <td data-label="SKU"><input class="input mono" data-campo="sku" value="${App.escapeHtml(v.sku)}" aria-label="SKU ${App.escapeHtml(rotulo)}"></td>
         <td data-label="Código de barras"><input class="input mono" data-campo="codigoBarras" inputmode="numeric" maxlength="14" value="${App.escapeHtml(v.codigoBarras)}" aria-label="Código de barras ${App.escapeHtml(rotulo)}"></td>
-        <td data-label="Estoque" class="num"><input class="input input-estoque texto-direita" data-campo="estoque" type="number" min="0" value="${v.estoque}" aria-label="Estoque ${App.escapeHtml(rotulo)}"></td>
       </tr>`;
     }).join('');
-    corpoGrade.querySelectorAll('[data-campo=estoque]').forEach((i) => i.addEventListener('input', atualizarResumoGrade));
     atualizarResumoGrade();
   }
 
   function atualizarResumoGrade() {
     lerGradeDaTela();
+    const tams = tamanhosEscolhidos();
+    const cs = coresEscolhidas();
+    const qtd = (t, c) => (variacoes.find((v) => v.tamanho === t && v.cor === c) || {}).estoque || 0;
+    cs.forEach((c, ci) => { const el = document.querySelector(`[data-soma-linha="${ci}"]`); if (el) el.textContent = tams.reduce((s, t) => s + qtd(t, c), 0); });
+    tams.forEach((t, ti) => { const el = document.querySelector(`[data-soma-col="${ti}"]`); if (el) el.textContent = cs.reduce((s, c) => s + qtd(t, c), 0); });
     const pecas = variacoes.reduce((s, v) => s + v.estoque, 0);
+    const geral = document.querySelector('[data-soma-geral]'); if (geral) geral.textContent = pecas;
+
     const el = document.getElementById('resumo-grade');
-    el.textContent = variacoes.length && !pecas
-      ? `${variacoes.length} variações · 0 peças — preencha a coluna Estoque`
-      : `${variacoes.length} variações · ${pecas} peças no total`;
-    el.classList.toggle('valor-negativo', !!variacoes.length && !pecas);
-    el.classList.toggle('negrito', !!variacoes.length && !pecas);
+    el.textContent = variacoes.length ? `${pecas} peça${pecas === 1 ? '' : 's'}` : '';
+    el.classList.toggle('zerado', !!variacoes.length && !pecas);
+    document.getElementById('pf-barra-resumo').innerHTML = variacoes.length
+      ? `<strong>${variacoes.length}</strong> variaç${variacoes.length === 1 ? 'ão' : 'ões'} · <strong>${pecas}</strong> peça${pecas === 1 ? '' : 's'}`
+      : '';
+    desenharPrevia();
   }
 
-  // Aplica o mesmo estoque em todas as linhas
+  // Aplica a mesma quantidade em todas as casas
   document.getElementById('btn-aplicar-estoque').addEventListener('click', () => {
     const valor = parseInt(document.getElementById('estoque-todos').value, 10);
     if (Number.isNaN(valor) || valor < 0) return App.toast('Informe uma quantidade válida.', 'erro');
-    corpoGrade.querySelectorAll('[data-campo=estoque]').forEach((i) => { i.value = valor; });
+    document.querySelectorAll('#matriz-estoque [data-mat]').forEach((i) => { i.value = valor; });
+    sujo = true;
     atualizarResumoGrade();
   });
+  document.getElementById('estoque-todos').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-aplicar-estoque').click(); } });
 
   // Regera SKUs (com o nome atual) e códigos de barras
   document.getElementById('btn-regerar').addEventListener('click', () => {
     lerGradeDaTela();
     variacoes.forEach((v) => { v.sku = `${prefixoSku()}-${v.tamanho}-${sigla(v.cor)}`; v.codigoBarras = gerarCodigoBarras(); });
     desenharGrade();
-    App.toast('SKUs e códigos de barras regerados.');
+    App.toast('SKUs e códigos de barras gerados de novo.');
   });
 
   // Nova cor personalizada
-  document.getElementById('btn-add-cor').addEventListener('click', async () => {
+  async function adicionarCor() {
     const nome = document.getElementById('nova-cor').value.trim();
     if (!nome) return App.toast('Digite o nome da cor.', 'erro');
     const nomeFormatado = nome.charAt(0).toUpperCase() + nome.slice(1);
@@ -328,10 +422,38 @@ App.aoIniciar(async () => {
     cores = await Data.listarCores();
     selecionados.cores.add(cores.find((c) => c.nome.toLowerCase() === nome.toLowerCase())?.nome || nomeFormatado);
     document.getElementById('nova-cor').value = '';
+    sujo = true;
     desenharChips();
     gerarGrade();
     App.toast(`Cor "${nomeFormatado}" adicionada.`);
-  });
+  }
+  document.getElementById('btn-add-cor').addEventListener('click', adicionarCor);
+  document.getElementById('nova-cor').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); adicionarCor(); } });
+
+  /* ==================================================================
+     PRÉVIA — como a peça aparece no catálogo
+     ================================================================== */
+  function desenharPrevia() {
+    const el = document.getElementById('pf-previa');
+    if (!el) return;
+    const preco = App.lerNumero(form.preco.value);
+    const tams = tamanhosEscolhidos();
+    const cs = coresEscolhidas();
+    const pecas = variacoes.reduce((s, v) => s + (v.estoque || 0), 0);
+    el.innerHTML = `
+      <div class="pf-previa-foto">
+        ${foto ? `<img src="${App.escapeHtml(foto)}" alt="">` : `<span>${App.escapeHtml(form.nome.value.trim() || 'Sua peça')}</span>`}
+        ${variacoes.length && !pecas ? '<em>Esgotado</em>' : ''}
+      </div>
+      <div class="pf-previa-info">
+        <small>${App.escapeHtml(form.marca.value.trim() || 'Marca')}</small>
+        <strong>${App.escapeHtml(form.nome.value.trim() || 'Nome da peça')}</strong>
+        <b>${preco ? App.formatarMoeda(preco) : 'R$ —'}</b>
+        ${cs.length ? `<span class="pf-previa-cores">${cs.slice(0, 8).map(bolinha).join('')}</span>` : ''}
+        ${tams.length ? `<span class="pf-previa-tams">${tams.map((t) => App.escapeHtml(t)).join(' · ')}</span>` : ''}
+      </div>`;
+  }
+  ['nome', 'marca'].forEach((n) => form[n].addEventListener('input', desenharPrevia));
 
   /* ==================================================================
      EDIÇÃO: carrega produto existente
@@ -359,7 +481,9 @@ App.aoIniciar(async () => {
       fotosCores = { ...(p.fotosCores || {}) };
       fotosExtras = [...(p.fotosExtras || [])];
       variacoes = p.variacoes.map((v) => ({ ...v }));
-      variacoes.forEach((v) => { selecionados.tamanhos.add(v.tamanho); selecionados.cores.add(v.cor); });
+      variacoes.forEach((v) => { selecionados.tamanhos.add(v.tamanho); selecionados.cores.add(v.cor); if (!tamanhos.includes(v.tamanho)) tamanhos.push(v.tamanho); });
+      document.getElementById('btn-salvar-outro').hidden = true;
+      if (p.colecao || p.fornecedorId || p.ncm) document.getElementById('pf-mais').open = true;
     } catch (e) {
       App.toast('Produto não encontrado.', 'erro');
     }
@@ -372,11 +496,18 @@ App.aoIniciar(async () => {
   atualizarMargem();
   atualizarNcm();
 
+  // Avisa antes de sair com alterações não salvas
+  form.addEventListener('input', () => { sujo = true; });
+  form.addEventListener('change', () => { sujo = true; });
+  window.addEventListener('beforeunload', (e) => { if (sujo) { e.preventDefault(); e.returnValue = ''; } });
+  document.getElementById('btn-salvar-outro').addEventListener('click', () => { salvarOutro = true; form.requestSubmit(); });
+
   /* ==================================================================
      SALVAR
      ================================================================== */
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const outro = salvarOutro; salvarOutro = false;
     if (!App.validarFormulario(form)) return;
     lerGradeDaTela();
 
@@ -403,6 +534,7 @@ App.aoIniciar(async () => {
 
     // NCM: se informado, precisa ter 8 dígitos; se vazio, avisa quando a categoria também não tem
     if (dados.ncm && !ncmValido(dados.ncm)) {
+      document.getElementById('pf-mais').open = true;
       form.ncm.focus();
       return App.toast('O NCM deve ter 8 dígitos (ex.: 6109.10.00).', 'erro');
     }
@@ -412,7 +544,7 @@ App.aoIniciar(async () => {
         mensagem: `Nem o produto nem a categoria "${dados.categoria}" têm NCM. Você poderá vender, mas não emitir NFC-e deste produto até informar o NCM.`,
         textoConfirmar: 'Salvar sem NCM'
       });
-      if (!ok) { form.ncm.focus(); return; }
+      if (!ok) { document.getElementById('pf-mais').open = true; form.ncm.focus(); return; }
     }
 
     const produto = {
@@ -438,26 +570,27 @@ App.aoIniciar(async () => {
     if (!idEdicao && variacoes.length && variacoes.every((v) => !v.estoque)) {
       const ok = await App.confirmar({
         titulo: 'Nenhuma peça no estoque',
-        mensagem: 'A quantidade de cada tamanho/cor está zerada, então o produto vai aparecer como "Esgotado". Preencha a coluna "Estoque" na grade (ou use "Quantidade em cada tamanho/cor" + Aplicar).',
+        mensagem: 'As quantidades estão zeradas, então o produto vai aparecer como "Esgotado". Preencha a etapa 4 — Quantas peças você tem.',
         textoConfirmar: 'Salvar esgotado mesmo',
         textoCancelar: 'Voltar e preencher'
       });
-      if (!ok) { const campo = document.getElementById('estoque-todos'); campo.scrollIntoView({ block: 'center' }); campo.focus(); return; }
+      if (!ok) { const campo = document.querySelector('#matriz-estoque [data-mat]') || document.getElementById('estoque-todos'); campo.scrollIntoView({ block: 'center' }); campo.focus(); return; }
     }
     if (produto.preco < produto.custo) {
       const ok = await App.confirmar({ titulo: 'Preço abaixo do custo', mensagem: 'O preço de venda está menor que o custo. Deseja salvar mesmo assim?', textoConfirmar: 'Salvar assim mesmo' });
       if (!ok) return;
     }
 
-    const botao = form.querySelector('button[type=submit]');
-    botao.disabled = true;
+    const botoes = form.querySelectorAll('.pf-barra button');
+    botoes.forEach((b) => { b.disabled = true; });
     try {
       await Data.salvarProduto(produto);
-      App.toast(idEdicao ? 'Produto atualizado com sucesso!' : 'Produto cadastrado com sucesso!');
-      setTimeout(() => { location.href = 'produtos.html'; }, 700);
+      sujo = false;
+      App.toast(idEdicao ? 'Produto atualizado com sucesso!' : outro ? 'Produto cadastrado! Pode cadastrar o próximo.' : 'Produto cadastrado com sucesso!');
+      setTimeout(() => { location.href = outro ? 'produto-form.html' : 'produtos.html'; }, 700);
     } catch (erro) {
       App.toast(erro.message, 'erro');
-      botao.disabled = false;
+      botoes.forEach((b) => { b.disabled = false; });
     }
   });
 });

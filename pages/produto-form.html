@@ -31,156 +31,181 @@
       <main class="conteudo" id="conteudo" tabindex="-1">
         <div class="pagina-cabecalho">
           <div>
-            <a href="produtos.html" class="btn btn-fantasma" style="margin-left:-12px"><i data-lucide="arrow-left"></i>Produtos</a>
+            <a href="produtos.html" class="link-voltar"><i data-lucide="arrow-left"></i>Produtos</a>
             <h1 id="titulo-form" class="mt-2">Novo produto</h1>
-            <p>Preencha os dados e monte a grade de tamanhos e cores.</p>
+            <p>Siga as etapas: dados da peça, preço, tamanhos e cores, e quantas peças você tem.</p>
           </div>
         </div>
 
-        <form id="form-produto" novalidate>
+        <form id="form-produto" class="pf" novalidate>
           <input type="hidden" name="produtoId">
 
           <div class="form-layout">
             <!-- Coluna principal -->
             <div class="form-secoes">
 
-              <!-- Informações básicas -->
-              <section class="card">
-                <div class="card-cabecalho"><h2>Informações básicas</h2></div>
+              <!-- 1. Sobre a peça -->
+              <section class="card pf-etapa">
+                <div class="pf-cabeca"><span class="pf-num">1</span><div><h2>Sobre a peça</h2><p>Nome, marca e categoria aparecem no catálogo e nas etiquetas.</p></div></div>
                 <div class="card-corpo form-grid">
                   <div class="campo col-span-2">
                     <label for="nome">Nome do produto <span class="obrigatorio" aria-hidden="true">*</span></label>
-                    <input class="input" id="nome" name="nome" required placeholder="Ex.: Camiseta Básica Algodão">
+                    <input class="input" id="nome" name="nome" required placeholder="Ex.: Camiseta Oversized Preta" autocomplete="off">
                   </div>
                   <div class="campo">
                     <label for="marca">Marca <span class="obrigatorio" aria-hidden="true">*</span></label>
-                    <input class="input" id="marca" name="marca" list="lista-marcas" required placeholder="Ex.: Urbana">
+                    <input class="input" id="marca" name="marca" list="lista-marcas" required placeholder="Ex.: Nike" autocomplete="off">
                     <datalist id="lista-marcas"></datalist>
                   </div>
                   <div class="campo">
                     <label for="categoria">Categoria <span class="obrigatorio" aria-hidden="true">*</span></label>
                     <select class="select" id="categoria" name="categoria" required></select>
                   </div>
-                  <div class="campo">
-                    <label for="colecao">Coleção</label>
-                    <input class="input" id="colecao" name="colecao" list="lista-colecoes" placeholder="Ex.: Verão 2026">
-                    <datalist id="lista-colecoes"></datalist>
-                  </div>
-                  <div class="campo">
-                    <label for="fornecedorId">Fornecedor</label>
-                    <select class="select" id="fornecedorId" name="fornecedorId"></select>
-                  </div>
-                  <div class="campo so-nota">
-                    <label for="ncm">NCM (classificação fiscal)</label>
-                    <div class="flex gap-2">
-                      <input class="input mono" id="ncm" name="ncm" inputmode="numeric" data-mascara="ncm" placeholder="0000.00.00" aria-describedby="ncm-ajuda" style="flex:1">
-                      <button type="button" class="btn btn-secundario" id="btn-ncm-padrao" title="Usar o NCM padrão da categoria">Usar padrão</button>
-                    </div>
-                    <span class="ajuda" id="ncm-ajuda" aria-live="polite"></span>
-                  </div>
-                  <div class="campo so-nota">
-                    <span class="rotulo">Usado na nota fiscal</span>
-                    <div class="alerta info" id="ncm-efetivo" style="min-height:44px;align-items:center"><i data-lucide="landmark"></i><span></span></div>
-                  </div>
                   <div class="campo col-span-2">
-                    <label for="descricao">Descrição</label>
-                    <textarea class="textarea" id="descricao" name="descricao" placeholder="Tecido, modelagem, detalhes…"></textarea>
+                    <label for="descricao">Descrição <small class="texto-3">(opcional)</small></label>
+                    <textarea class="textarea" id="descricao" name="descricao" rows="3" placeholder="Tecido, modelagem, caimento…"></textarea>
                   </div>
+                  <details class="pf-mais col-span-2" id="pf-mais">
+                    <summary><i data-lucide="sliders-horizontal"></i>Mais detalhes <small class="texto-3">coleção, fornecedor<span class="so-nota">, NCM</span></small><i data-lucide="chevron-down" class="pf-seta"></i></summary>
+                    <div class="form-grid pf-mais-corpo">
+                      <div class="campo">
+                        <label for="colecao">Coleção</label>
+                        <input class="input" id="colecao" name="colecao" list="lista-colecoes" placeholder="Ex.: Verão 2026" autocomplete="off">
+                        <datalist id="lista-colecoes"></datalist>
+                      </div>
+                      <div class="campo">
+                        <label for="fornecedorId">Fornecedor</label>
+                        <select class="select" id="fornecedorId" name="fornecedorId"></select>
+                      </div>
+                      <div class="campo so-nota">
+                        <label for="ncm">NCM (classificação fiscal)</label>
+                        <div class="flex gap-2">
+                          <input class="input mono" id="ncm" name="ncm" inputmode="numeric" data-mascara="ncm" placeholder="0000.00.00" aria-describedby="ncm-ajuda" style="flex:1">
+                          <button type="button" class="btn btn-secundario" id="btn-ncm-padrao" title="Usar o NCM padrão da categoria">Usar padrão</button>
+                        </div>
+                        <span class="ajuda" id="ncm-ajuda" aria-live="polite"></span>
+                      </div>
+                      <div class="campo so-nota">
+                        <span class="rotulo">Usado na nota fiscal</span>
+                        <div class="alerta info" id="ncm-efetivo" style="min-height:44px;align-items:center"><i data-lucide="landmark"></i><span></span></div>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               </section>
 
-              <!-- Preço -->
-              <section class="card">
-                <div class="card-cabecalho"><h2>Preço e alerta de estoque</h2></div>
-                <div class="card-corpo form-grid form-grid-3">
+              <!-- 2. Preço -->
+              <section class="card pf-etapa">
+                <div class="pf-cabeca"><span class="pf-num">2</span><div><h2>Preço</h2><p>Quanto você pagou e por quanto vai vender.</p></div></div>
+                <div class="card-corpo form-grid">
                   <div class="campo">
-                    <label for="custo">Custo <span class="obrigatorio" aria-hidden="true">*</span></label>
+                    <label for="custo">Custo (quanto você pagou) <span class="obrigatorio" aria-hidden="true">*</span></label>
                     <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="custo" name="custo" inputmode="decimal" data-mascara="moeda" required placeholder="0,00"></div>
                   </div>
                   <div class="campo">
                     <label for="preco">Preço de venda <span class="obrigatorio" aria-hidden="true">*</span></label>
                     <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="preco" name="preco" inputmode="decimal" data-mascara="moeda" required placeholder="0,00"></div>
                   </div>
-                  <div class="campo">
-                    <label for="estoqueMinimo">Avisar quando sobrarem</label>
-                    <input class="input" id="estoqueMinimo" name="estoqueMinimo" type="number" min="0" value="5">
-                    <span class="ajuda">peças ou menos (é só um alerta — a quantidade que você tem vai na grade de tamanhos abaixo)</span>
+                  <div class="col-span-2 pf-sugestao" id="pf-sugestao">
+                    <span class="rotulo">Sugerir preço pelo custo</span>
+                    <div class="chips chips-compactos" id="chips-markup">
+                      <button type="button" class="chip" data-markup="2">2×</button>
+                      <button type="button" class="chip" data-markup="2.5">2,5×</button>
+                      <button type="button" class="chip" data-markup="3">3×</button>
+                      <button type="button" class="chip" data-markup="3.5">3,5×</button>
+                    </div>
+                    <label class="checkbox pf-noventa"><input type="checkbox" id="terminar-90" checked> Terminar em ,90</label>
                   </div>
-                </div>
-                <div class="card-corpo" style="padding-top:0">
-                  <div class="alerta info" id="box-margem" aria-live="polite">
-                    <i data-lucide="percent"></i>
-                    <span id="texto-margem">Informe custo e preço para calcular a margem.</span>
+                  <div class="col-span-2 pf-lucro" id="box-margem" aria-live="polite">
+                    <div><span>Lucro por peça</span><strong id="m-lucro">—</strong></div>
+                    <div><span>Margem</span><strong id="m-margem">—</strong></div>
+                    <div><span>Markup</span><strong id="m-markup">—</strong></div>
+                    <p id="texto-margem" class="pf-lucro-dica">Informe custo e preço para ver o lucro.</p>
                   </div>
                 </div>
               </section>
 
-              <!-- Grade de variações -->
-              <section class="card">
-                <div class="card-cabecalho">
-                  <div>
-                    <h2>Grade de variações</h2>
-                    <p class="texto-sm">Escolha tamanhos e cores — a tabela é gerada automaticamente.</p>
-                  </div>
-                </div>
+              <!-- 3. Tamanhos e cores -->
+              <section class="card pf-etapa">
+                <div class="pf-cabeca"><span class="pf-num">3</span><div><h2>Tamanhos e cores</h2><p>Marque o que essa peça tem. Cada combinação vira uma variação com código próprio.</p></div></div>
                 <div class="card-corpo">
                   <div class="grupo-chips">
-                    <span class="rotulo" id="rot-letras">Tamanhos (letras)</span>
-                    <div class="chips" role="group" aria-labelledby="rot-letras" id="chips-letras"></div>
-                  </div>
-                  <div class="grupo-chips">
-                    <span class="rotulo" id="rot-numeros">Tamanhos (numeração)</span>
-                    <div class="chips" role="group" aria-labelledby="rot-numeros" id="chips-numeros"></div>
+                    <div class="pf-rotulo-linha">
+                      <span class="rotulo" id="rot-tamanhos">Tamanhos</span>
+                      <div class="pf-atalhos">
+                        <button type="button" data-preset="P,M,G,GG">P ao GG</button>
+                        <button type="button" data-preset="PP,P,M,G,GG">PP ao GG</button>
+                        <button type="button" data-preset="38,40,42,44">38 ao 44</button>
+                        <button type="button" data-preset="">Limpar</button>
+                      </div>
+                    </div>
+                    <div class="chips" role="group" aria-labelledby="rot-tamanhos" id="chips-letras"></div>
+                    <div class="chips mt-2" role="group" aria-labelledby="rot-tamanhos" id="chips-numeros"></div>
+                    <div class="pf-novo">
+                      <input class="input" id="novo-tamanho" placeholder="Outro tamanho (ex.: XG, Único, 34)" maxlength="8" aria-label="Outro tamanho">
+                      <button type="button" class="btn btn-secundario" id="btn-add-tamanho"><i data-lucide="plus"></i>Tamanho</button>
+                    </div>
                   </div>
                   <div class="grupo-chips">
                     <span class="rotulo" id="rot-cores">Cores</span>
                     <div class="chips" role="group" aria-labelledby="rot-cores" id="chips-cores"></div>
-                  </div>
-                  <div class="grupo-chips flex gap-2 items-end" style="flex-wrap:wrap">
-                    <div class="campo" style="flex:1;min-width:180px">
-                      <label for="nova-cor">Nova cor</label>
-                      <input class="input" id="nova-cor" placeholder="Ex.: Lilás">
+                    <div class="pf-novo">
+                      <input class="input" id="nova-cor" placeholder="Outra cor (ex.: Lilás)" aria-label="Nome da nova cor">
+                      <input class="input pf-tom" id="nova-cor-hex" type="color" value="#B39DDB" aria-label="Tom da nova cor" title="Tom da cor">
+                      <button type="button" class="btn btn-secundario" id="btn-add-cor"><i data-lucide="plus"></i>Cor</button>
                     </div>
-                    <div class="campo">
-                      <label for="nova-cor-hex">Tom</label>
-                      <input class="input" id="nova-cor-hex" type="color" value="#B39DDB" style="width:56px;padding:4px">
-                    </div>
-                    <button type="button" class="btn btn-secundario" id="btn-add-cor"><i data-lucide="plus"></i>Adicionar cor</button>
                   </div>
                 </div>
+              </section>
 
-                <!-- Ferramentas da grade -->
-                <div class="card-corpo flex gap-2 items-end" style="flex-wrap:wrap;border-top:1px solid var(--cor-borda)" id="ferramentas-grade">
-                  <div class="campo" style="width:220px">
-                    <label for="estoque-todos">Quantidade em cada tamanho/cor</label>
-                    <input class="input" id="estoque-todos" type="number" min="0" placeholder="Ex.: 5">
-                  </div>
-                  <button type="button" class="btn btn-secundario" id="btn-aplicar-estoque">Aplicar</button>
-                  <button type="button" class="btn btn-fantasma" id="btn-regerar"><i data-lucide="refresh-cw"></i>Regerar SKUs e códigos</button>
-                  <span class="texto-sm texto-3" id="resumo-grade" style="margin-left:auto"></span>
+              <!-- 4. Estoque -->
+              <section class="card pf-etapa">
+                <div class="pf-cabeca"><span class="pf-num">4</span><div><h2>Quantas peças você tem</h2><p>Digite a quantidade de cada cor em cada tamanho.</p></div>
+                  <span class="pf-total" id="resumo-grade"></span>
                 </div>
+                <div class="card-corpo">
+                  <div id="ferramentas-grade" class="pf-ferramentas">
+                    <div class="pf-novo" style="margin:0">
+                      <input class="input" id="estoque-todos" type="number" min="0" inputmode="numeric" placeholder="Mesma quantidade em todas" aria-label="Quantidade para todas as variações">
+                      <button type="button" class="btn btn-secundario" id="btn-aplicar-estoque">Aplicar em todas</button>
+                    </div>
+                  </div>
+                  <div id="matriz-estoque" class="pf-matriz-wrap"></div>
 
-                <div class="tabela-wrap">
-                  <table class="tabela tabela-responsiva grade-tabela">
-                    <thead>
-                      <tr><th>Tamanho</th><th>Cor</th><th>SKU</th><th>Código de barras</th><th class="num">Estoque</th></tr>
-                    </thead>
-                    <tbody id="grade"></tbody>
-                  </table>
+                  <div class="pf-linha-alerta">
+                    <label for="estoqueMinimo">Avisar quando sobrarem</label>
+                    <input class="input" id="estoqueMinimo" name="estoqueMinimo" type="number" min="0" value="5">
+                    <span>peças ou menos</span>
+                  </div>
+
+                  <details class="pf-mais" id="pf-codigos">
+                    <summary><i data-lucide="barcode"></i>SKUs e códigos de barras <small class="texto-3">gerados sozinhos — abra só se quiser trocar</small><i data-lucide="chevron-down" class="pf-seta"></i></summary>
+                    <div class="pf-mais-corpo">
+                      <div class="flex gap-2 items-center" style="justify-content:flex-end;margin-bottom:8px">
+                        <button type="button" class="btn btn-fantasma" id="btn-regerar"><i data-lucide="refresh-cw"></i>Gerar de novo</button>
+                      </div>
+                      <div class="tabela-wrap">
+                        <table class="tabela tabela-responsiva grade-tabela">
+                          <thead><tr><th>Tamanho</th><th>Cor</th><th>SKU</th><th>Código de barras</th></tr></thead>
+                          <tbody id="grade"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </details>
                 </div>
               </section>
             </div>
 
-            <!-- Coluna lateral: foto -->
+            <!-- Coluna lateral: fotos e prévia -->
             <aside class="form-lateral">
               <section class="card">
-                <div class="card-cabecalho"><h2>Foto</h2></div>
+                <div class="card-cabecalho"><h2>Fotos</h2></div>
                 <div class="card-corpo" style="display:grid;justify-items:center;gap:12px">
                   <label class="upload" id="upload">
                     <span id="upload-placeholder" class="flex-col items-center gap-2">
                       <i data-lucide="image-plus"></i>
-                      <span>Clique ou arraste uma imagem</span>
-                      <span class="texto-xs">JPG ou PNG até 2 MB</span>
+                      <span>Clique ou arraste a foto principal</span>
+                      <span class="texto-xs">JPG ou PNG</span>
                     </span>
                     <img id="foto-preview" alt="Pré-visualização da foto do produto" class="oculto">
                     <input type="file" id="foto" accept="image/*" aria-label="Enviar foto do produto">
@@ -198,12 +223,21 @@
                   <label class="interruptor" style="width:100%"><span>Trocar a cor na foto do catálogo<br><small class="texto-3">Bom para foto de estúdio, fundo liso. Desligue em fotos de rua.</small></span><input type="checkbox" id="recolor-foto" checked></label>
                 </div>
               </section>
+
+              <section class="card pf-previa-card">
+                <div class="card-cabecalho"><h2>Como fica no catálogo</h2></div>
+                <div class="card-corpo">
+                  <div class="pf-previa" id="pf-previa"></div>
+                </div>
+              </section>
             </aside>
           </div>
 
           <!-- Ações -->
-          <div class="barra-acoes">
+          <div class="barra-acoes pf-barra">
+            <span class="pf-barra-resumo" id="pf-barra-resumo"></span>
             <a href="produtos.html" class="btn btn-secundario">Cancelar</a>
+            <button type="button" class="btn btn-secundario" id="btn-salvar-outro"><i data-lucide="copy-plus"></i>Salvar e cadastrar outro</button>
             <button type="submit" class="btn btn-primario"><i data-lucide="check"></i>Salvar produto</button>
           </div>
         </form>
