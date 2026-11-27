@@ -484,6 +484,8 @@ App.aoIniciar(async () => {
      PRÉVIA — como a peça aparece no catálogo
      ================================================================== */
   function desenharPrevia() {
+    const vivo = document.getElementById('ed-nome-vivo');
+    if (vivo) vivo.textContent = form.nome.value.trim() || 'Sem nome';
     const el = document.getElementById('pf-previa');
     if (!el) return;
     const preco = App.lerNumero(form.preco.value);

@@ -28,52 +28,90 @@
     <div class="main">
       <header class="topbar" id="topbar"></header>
 
-      <main class="conteudo" id="conteudo" tabindex="-1">
-        <div class="pagina-cabecalho">
-          <div>
-            <a href="produtos.html" class="link-voltar"><i data-lucide="arrow-left"></i>Produtos</a>
-            <h1 id="titulo-form" class="mt-2">Novo produto</h1>
-            
-          </div>
-        </div>
-
-        <form id="form-produto" class="pf" novalidate>
+      <main class="conteudo ed-pagina" id="conteudo" tabindex="-1">
+        <form id="form-produto" class="pf ed" novalidate>
           <input type="hidden" name="produtoId">
 
-          <div class="form-layout">
-            <!-- Coluna principal -->
-            <div class="form-secoes">
+          <!-- Barra do editor: título ao vivo, resumo e salvar -->
+          <div class="ed-barra pf-barra">
+            <div class="ed-barra-titulo">
+              <a href="produtos.html" class="btn-icone ed-voltar" title="Voltar para Produtos" aria-label="Voltar para Produtos"><i data-lucide="arrow-left"></i></a>
+              <div class="ed-barra-textos">
+                <h1 id="titulo-form">Novo produto</h1>
+                <span class="ed-barra-sub"><span id="ed-nome-vivo">Sem nome</span><span class="pf-barra-resumo" id="pf-barra-resumo"></span></span>
+              </div>
+            </div>
+            <div class="ed-barra-acoes">
+              <a href="produtos.html" class="btn btn-fantasma ed-cancelar">Cancelar</a>
+              <button type="button" class="btn btn-secundario" id="btn-salvar-outro"><i data-lucide="copy-plus"></i><span>Salvar e cadastrar outro</span></button>
+              <button type="submit" class="btn btn-primario"><i data-lucide="check"></i><span>Salvar produto</span></button>
+            </div>
+          </div>
 
-              <!-- 1. Sobre a peça -->
-              <section class="card pf-etapa">
-                <div class="pf-cabeca"><span class="pf-num">01</span><div><h2>Sobre a peça</h2></div></div>
-                <div class="card-corpo form-grid">
+          <div class="ed-layout">
+            <!-- Vitrine: fotos + como fica no catálogo -->
+            <aside class="ed-midia" aria-label="Fotos">
+              <label class="upload ed-upload" id="upload">
+                <span id="upload-placeholder" class="ed-upload-vazio">
+                  <span class="ed-upload-icone"><i data-lucide="image-plus"></i></span>
+                  <strong>Foto principal</strong>
+                  <span>Clique ou arraste a imagem aqui</span>
+                </span>
+                <img id="foto-preview" alt="Pré-visualização da foto do produto" class="oculto">
+                <input type="file" id="foto" accept="image/*" aria-label="Enviar foto do produto">
+              </label>
+              <button type="button" class="ed-link-perigo oculto" id="btn-remover-foto"><i data-lucide="trash-2"></i>Remover foto principal</button>
+
+              <div class="ed-midia-bloco">
+                <span class="ed-rotulo">Mais fotos <em>costas, detalhe, no corpo · até 5</em></span>
+                <div class="fotos-extras" id="fotos-extras"></div>
+              </div>
+
+              <div class="ed-midia-bloco fotos-cores-bloco" id="fotos-cores-bloco" hidden>
+                <span class="ed-rotulo">Foto de cada cor <em>opcional</em></span>
+                <div class="fotos-cores" id="fotos-cores"></div>
+              </div>
+
+              <label class="interruptor ed-interruptor"><span>Trocar a cor na foto do catálogo<small>Bom para foto de estúdio, fundo liso.</small></span><input type="checkbox" id="recolor-foto" checked></label>
+
+              <div class="ed-midia-bloco ed-previa-bloco">
+                <span class="ed-rotulo">No catálogo</span>
+                <div class="pf-previa ed-previa" id="pf-previa"></div>
+              </div>
+            </aside>
+
+            <!-- Painel do formulário -->
+            <div class="ed-painel">
+
+              <section class="ed-secao">
+                <div class="ed-secao-info"><h2>Informações</h2><p>Aparecem no catálogo, no caixa e nas etiquetas.</p></div>
+                <div class="ed-secao-campos form-grid">
                   <div class="campo col-span-2">
-                    <label for="nome">Nome do produto <span class="obrigatorio" aria-hidden="true">*</span></label>
-                    <input class="input" id="nome" name="nome" required placeholder="Ex.: Camiseta Oversized Preta" autocomplete="off">
+                    <label for="nome">Nome do produto</label>
+                    <input class="input ed-input-grande" id="nome" name="nome" required placeholder="Ex.: Camiseta Oversized Preta" autocomplete="off">
                   </div>
                   <div class="campo">
-                    <label for="marca">Marca <span class="obrigatorio" aria-hidden="true">*</span></label>
+                    <label for="marca">Marca</label>
                     <input class="input" id="marca" name="marca" list="lista-marcas" required placeholder="Ex.: Nike" autocomplete="off">
                     <datalist id="lista-marcas"></datalist>
                   </div>
                   <div class="campo">
-                    <label for="categoria">Categoria <span class="obrigatorio" aria-hidden="true">*</span></label>
+                    <label for="categoria">Categoria</label>
                     <div class="pf-categoria">
                       <select class="select" id="categoria" name="categoria" required></select>
-                      <button type="button" class="btn btn-secundario" id="btn-nova-categoria" title="Criar categoria" aria-label="Criar categoria"><i data-lucide="plus"></i>Nova</button>
+                      <button type="button" class="btn-icone ed-botao-mais" id="btn-nova-categoria" title="Criar categoria" aria-label="Criar categoria"><i data-lucide="plus"></i></button>
                     </div>
-                    <div class="pf-novo" id="nova-categoria-bloco" hidden style="margin-top:8px">
-                      <input class="input" id="nova-categoria" maxlength="40" placeholder="Nome da categoria (ex.: Bonés)" aria-label="Nome da nova categoria">
-                      <button type="button" class="btn btn-primario" id="btn-salvar-categoria"><i data-lucide="check"></i>Criar</button>
+                    <div class="pf-novo" id="nova-categoria-bloco" hidden>
+                      <input class="input" id="nova-categoria" maxlength="40" placeholder="Nova categoria (ex.: Bonés)" aria-label="Nome da nova categoria">
+                      <button type="button" class="btn btn-primario" id="btn-salvar-categoria">Criar</button>
                     </div>
                   </div>
                   <div class="campo col-span-2">
-                    <label for="descricao">Descrição <small class="texto-3">(opcional)</small></label>
+                    <label for="descricao">Descrição <small>opcional</small></label>
                     <textarea class="textarea" id="descricao" name="descricao" rows="2" placeholder="Tecido, modelagem, caimento…"></textarea>
                   </div>
                   <details class="pf-mais col-span-2" id="pf-mais">
-                    <summary><i data-lucide="sliders-horizontal"></i>Mais detalhes <small class="texto-3">coleção, fornecedor<span class="so-nota">, NCM</span></small><i data-lucide="chevron-down" class="pf-seta"></i></summary>
+                    <summary>Coleção, fornecedor<span class="so-nota"> e NCM</span><i data-lucide="chevron-down" class="pf-seta"></i></summary>
                     <div class="form-grid pf-mais-corpo">
                       <div class="campo">
                         <label for="colecao">Coleção</label>
@@ -101,20 +139,19 @@
                 </div>
               </section>
 
-              <!-- 2. Preço -->
-              <section class="card pf-etapa">
-                <div class="pf-cabeca"><span class="pf-num">02</span><div><h2>Preço</h2></div></div>
-                <div class="card-corpo form-grid">
+              <section class="ed-secao">
+                <div class="ed-secao-info"><h2>Preço</h2><p>O lucro aparece na hora.</p></div>
+                <div class="ed-secao-campos form-grid">
                   <div class="campo">
-                    <label for="custo">Custo (quanto você pagou) <span class="obrigatorio" aria-hidden="true">*</span></label>
+                    <label for="custo">Custo</label>
                     <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="custo" name="custo" inputmode="decimal" data-mascara="moeda" required placeholder="0,00"></div>
                   </div>
                   <div class="campo">
-                    <label for="preco">Preço de venda <span class="obrigatorio" aria-hidden="true">*</span></label>
+                    <label for="preco">Preço de venda</label>
                     <div class="input-grupo"><span class="prefixo">R$</span><input class="input" id="preco" name="preco" inputmode="decimal" data-mascara="moeda" required placeholder="0,00"></div>
                   </div>
                   <div class="col-span-2 pf-sugestao" id="pf-sugestao">
-                    <span class="rotulo">Sugerir preço pelo custo</span>
+                    <span class="rotulo">Sugerir pelo custo</span>
                     <div class="chips chips-compactos" id="chips-markup">
                       <button type="button" class="chip" data-markup="2">2×</button>
                       <button type="button" class="chip" data-markup="2.5">2,5×</button>
@@ -132,17 +169,16 @@
                 </div>
               </section>
 
-              <!-- 3. Tamanhos e cores -->
-              <section class="card pf-etapa">
-                <div class="pf-cabeca"><span class="pf-num">03</span><div><h2>Tamanhos e cores</h2></div></div>
-                <div class="card-corpo">
+              <section class="ed-secao">
+                <div class="ed-secao-info"><h2>Variações</h2><p>Marque os tamanhos e as cores que essa peça tem.</p></div>
+                <div class="ed-secao-campos">
                   <div class="grupo-chips">
                     <div class="pf-rotulo-linha">
                       <span class="rotulo" id="rot-tamanhos">Tamanhos</span>
                       <div class="pf-atalhos">
-                        <button type="button" data-preset="P,M,G,GG">P ao GG</button>
-                        <button type="button" data-preset="PP,P,M,G,GG">PP ao GG</button>
-                        <button type="button" data-preset="38,40,42,44">38 ao 44</button>
+                        <button type="button" data-preset="P,M,G,GG">P–GG</button>
+                        <button type="button" data-preset="PP,P,M,G,GG">PP–GG</button>
+                        <button type="button" data-preset="38,40,42,44">38–44</button>
                         <button type="button" data-preset="">Limpar</button>
                       </div>
                     </div>
@@ -150,8 +186,8 @@
                     <div class="chips mt-2" role="group" aria-labelledby="rot-tamanhos" id="chips-numeros"></div>
                     <button type="button" class="pf-link" data-abrir="novo-tamanho-bloco"><i data-lucide="plus"></i>Outro tamanho</button>
                     <div class="pf-novo" id="novo-tamanho-bloco" hidden>
-                      <input class="input" id="novo-tamanho" placeholder="Outro tamanho (ex.: XG, Único, 34)" maxlength="8" aria-label="Outro tamanho">
-                      <button type="button" class="btn btn-secundario" id="btn-add-tamanho"><i data-lucide="plus"></i>Tamanho</button>
+                      <input class="input" id="novo-tamanho" placeholder="Ex.: XG, Único, 34" maxlength="8" aria-label="Outro tamanho">
+                      <button type="button" class="btn btn-secundario" id="btn-add-tamanho">Adicionar</button>
                     </div>
                   </div>
                   <div class="grupo-chips">
@@ -161,38 +197,34 @@
                     <div class="chips" role="group" aria-labelledby="rot-jeans" id="chips-jeans"></div>
                     <button type="button" class="pf-link" data-abrir="nova-cor-bloco"><i data-lucide="plus"></i>Outra cor</button>
                     <div class="pf-novo" id="nova-cor-bloco" hidden>
-                      <input class="input" id="nova-cor" placeholder="Outra cor (ex.: Lilás)" aria-label="Nome da nova cor">
+                      <input class="input" id="nova-cor" placeholder="Ex.: Lilás" aria-label="Nome da nova cor">
                       <input class="input pf-tom" id="nova-cor-hex" type="color" value="#B39DDB" aria-label="Tom da nova cor" title="Tom da cor">
-                      <button type="button" class="btn btn-secundario" id="btn-add-cor"><i data-lucide="plus"></i>Cor</button>
+                      <button type="button" class="btn btn-secundario" id="btn-add-cor">Adicionar</button>
                     </div>
                   </div>
                 </div>
               </section>
 
-              <!-- 4. Estoque -->
-              <section class="card pf-etapa">
-                <div class="pf-cabeca"><span class="pf-num">04</span><div><h2>Quantas peças você tem</h2></div>
-                  <span class="pf-total" id="resumo-grade"></span>
-                </div>
-                <div class="card-corpo">
+              <section class="ed-secao">
+                <div class="ed-secao-info"><h2>Estoque</h2><p>Quantas peças você tem de cada cor e tamanho.</p><span class="pf-total" id="resumo-grade"></span></div>
+                <div class="ed-secao-campos">
                   <div id="ferramentas-grade" class="pf-ferramentas">
                     <div class="pf-novo" style="margin:0">
                       <input class="input" id="estoque-todos" type="number" min="0" inputmode="numeric" placeholder="Mesma quantidade em todas" aria-label="Quantidade para todas as variações">
-                      <button type="button" class="btn btn-secundario" id="btn-aplicar-estoque">Aplicar em todas</button>
+                      <button type="button" class="btn btn-secundario" id="btn-aplicar-estoque">Aplicar</button>
                     </div>
                   </div>
                   <div id="matriz-estoque" class="pf-matriz-wrap"></div>
-
                   <div class="pf-linha-alerta">
                     <label for="estoqueMinimo">Avisar quando sobrarem</label>
                     <input class="input" id="estoqueMinimo" name="estoqueMinimo" type="number" min="0" value="5">
                     <span>peças ou menos</span>
                   </div>
-
                   <details class="pf-mais" id="pf-codigos">
-                    <summary><i data-lucide="barcode"></i>SKUs e códigos de barras <small class="texto-3">gerados sozinhos — abra só se quiser trocar</small><i data-lucide="chevron-down" class="pf-seta"></i></summary>
+                    <summary>SKUs e códigos de barras<i data-lucide="chevron-down" class="pf-seta"></i></summary>
                     <div class="pf-mais-corpo">
-                      <div class="flex gap-2 items-center" style="justify-content:flex-end;margin-bottom:8px">
+                      <div class="flex gap-2 items-center" style="justify-content:space-between;margin-bottom:8px">
+                        <span class="texto-xs texto-3">Gerados sozinhos. Troque só se a peça já tiver etiqueta própria.</span>
                         <button type="button" class="btn btn-fantasma" id="btn-regerar"><i data-lucide="refresh-cw"></i>Gerar de novo</button>
                       </div>
                       <div class="tabela-wrap">
@@ -206,50 +238,6 @@
                 </div>
               </section>
             </div>
-
-            <!-- Coluna lateral: fotos e prévia -->
-            <aside class="form-lateral">
-              <section class="card">
-                <div class="card-cabecalho"><h2>Fotos</h2></div>
-                <div class="card-corpo" style="display:grid;justify-items:center;gap:12px">
-                  <label class="upload" id="upload">
-                    <span id="upload-placeholder" class="flex-col items-center gap-2">
-                      <i data-lucide="image-plus"></i>
-                      <span>Clique ou arraste a foto principal</span>
-                      <span class="texto-xs">JPG ou PNG</span>
-                    </span>
-                    <img id="foto-preview" alt="Pré-visualização da foto do produto" class="oculto">
-                    <input type="file" id="foto" accept="image/*" aria-label="Enviar foto do produto">
-                  </label>
-                  <button type="button" class="btn btn-fantasma oculto" id="btn-remover-foto"><i data-lucide="trash-2"></i>Remover foto</button>
-                  <div class="fotos-extras-bloco">
-                    <span class="rotulo">Mais fotos <small class="texto-3">(costas, detalhe, no corpo — até 5)</small></span>
-                    <div class="fotos-extras" id="fotos-extras"></div>
-                  </div>
-                  <div class="fotos-cores-bloco" id="fotos-cores-bloco" hidden>
-                    <span class="rotulo">Foto de cada cor <small class="texto-3">(opcional)</small></span>
-                    <div class="fotos-cores" id="fotos-cores"></div>
-                    <span class="texto-xs texto-3">Com foto, o catálogo mostra a foto real da cor. Sem foto, ele pinta a principal.</span>
-                  </div>
-                  <label class="interruptor" style="width:100%"><span>Trocar a cor na foto do catálogo<br><small class="texto-3">Bom para foto de estúdio, fundo liso. Desligue em fotos de rua.</small></span><input type="checkbox" id="recolor-foto" checked></label>
-                </div>
-              </section>
-
-              <section class="card pf-previa-card">
-                <div class="card-cabecalho"><h2>Como fica no catálogo</h2></div>
-                <div class="card-corpo">
-                  <div class="pf-previa" id="pf-previa"></div>
-                </div>
-              </section>
-            </aside>
-          </div>
-
-          <!-- Ações -->
-          <div class="barra-acoes pf-barra">
-            <span class="pf-barra-resumo" id="pf-barra-resumo"></span>
-            <a href="produtos.html" class="btn btn-secundario">Cancelar</a>
-            <button type="button" class="btn btn-secundario" id="btn-salvar-outro"><i data-lucide="copy-plus"></i>Salvar e cadastrar outro</button>
-            <button type="submit" class="btn btn-primario"><i data-lucide="check"></i>Salvar produto</button>
           </div>
         </form>
       </main>
