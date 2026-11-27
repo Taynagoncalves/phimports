@@ -909,6 +909,26 @@ App.aoIniciar(async () => {
      acontecer com o cursor em outro campo (desconto, valor, cliente…),
      o código é desviado para o carrinho e o campo volta ao que era.
      ================================================================== */
+  /* Leitor sem precisar clicar no campo: letra/número digitado fora de um campo
+     (cursor num botão ou em lugar nenhum) vai direto para o campo do código. */
+  const ehCampo = (el) => !!el && el.matches && el.matches('input, textarea, select, [contenteditable="true"]');
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.altKey || e.metaKey || e.key.length !== 1 || e.key === ' ') return;
+    if (document.querySelector('.modal-overlay')) return;
+    if (ehCampo(document.activeElement)) return;
+    inputBusca.focus();   // o caractere desta tecla já cai no campo do código
+  }, true);
+  // No computador: depois de clicar num botão ou numa área vazia, o cursor volta para o campo do código
+  document.addEventListener('pointerup', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    if (ehCampo(e.target) || (e.target.closest && e.target.closest('label, .modal-overlay, select'))) return;
+    setTimeout(() => {
+      if (document.querySelector('.modal-overlay') || ehCampo(document.activeElement)) return;
+      if (String(window.getSelection && window.getSelection()).length) return;   // está selecionando um texto
+      inputBusca.focus({ preventScroll: true });
+    }, 120);
+  });
+
   const LEITOR_MIN_CARACTERES = 6;
   const LEITOR_MS_POR_TECLA = 35;   // pessoas digitam bem mais devagar
   const LEITOR_PAUSA_MS = 100;      // pausa maior que isso = começou outra digitação
