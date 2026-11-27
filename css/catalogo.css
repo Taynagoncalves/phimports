@@ -727,3 +727,6 @@ body.tema-escuro { --fundo-foto: #1E1E1C; }
 .card-foto:not(:has(.poster)) { background: var(--fundo-foto); }
 .card-foto img, .peca-foto img, .galeria-slide img, .look-foto img, .item-foto img { object-fit: contain; }
 .peca-foto, .galeria-slide, .look-foto, .item-foto { background: var(--fundo-foto); }
+
+:root { --fundo-foto: #FFFFFF; }
+body.tema-escuro { --fundo-foto: #FFFFFF; }

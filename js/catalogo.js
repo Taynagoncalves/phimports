@@ -12,7 +12,17 @@
   const moeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const normalizar = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   // Fotos do Cloudinary no tamanho certo (mais leve no celular)
-  const foto = (url, largura) => (url && url.includes('/image/upload/') ? url.replace(/\/image\/upload\/(f_auto,q_auto\/)?/, `/image/upload/f_auto,q_auto,c_limit,w_${largura}/`) : url);
+  // Imagens decorativas (blocos de categoria): só no tamanho certo
+  const fotoSimples = (url, largura) => (url && url.includes('/image/upload/') ? url.replace(/\/image\/upload\/(f_auto,q_auto\/)?/, `/image/upload/f_auto,q_auto,c_limit,w_${largura}/`) : url);
+  // Fotos das peças: o Cloudinary corta a sobra de fundo em volta da roupa (e_trim) e encaixa
+  // no formato do card com a mesma margem — assim todas as roupas aparecem do mesmo tamanho
+  let proporcaoFoto = 4 / 5;
+  const foto = (url, largura) => {
+    if (!url || !url.includes('/image/upload/')) return url;
+    const w = Math.round(largura), h = Math.round(largura / proporcaoFoto);
+    const iw = Math.round(w * 0.86), ih = Math.round(h * 0.86);
+    return url.replace(/\/image\/upload\/(f_auto,q_auto\/)?/, `/image/upload/e_trim:12/c_pad,w_${iw},h_${ih},b_auto:border/c_pad,w_${w},h_${h},b_auto:border/f_auto,q_auto/`);
+  };
   const ICONE_CABIDE = '<svg viewBox="0 0 24 24" class="sem-foto"><path d="M12 7a2 2 0 1 1 2-2c0 1.1-2 1.5-2 3v1M12 9 3 15.5a1.4 1.4 0 0 0 .8 2.5h16.4a1.4 1.4 0 0 0 .8-2.5L12 9Z"/></svg>';
   /** Peça sem foto: "pôster" da marca (categoria, nome e "foto em breve") */
   const posterHtml = (p, grande) => `<div class="poster${grande ? ' grande' : ''}" aria-hidden="true">
@@ -111,6 +121,7 @@
     document.body.classList.toggle('titulos-modernos', fonte === 'moderna');
     document.body.classList.toggle('fonte-urbana', fonte === 'urbana');
     raizEl.setProperty('--proporcao', PROPORCOES[t.foto] || PROPORCOES.retrato);
+    proporcaoFoto = { retrato: 4 / 5, alta: 3 / 4, quadrada: 1 }[t.foto] || 4 / 5;
     raizEl.setProperty('--raio-loja', t.cantos === 'arredondados' ? '14px' : '0px');
     document.body.classList.toggle('uma-coluna', String(t.colunas) === '1');
     $('anuncio').hidden = t.faixa === false;
@@ -164,7 +175,7 @@
     $('secao-cats').hidden = lista.length < 2;
     $('cats-grade').innerHTML = lista.map(([nome, g]) => `
       <button type="button" class="cat-bloco${g.foto ? ' com-foto' : ''}" data-ir-cat="${esc(nome)}">
-        ${g.foto ? `<img src="${esc(foto(g.foto, 700))}" alt="" loading="lazy">` : ''}
+        ${g.foto ? `<img src="${esc(fotoSimples(g.foto, 700))}" alt="" loading="lazy">` : ''}
         <span class="cat-qtd">${g.n} peça${g.n === 1 ? '' : 's'}</span>
         <strong>${esc(nome)}</strong>
         <span class="cat-ver">Ver ${ICONES_EXTRA.seta}</span>
