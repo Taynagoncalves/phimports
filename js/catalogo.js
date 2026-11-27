@@ -63,11 +63,13 @@
   const estoqueDe = (p) => (p.estoque !== undefined ? Number(p.estoque) : p.variacoes.reduce((s, v) => s + qtdDe(v), 0));
   const esgotada = (p) => estoqueDe(p) <= 0;
   const tamanhosDisponiveis = (p) => [...new Set(p.variacoes.filter((v) => qtdDe(v) > 0).map((v) => v.t).filter(Boolean))];
+  // Estoque só aparece quando está acabando (até 5 peças) ou esgotou
+  const ESTOQUE_BAIXO = 5;
   function textoEstoque(n) {
     if (n <= 0) return 'Esgotado';
-    if (n === 1) return 'Última peça';
-    if (n <= 3) return `Últimas ${n} peças`;
-    return `${n} em estoque`;
+    if (n === 1) return 'Resta apenas 1';
+    if (n <= ESTOQUE_BAIXO) return `Restam apenas ${n}`;
+    return '';
   }
   const linkWhats = (texto) => `https://wa.me/${cat.whatsapp}?text=${encodeURIComponent(texto)}`;
 
@@ -321,7 +323,7 @@
       : temPromo(p) ? `<span class="selo promo">−${Math.round((1 - p.promo / p.preco) * 100)}%</span>`
       : p.novo ? '<span class="selo">Novo</span>' : '';
     return `
-      <button type="button" class="card${n <= 0 ? ' esgotado' : ''}" data-peca="${esc(p.id)}" aria-label="${esc(p.nome)} — ${esc(textoEstoque(n))}">
+      <button type="button" class="card${n <= 0 ? ' esgotado' : ''}" data-peca="${esc(p.id)}" aria-label="${esc(p.nome)}${textoEstoque(n) ? ' — ' + esc(textoEstoque(n)) : ''}">
         <div class="card-foto">
           ${p.foto ? fotosCardHtml(p) : posterHtml(p)}
           ${selo}
@@ -332,7 +334,7 @@
         <div class="preco">${precoHtml(p)}</div>
         <div class="card-pe">
           ${cores.length > 1 ? `<div class="card-cores">${cores.map(([, h]) => `<span style="background:${esc(h)}"></span>`).join('')}</div>` : '<span></span>'}
-          <span class="card-estoque${n > 0 && n <= 3 ? ' poucas' : ''}">${esc(textoEstoque(n))}</span>
+          ${textoEstoque(n) ? `<span class="card-estoque${n > 0 ? ' poucas' : ''}">${esc(textoEstoque(n))}</span>` : ''}
         </div>
       </button>`;
   }
@@ -373,7 +375,7 @@
       && (!q || normalizar(`${p.nome} ${p.categoria} ${p.marca} ${p.variacoes.map((v) => v.c).join(' ')}`).includes(q)));
     const ordem = $('ordem').value;
     if (ordem !== 'novos') lista = [...lista].sort((a, b) => esgotada(a) - esgotada(b) || ((precoDe(a) ?? 0) - (precoDe(b) ?? 0)) * (ordem === 'menor' ? 1 : -1));
-    $('contagem').textContent = `${soFavoritos ? 'Seus favoritos' : categoria || 'Todas as peças'} · ${lista.length} peça${lista.length === 1 ? '' : 's'}`;
+    $('contagem').textContent = `${q ? `Busca: “${$('q').value.trim()}”` : soFavoritos ? 'Seus favoritos' : categoria || 'Todas as peças'} · ${lista.length} peça${lista.length === 1 ? '' : 's'}`;
     $('grade').innerHTML = lista.map(cardHtml).join('');
     ligarCards($('grade'));
     $('estado').hidden = !!lista.length;
@@ -781,10 +783,12 @@
     const precisaEscolher = (coresDe(p).length && !escolha.c) || (tamanhosDe(p).length && !escolha.t);
     const n = v && !precisaEscolher ? qtdDe(v) : estoqueDe(p);
     const el = $('p-estoque');
-    el.className = 'estoque-info' + (n <= 0 ? ' fora' : n <= 3 ? ' poucas' : '');
+    el.className = 'estoque-info' + (n <= 0 ? ' fora' : n <= ESTOQUE_BAIXO ? ' poucas' : '');
     el.textContent = n <= 0 ? (v && !precisaEscolher ? 'Esgotado nesta cor/tamanho' : 'Peça esgotada no momento')
-      : v && !precisaEscolher ? (n === 1 ? 'Última peça neste tamanho' : `${n} disponíveis neste tamanho`)
-      : `${n} ${n === 1 ? 'peça' : 'peças'} em estoque`;
+      : n > ESTOQUE_BAIXO ? ''
+      : v && !precisaEscolher ? (n === 1 ? 'Resta apenas 1 neste tamanho' : `Restam apenas ${n} neste tamanho`)
+      : (n === 1 ? 'Resta apenas 1' : `Restam apenas ${n}`);
+    el.hidden = !el.textContent;
   }
   $('p-menos').addEventListener('click', () => { escolha.qtd = Math.max(1, escolha.qtd - 1); $('p-qtd').textContent = escolha.qtd; });
   $('p-mais').addEventListener('click', () => {
@@ -1147,7 +1151,9 @@
   $('btn-sacola').addEventListener('click', abrirSacola);
   $('barra-sacola').addEventListener('click', abrirSacola);
   $('btn-busca').addEventListener('click', () => { const b = $('topo-busca'); b.hidden = !b.hidden; if (!b.hidden) $('q').focus(); });
-  $('q').addEventListener('input', () => { desenharGrade(); if ($('q').value) $('colecao').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('q').addEventListener('input', () => { $('q-colecao').value = $('q').value; desenharGrade(); if ($('q').value) $('colecao').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('q-colecao').addEventListener('input', () => { $('q').value = $('q-colecao').value; $('q-limpar').hidden = !$('q-colecao').value; desenharGrade(); });
+  $('q-limpar').addEventListener('click', () => { $('q-colecao').value = ''; $('q').value = ''; $('q-limpar').hidden = true; desenharGrade(); $('q-colecao').focus(); });
   $('ordem').addEventListener('change', desenharGrade);
   $('link-inicio').addEventListener('click', (e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
   // Topo: escuro e integrado enquanto está sobre a abertura; claro ao chegar nas peças

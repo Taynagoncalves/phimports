@@ -97,6 +97,12 @@
     <!-- Coleção -->
     <section class="colecao" id="colecao">
       <div class="secao-cabeca"><h2>A coleção</h2><span class="secao-sub" id="contagem">Todas as peças</span></div>
+      <div class="busca-colecao" role="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m20 20-4.6-4.6"/></svg>
+        <label for="q-colecao" class="sr-only">Buscar peças</label>
+        <input id="q-colecao" type="search" placeholder="Buscar peça, cor ou categoria" autocomplete="off" enterkeyhint="search">
+        <button type="button" id="q-limpar" aria-label="Limpar busca" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
       <div class="filtros">
         <nav class="categorias" id="categorias" aria-label="Categorias"></nav>
         <label class="ordem"><span class="sr-only">Ordenar</span>
