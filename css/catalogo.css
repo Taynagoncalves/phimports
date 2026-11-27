@@ -717,3 +717,13 @@ html.previa::-webkit-scrollbar, html.previa body::-webkit-scrollbar, html.previa
 .busca-colecao button:hover { background: rgba(127, 127, 127, .12); }
 .estoque-info[hidden] { display: none; }
 .card-foto .poster-cat { margin-right: 38px; }
+
+/* ==========================================================================
+   Fotos das peças inteiras (sem cortar): a foto cabe no quadro e o
+   espaço que sobra fica num fundo neutro claro
+   ========================================================================== */
+:root { --fundo-foto: #F2F2F0; }
+body.tema-escuro { --fundo-foto: #1E1E1C; }
+.card-foto:not(:has(.poster)) { background: var(--fundo-foto); }
+.card-foto img, .peca-foto img, .galeria-slide img, .look-foto img, .item-foto img { object-fit: contain; }
+.peca-foto, .galeria-slide, .look-foto, .item-foto { background: var(--fundo-foto); }
