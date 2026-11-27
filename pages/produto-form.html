@@ -59,7 +59,14 @@
                   </div>
                   <div class="campo">
                     <label for="categoria">Categoria <span class="obrigatorio" aria-hidden="true">*</span></label>
-                    <select class="select" id="categoria" name="categoria" required></select>
+                    <div class="pf-categoria">
+                      <select class="select" id="categoria" name="categoria" required></select>
+                      <button type="button" class="btn btn-secundario" id="btn-nova-categoria" title="Criar categoria" aria-label="Criar categoria"><i data-lucide="plus"></i>Nova</button>
+                    </div>
+                    <div class="pf-novo" id="nova-categoria-bloco" hidden style="margin-top:8px">
+                      <input class="input" id="nova-categoria" maxlength="40" placeholder="Nome da categoria (ex.: Bonés)" aria-label="Nome da nova categoria">
+                      <button type="button" class="btn btn-primario" id="btn-salvar-categoria"><i data-lucide="check"></i>Criar</button>
+                    </div>
                   </div>
                   <div class="campo col-span-2">
                     <label for="descricao">Descrição <small class="texto-3">(opcional)</small></label>

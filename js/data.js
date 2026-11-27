@@ -1194,6 +1194,34 @@
     return responder(cor);
   }
 
+  /** Categoria nova fica salva na lista da loja (em ordem alfabética) */
+  function adicionarCategoria(nome) {
+    const negado = exigirDono('cadastrar categorias'); if (negado) return negado;
+    const t = String(nome || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+    if (!t) return falhar('Informe o nome da categoria.');
+    const formatado = t.charAt(0).toUpperCase() + t.slice(1);
+    db.categorias = db.categorias || [];
+    const existente = db.categorias.find((x) => normalizar(x) === normalizar(formatado));
+    if (existente) return responder(existente);
+    db.categorias.push(formatado);
+    db.categorias.sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    persistir();
+    return responder(formatado);
+  }
+
+  /** Tamanho novo (XG, Único, 34…) fica salvo na lista da loja */
+  function adicionarTamanho(tamanho) {
+    const negado = exigirDono('cadastrar tamanhos'); if (negado) return negado;
+    const t = String(tamanho || '').trim().slice(0, 8);
+    if (!t) return falhar('Informe o tamanho.');
+    db.tamanhos = db.tamanhos || [];
+    const existente = db.tamanhos.find((x) => normalizar(x) === normalizar(t));
+    if (existente) return responder(existente);
+    db.tamanhos.push(t);
+    persistir();
+    return responder(t);
+  }
+
   function listarMarcas() {
     return responder([...new Set(db.produtos.map((p) => p.marca))].sort());
   }
@@ -3121,7 +3149,7 @@
     // Loja e usuários
     obterLoja, salvarLoja, listarUsuarios, salvarUsuario, excluirUsuario,
     // Catálogo auxiliar
-    listarCategorias, listarMarcas, listarColecoes, listarCores, adicionarCor, listarTamanhos,
+    listarCategorias, listarMarcas, listarColecoes, listarCores, adicionarCor, listarTamanhos, adicionarTamanho, adicionarCategoria,
     // Produtos
     listarProdutos, obterProduto, salvarProduto, excluirProduto, buscarPorCodigo, listarEstoqueBaixo,
     // Estoque

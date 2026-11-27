@@ -31,6 +31,31 @@ App.aoIniciar(async () => {
   let cores = await Data.listarCores();
 
   App.preencherSelect(form.categoria, categorias, { vazio: 'Selecione…' });
+
+  // Categoria nova: fica salva na lista da loja e já vem escolhida
+  const blocoCategoria = document.getElementById('nova-categoria-bloco');
+  const campoCategoria = document.getElementById('nova-categoria');
+  document.getElementById('btn-nova-categoria').addEventListener('click', () => {
+    blocoCategoria.hidden = !blocoCategoria.hidden;
+    if (!blocoCategoria.hidden) campoCategoria.focus();
+  });
+  async function criarCategoria() {
+    const nome = campoCategoria.value.trim();
+    if (!nome) { campoCategoria.focus(); return App.toast('Digite o nome da categoria.', 'erro'); }
+    try {
+      const salva = await Data.adicionarCategoria(nome);
+      const lista = await Data.listarCategorias();
+      App.preencherSelect(form.categoria, lista, { vazio: 'Selecione…' });
+      form.categoria.value = salva;
+      form.categoria.classList.remove('invalido');
+      form.categoria.dispatchEvent(new Event('change'));
+      campoCategoria.value = '';
+      blocoCategoria.hidden = true;
+      App.toast(`Categoria "${salva}" criada.`);
+    } catch (er) { App.toast(er.message, 'erro'); }
+  }
+  document.getElementById('btn-salvar-categoria').addEventListener('click', criarCategoria);
+  campoCategoria.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); criarCategoria(); } });
   App.preencherSelect(form.fornecedorId, fornecedores.map((f) => ({ valor: f.id, texto: f.nome })), { vazio: 'Nenhum' });
 
   /* ==================================================================
@@ -265,11 +290,14 @@ App.aoIniciar(async () => {
   }));
 
   // Tamanho que não está na lista (XG, Único, 34…)
-  function adicionarTamanho() {
+  async function adicionarTamanho() {
     const campo = document.getElementById('novo-tamanho');
     const t = campo.value.trim().toUpperCase().replace(/^UNICO$|^ÚNICO$/, 'Único');
     if (!t) return App.toast('Digite o tamanho.', 'erro');
+    // Fica salvo na lista de tamanhos da loja (aparece nos próximos cadastros)
+    try { await Data.adicionarTamanho(t); } catch (er) { App.toast(er.message, 'erro'); }
     if (!tamanhos.includes(t)) tamanhos.push(t);
+    App.toast(`Tamanho "${t}" salvo.`);
     selecionados.tamanhos.add(t);
     campo.value = '';
     sujo = true;

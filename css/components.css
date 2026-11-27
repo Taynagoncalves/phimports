@@ -2271,3 +2271,7 @@ button.pd-kpi:hover { border-color: var(--cor-borda-forte); box-shadow: 0 8px 22
 }
 
 .alerta.perigo { background: var(--cor-perigo-suave); color: var(--cor-perigo); }
+
+.pf-categoria { display: flex; gap: 8px; }
+.pf-categoria .select { flex: 1; min-width: 0; }
+.pf-categoria .btn { flex-shrink: 0; }
