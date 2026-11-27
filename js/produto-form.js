@@ -28,6 +28,7 @@ App.aoIniciar(async () => {
   const [categorias, marcas, colecoes, fornecedores, tamanhos] = await Promise.all([
     Data.listarCategorias(), Data.listarMarcas(), Data.listarColecoes(), Data.listarFornecedores(), Data.listarTamanhos()
   ]);
+  try { await Data.garantirCoresJeans(); } catch (er) { /* só o dono grava */ }
   let cores = await Data.listarCores();
 
   App.preencherSelect(form.categoria, categorias, { vazio: 'Selecione…' });
@@ -238,6 +239,14 @@ App.aoIniciar(async () => {
   // Sigla sem acento (3 letras) — usada no SKU
   const sigla = (t, n = 3) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]/g, '').slice(0, n).toUpperCase();
 
+  // Sigla da cor no SKU: uma palavra → 3 letras (Preto → PRE); duas ou mais → inicial + 2 letras
+  // da última (Jeans claro → JCL, Azul-escuro → AES), para não repetir entre tons parecidos
+  function siglaCor(cor) {
+    const partes = String(cor).normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[\s-]+/).filter(Boolean);
+    if (partes.length < 2) return sigla(cor);
+    return (sigla(partes[0], 1) + sigla(partes[partes.length - 1], 2)).toUpperCase();
+  }
+
   // Prefixo do SKU a partir das iniciais do nome: "Camiseta Básica Algodão" → "CBA"
   function prefixoSku() {
     const palavras = form.nome.value.trim().split(/\s+/).filter((p) => p.length > 2 || /^[A-Z]/.test(p));
@@ -268,7 +277,11 @@ App.aoIniciar(async () => {
       <button type="button" class="chip" data-grupo="${grupo}" data-valor="${App.escapeHtml(valor)}" aria-pressed="${selecionados[grupo].has(valor)}">${extra}${App.escapeHtml(valor)}</button>`;
     document.getElementById('chips-letras').innerHTML = tamanhos.filter((t) => !ehNumero(t)).map((t) => chip(t, 'tamanhos')).join('');
     document.getElementById('chips-numeros').innerHTML = tamanhos.filter(ehNumero).map((t) => chip(t, 'tamanhos')).join('');
-    document.getElementById('chips-cores').innerHTML = cores.map((c) => chip(c.nome, 'cores', `<span class="cor-bolinha" style="background:${c.hex}" aria-hidden="true"></span>`)).join('');
+    const ehJeans = (c) => /^jeans\b/i.test(c.nome);
+    const chipCor = (c) => chip(c.nome, 'cores', `<span class="cor-bolinha" style="background:${c.hex}" aria-hidden="true"></span>`);
+    document.getElementById('chips-cores').innerHTML = cores.filter((c) => !ehJeans(c)).map(chipCor).join('');
+    document.getElementById('chips-jeans').innerHTML = cores.filter(ehJeans).map(chipCor).join('');
+    document.getElementById('rot-jeans').hidden = !cores.some(ehJeans);
 
     document.querySelectorAll('.chip[data-grupo]').forEach((b) => b.addEventListener('click', () => {
       const conjunto = selecionados[b.dataset.grupo];
@@ -320,7 +333,7 @@ App.aoIniciar(async () => {
         lista.push(anteriores.get(tam + '|' + cor) || {
           tamanho: tam,
           cor,
-          sku: `${prefixoSku()}-${tam}-${sigla(cor)}`,
+          sku: `${prefixoSku()}-${tam}-${siglaCor(cor)}`,
           codigoBarras: gerarCodigoBarras(),
           estoque: 0
         });
@@ -437,7 +450,7 @@ App.aoIniciar(async () => {
   // Regera SKUs (com o nome atual) e códigos de barras
   document.getElementById('btn-regerar').addEventListener('click', () => {
     lerGradeDaTela();
-    variacoes.forEach((v) => { v.sku = `${prefixoSku()}-${v.tamanho}-${sigla(v.cor)}`; v.codigoBarras = gerarCodigoBarras(); });
+    variacoes.forEach((v) => { v.sku = `${prefixoSku()}-${v.tamanho}-${siglaCor(v.cor)}`; v.codigoBarras = gerarCodigoBarras(); });
     desenharGrade();
     App.toast('SKUs e códigos de barras gerados de novo.');
   });
@@ -554,7 +567,7 @@ App.aoIniciar(async () => {
       const pref = prefixoSku();
       for (const v of variacoes) {
         let k = 2;
-        while (await Data.buscarPorCodigo(v.sku) && k < 100) { v.sku = `${pref}${k}-${v.tamanho}-${sigla(v.cor)}`; k++; }
+        while (await Data.buscarPorCodigo(v.sku) && k < 100) { v.sku = `${pref}${k}-${v.tamanho}-${siglaCor(v.cor)}`; k++; }
       }
     }
     const dados = App.lerFormulario(form);

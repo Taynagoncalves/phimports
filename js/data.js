@@ -1194,6 +1194,25 @@
     return responder(cor);
   }
 
+  /** Tons de jeans sempre disponíveis no cadastro de produto */
+  const CORES_JEANS = [
+    { nome: 'Jeans claro', hex: '#9FB6D1' },
+    { nome: 'Jeans médio', hex: '#5E7FA8' },
+    { nome: 'Jeans escuro', hex: '#2F4468' },
+    { nome: 'Jeans preto', hex: '#2A2C31' },
+    { nome: 'Jeans cinza', hex: '#7C838D' },
+    { nome: 'Jeans branco', hex: '#ECEEF0' }
+  ];
+  function garantirCoresJeans() {
+    if (!usuarioLogado() || usuarioLogado().perfil !== 'dono') return responder(false);
+    db.cores = db.cores || [];
+    const faltam = CORES_JEANS.filter((j) => !db.cores.some((c) => normalizar(c.nome) === normalizar(j.nome)));
+    if (!faltam.length) return responder(false);
+    db.cores.push(...faltam.map((c) => ({ ...c })));
+    persistir();
+    return responder(true);
+  }
+
   /** Categoria nova fica salva na lista da loja (em ordem alfabética) */
   function adicionarCategoria(nome) {
     const negado = exigirDono('cadastrar categorias'); if (negado) return negado;
@@ -3149,7 +3168,7 @@
     // Loja e usuários
     obterLoja, salvarLoja, listarUsuarios, salvarUsuario, excluirUsuario,
     // Catálogo auxiliar
-    listarCategorias, listarMarcas, listarColecoes, listarCores, adicionarCor, listarTamanhos, adicionarTamanho, adicionarCategoria,
+    listarCategorias, listarMarcas, listarColecoes, listarCores, adicionarCor, listarTamanhos, adicionarTamanho, adicionarCategoria, garantirCoresJeans,
     // Produtos
     listarProdutos, obterProduto, salvarProduto, excluirProduto, buscarPorCodigo, listarEstoqueBaixo,
     // Estoque

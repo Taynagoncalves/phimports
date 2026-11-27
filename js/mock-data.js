@@ -74,7 +74,16 @@
     { nome: 'Rosa', hex: '#E9A6B8' },
     { nome: 'Azul', hex: '#3E6DB5' },
     { nome: 'Amarelo', hex: '#F2C94C' },
-    { nome: 'Vermelho', hex: '#C0392B' }
+    { nome: 'Vermelho', hex: '#C0392B' },
+    // Tons de jeans
+    ...[
+      { nome: 'Jeans claro', hex: '#9FB6D1' },
+      { nome: 'Jeans médio', hex: '#5E7FA8' },
+      { nome: 'Jeans escuro', hex: '#2F4468' },
+      { nome: 'Jeans preto', hex: '#2A2C31' },
+      { nome: 'Jeans cinza', hex: '#7C838D' },
+      { nome: 'Jeans branco', hex: '#ECEEF0' }
+    ]
   ];
 
   const tamanhos = ['PP', 'P', 'M', 'G', 'GG', '36', '38', '40', '42', '44', '46'];

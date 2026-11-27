@@ -2275,3 +2275,6 @@ button.pd-kpi:hover { border-color: var(--cor-borda-forte); box-shadow: 0 8px 22
 .pf-categoria { display: flex; gap: 8px; }
 .pf-categoria .select { flex: 1; min-width: 0; }
 .pf-categoria .btn { flex-shrink: 0; }
+
+.pf-sub-rotulo { display: block; margin: 14px 0 8px; font-size: var(--fs-xs) !important; color: var(--cor-texto-3); }
+.pf-sub-rotulo[hidden] { display: none; }
