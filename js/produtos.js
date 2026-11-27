@@ -195,7 +195,7 @@ App.aoIniciar(async () => {
     const tams = [...new Set(p.variacoes.map((v) => v.tamanho))];
     const crs = [...new Set(p.variacoes.map((v) => v.cor))];
     return `<div class="grade-resumo">
-      <span class="tamanhos-mini">${tams.map((t) => `<span>${App.escapeHtml(t)}</span>`).join('')}</span>
+      <span class="pl-tamanhos">${tams.map((t) => App.escapeHtml(t)).join(' · ')}</span>
       <span class="cores-mini">${crs.map((c) => `<span title="${App.escapeHtml(c)}">${App.bolinhaCor(c)}</span>`).join('')}</span>
     </div>`;
   }

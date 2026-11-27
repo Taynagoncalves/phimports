@@ -2420,3 +2420,56 @@ button.pd-kpi:hover { border-color: var(--cor-borda-forte); box-shadow: 0 8px 22
   .ed #btn-salvar-outro svg { display: inline-block !important; }
   .ed .ed-upload { aspect-ratio: 16 / 9; }
 }
+
+/* ==========================================================================
+   Produtos — faixa de números e painel único (mesmo estilo do editor)
+   ========================================================================== */
+.pl-pagina .prod-resumo { gap: 0; overflow: hidden; border: 1px solid var(--cor-borda); border-radius: 18px; background: var(--cor-superficie); }
+.pl-pagina .prod-kpi { border: 0; border-radius: 0; padding: 18px 22px; background: none; }
+.pl-pagina .prod-kpi + .prod-kpi { border-left: 1px solid var(--cor-borda); }
+.pl-pagina button.prod-kpi:hover { box-shadow: none; background: var(--cor-fundo); }
+.pl-pagina .prod-kpi strong { font-size: 24px; letter-spacing: -.02em; }
+@media (max-width: 900px) {
+  .pl-pagina .prod-kpi:nth-child(3) { border-left: 0; }
+  .pl-pagina .prod-kpi:nth-child(n+3) { border-top: 1px solid var(--cor-borda); }
+}
+@media (max-width: 520px) { .pl-pagina .prod-kpi { padding: 14px 16px; } .pl-pagina .prod-kpi strong { font-size: 19px; } }
+
+.pl-painel { border: 1px solid var(--cor-borda); border-radius: 18px; background: var(--cor-superficie); overflow: hidden; }
+.pl-painel .abas-categorias { margin: 0; padding: 6px 18px 0; border-bottom: 1px solid var(--cor-borda); }
+.pl-painel .produtos-filtros { padding: 16px 18px 0; }
+.pl-painel .produtos-filtros .select, .pl-painel .produtos-filtros .input { min-height: 40px; border-color: var(--cor-borda); background-color: var(--cor-superficie); }
+.pl-painel .busca .input { background: var(--cor-fundo); border-color: transparent; }
+.pl-painel .busca .input:focus { background: var(--cor-superficie); border-color: var(--cor-texto); }
+.pl-painel .prod-situacao { margin: 12px 0 0; padding: 0 18px; }
+.pl-painel .prod-sit { height: 30px; font-size: var(--fs-xs); font-weight: 600; }
+.pl-painel .filtros-ativos { margin: 10px 18px 6px; min-height: 0; }
+.pl-painel .filtros-ativos:empty { margin: 8px 0 0; }
+.pl-painel #visao-lista { margin-top: 6px; border: 0; border-radius: 0; box-shadow: none; border-top: 1px solid var(--cor-borda); }
+.pl-painel #visao-cartoes { padding: 16px 18px 18px; border-top: 1px solid var(--cor-borda); margin-top: 6px; }
+.pl-painel #paginacao-cartoes-card { border: 0; box-shadow: none; }
+
+/* Lista */
+.pl-painel .tabela-produtos thead th { background: none; font-size: 11px; letter-spacing: .05em; color: var(--cor-texto-3); }
+.pl-painel .tabela-produtos tbody tr { transition: background .12s; }
+.pl-painel .tabela-produtos tbody tr:hover { background: var(--cor-fundo); }
+.pl-painel .tabela-produtos .thumb { width: 46px; height: 46px; border-radius: 12px; border: 0; background: var(--cor-fundo); }
+.pl-painel .tabela-produtos .thumb img { border-radius: 12px; }
+.pl-painel .produto-cel .titulo { font-size: var(--fs-sm); font-weight: 650; }
+.pl-painel .tabela-produtos .tag { padding: 0; border: 0; background: none; color: var(--cor-texto-2); font-size: var(--fs-sm); font-weight: 500; }
+.pl-tamanhos { font-size: var(--fs-xs); font-weight: 600; color: var(--cor-texto-2); letter-spacing: .02em; }
+.pl-painel .grade-resumo { gap: 5px; }
+.pl-painel .preco-atual { font-size: var(--fs-sm); }
+.pl-painel .estoque-mini .nivel-barra { height: 4px; }
+@media (hover: hover) and (min-width: 768px) {
+  .pl-painel .tabela-produtos .col-acoes .btn-icone { opacity: 0; transition: opacity .15s; }
+  .pl-painel .tabela-produtos tr:hover .col-acoes .btn-icone, .pl-painel .tabela-produtos .col-acoes .btn-icone:focus-visible { opacity: 1; }
+}
+.pl-painel #paginacao { border-top: 1px solid var(--cor-borda); }
+@media (max-width: 767px) {
+  .pl-painel { border-radius: 14px; }
+  .pl-painel .abas-categorias { padding: 4px 12px 0; }
+  .pl-painel .produtos-filtros { padding: 12px 12px 0; }
+  .pl-painel .prod-situacao { padding: 0 12px; }
+  .pl-painel #visao-cartoes { padding: 12px; }
+}
