@@ -33,7 +33,7 @@
           <div>
             <a href="produtos.html" class="link-voltar"><i data-lucide="arrow-left"></i>Produtos</a>
             <h1 id="titulo-form" class="mt-2">Novo produto</h1>
-            <p>Siga as etapas: dados da peça, preço, tamanhos e cores, e quantas peças você tem.</p>
+            
           </div>
         </div>
 
@@ -46,7 +46,7 @@
 
               <!-- 1. Sobre a peça -->
               <section class="card pf-etapa">
-                <div class="pf-cabeca"><span class="pf-num">1</span><div><h2>Sobre a peça</h2><p>Nome, marca e categoria aparecem no catálogo e nas etiquetas.</p></div></div>
+                <div class="pf-cabeca"><span class="pf-num">01</span><div><h2>Sobre a peça</h2></div></div>
                 <div class="card-corpo form-grid">
                   <div class="campo col-span-2">
                     <label for="nome">Nome do produto <span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -70,7 +70,7 @@
                   </div>
                   <div class="campo col-span-2">
                     <label for="descricao">Descrição <small class="texto-3">(opcional)</small></label>
-                    <textarea class="textarea" id="descricao" name="descricao" rows="3" placeholder="Tecido, modelagem, caimento…"></textarea>
+                    <textarea class="textarea" id="descricao" name="descricao" rows="2" placeholder="Tecido, modelagem, caimento…"></textarea>
                   </div>
                   <details class="pf-mais col-span-2" id="pf-mais">
                     <summary><i data-lucide="sliders-horizontal"></i>Mais detalhes <small class="texto-3">coleção, fornecedor<span class="so-nota">, NCM</span></small><i data-lucide="chevron-down" class="pf-seta"></i></summary>
@@ -103,7 +103,7 @@
 
               <!-- 2. Preço -->
               <section class="card pf-etapa">
-                <div class="pf-cabeca"><span class="pf-num">2</span><div><h2>Preço</h2><p>Quanto você pagou e por quanto vai vender.</p></div></div>
+                <div class="pf-cabeca"><span class="pf-num">02</span><div><h2>Preço</h2></div></div>
                 <div class="card-corpo form-grid">
                   <div class="campo">
                     <label for="custo">Custo (quanto você pagou) <span class="obrigatorio" aria-hidden="true">*</span></label>
@@ -134,7 +134,7 @@
 
               <!-- 3. Tamanhos e cores -->
               <section class="card pf-etapa">
-                <div class="pf-cabeca"><span class="pf-num">3</span><div><h2>Tamanhos e cores</h2><p>Marque o que essa peça tem. Cada combinação vira uma variação com código próprio.</p></div></div>
+                <div class="pf-cabeca"><span class="pf-num">03</span><div><h2>Tamanhos e cores</h2></div></div>
                 <div class="card-corpo">
                   <div class="grupo-chips">
                     <div class="pf-rotulo-linha">
@@ -148,7 +148,8 @@
                     </div>
                     <div class="chips" role="group" aria-labelledby="rot-tamanhos" id="chips-letras"></div>
                     <div class="chips mt-2" role="group" aria-labelledby="rot-tamanhos" id="chips-numeros"></div>
-                    <div class="pf-novo">
+                    <button type="button" class="pf-link" data-abrir="novo-tamanho-bloco"><i data-lucide="plus"></i>Outro tamanho</button>
+                    <div class="pf-novo" id="novo-tamanho-bloco" hidden>
                       <input class="input" id="novo-tamanho" placeholder="Outro tamanho (ex.: XG, Único, 34)" maxlength="8" aria-label="Outro tamanho">
                       <button type="button" class="btn btn-secundario" id="btn-add-tamanho"><i data-lucide="plus"></i>Tamanho</button>
                     </div>
@@ -158,7 +159,8 @@
                     <div class="chips" role="group" aria-labelledby="rot-cores" id="chips-cores"></div>
                     <span class="rotulo pf-sub-rotulo" id="rot-jeans">Jeans</span>
                     <div class="chips" role="group" aria-labelledby="rot-jeans" id="chips-jeans"></div>
-                    <div class="pf-novo">
+                    <button type="button" class="pf-link" data-abrir="nova-cor-bloco"><i data-lucide="plus"></i>Outra cor</button>
+                    <div class="pf-novo" id="nova-cor-bloco" hidden>
                       <input class="input" id="nova-cor" placeholder="Outra cor (ex.: Lilás)" aria-label="Nome da nova cor">
                       <input class="input pf-tom" id="nova-cor-hex" type="color" value="#B39DDB" aria-label="Tom da nova cor" title="Tom da cor">
                       <button type="button" class="btn btn-secundario" id="btn-add-cor"><i data-lucide="plus"></i>Cor</button>
@@ -169,7 +171,7 @@
 
               <!-- 4. Estoque -->
               <section class="card pf-etapa">
-                <div class="pf-cabeca"><span class="pf-num">4</span><div><h2>Quantas peças você tem</h2><p>Digite a quantidade de cada cor em cada tamanho.</p></div>
+                <div class="pf-cabeca"><span class="pf-num">04</span><div><h2>Quantas peças você tem</h2></div>
                   <span class="pf-total" id="resumo-grade"></span>
                 </div>
                 <div class="card-corpo">

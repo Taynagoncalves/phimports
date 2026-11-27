@@ -2278,3 +2278,60 @@ button.pd-kpi:hover { border-color: var(--cor-borda-forte); box-shadow: 0 8px 22
 
 .pf-sub-rotulo { display: block; margin: 14px 0 8px; font-size: var(--fs-xs) !important; color: var(--cor-texto-3); }
 .pf-sub-rotulo[hidden] { display: none; }
+
+/* ==========================================================================
+   Cadastro de produto — visual limpo
+   ========================================================================== */
+.pf-novo[hidden] { display: none !important; }
+.pf .form-secoes { gap: var(--esp-5); }
+.pf .pf-etapa, .pf .form-lateral .card { border-color: transparent; box-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 0 0 1px rgba(16, 24, 40, .05); }
+.pf .pf-cabeca { align-items: center; gap: 10px; padding: 22px 26px 4px; border-bottom: 0; }
+.pf .pf-num { width: auto; height: auto; border-radius: 0; background: none; color: var(--cor-texto-3); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.pf .pf-cabeca h2 { font-size: var(--fs-md); font-weight: 650; letter-spacing: -.01em; }
+.pf .pf-etapa > .card-corpo { padding: 14px 26px 24px; }
+.pf .form-lateral .card-cabecalho { border-bottom: 0; padding-bottom: 0; }
+.pf .form-lateral .card-cabecalho h2 { font-size: var(--fs-md); font-weight: 650; }
+.pf .rotulo, .pf .campo > label { font-size: var(--fs-xs); font-weight: 600; color: var(--cor-texto-2); }
+
+/* Tamanhos e cores: botões menores; o escolhido fica preenchido */
+.pf .chips { gap: 6px; }
+.pf .chip { min-height: 34px; padding: 0 12px; border: 1px solid var(--cor-borda); background: var(--cor-superficie); font-size: var(--fs-sm); box-shadow: none; }
+.pf .chip:hover:not(:disabled) { border-color: var(--cor-borda-forte); background: var(--cor-superficie); }
+.pf .chip[aria-pressed="true"] { background: var(--cor-texto); border-color: var(--cor-texto); color: var(--cor-superficie); box-shadow: none; }
+.pf .chip[aria-pressed="true"] .cor-bolinha { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .75); }
+.pf .grupo-chips + .grupo-chips { margin-top: 22px; }
+.pf .pf-atalhos button { border-style: solid; border-color: transparent; background: none; color: var(--cor-texto-3); text-decoration: underline; text-underline-offset: 3px; padding: 4px 6px; }
+.pf .pf-atalhos button:hover { color: var(--cor-texto); }
+.pf-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; padding: 4px 0; border: 0; background: none; color: var(--cor-texto-2); font: inherit; font-size: var(--fs-xs); font-weight: 600; cursor: pointer; }
+.pf-link svg { width: 14px; height: 14px; transition: transform .2s; }
+.pf-link.aberto svg { transform: rotate(45deg); }
+.pf-link:hover { color: var(--cor-texto); }
+.pf .pf-novo { margin-top: 8px; }
+.pf .pf-sub-rotulo { margin-top: 16px; }
+
+/* Preço: sugestão e lucro mais discretos */
+.pf .pf-sugestao .chip { min-height: 28px; padding: 0 10px; font-size: var(--fs-xs); }
+.pf .pf-lucro { border: 0; background: var(--cor-fundo); gap: 0; border-radius: 12px; }
+.pf .pf-lucro > div, .pf .pf-lucro-dica { background: transparent; }
+.pf .pf-lucro > div + div { border-left: 1px solid var(--cor-borda); }
+.pf .pf-lucro-dica { border-top: 1px solid var(--cor-borda); }
+
+/* Mais detalhes / códigos: viram links */
+.pf .pf-mais { border: 0; border-top: 1px solid var(--cor-borda); border-radius: 0; }
+.pf .pf-mais > summary { padding: 14px 0 4px; font-weight: 600; }
+.pf .pf-mais-corpo { padding: 8px 0 0; }
+
+/* Quantidades: casas mais leves */
+.pf .pf-matriz td input { border: 1px solid var(--cor-borda); background: var(--cor-superficie); box-shadow: none; }
+.pf .pf-matriz td input:focus { background: var(--cor-superficie); border-color: var(--cor-texto); }
+.pf .pf-matriz th, .pf .pf-matriz td { border-bottom-color: transparent; }
+.pf .pf-matriz tfoot td, .pf .pf-matriz tfoot th { border-top: 1px solid var(--cor-borda); }
+
+/* Fotos: quadro mais baixo */
+.pf .upload { max-width: 100%; aspect-ratio: 4 / 3; border-width: 1.5px; background: var(--cor-fundo); }
+.pf .fotos-extras-bloco, .pf .fotos-cores-bloco { border-top: 0; padding-top: 4px; }
+@media (max-width: 1023px) { .pf .upload { max-width: 100%; aspect-ratio: 16 / 9; } }
+@media (max-width: 640px) {
+  .pf .pf-cabeca { padding: 18px 18px 2px; }
+  .pf .pf-etapa > .card-corpo { padding: 12px 18px 20px; }
+}

@@ -917,3 +917,7 @@
   .sidebar:hover .sidebar-logo, .sidebar:focus-within .sidebar-logo { justify-content: center; padding: 0 var(--esp-3); }
   .sidebar:hover .sidebar-logo-img, .sidebar:focus-within .sidebar-logo-img { justify-content: center; }
 }
+
+/* Telas com barra de botões fixa embaixo (cadastros): o aviso aparece acima dela, sem cobrir o Salvar */
+body:has(.barra-acoes) .toasts { bottom: 88px; }
+@media (max-width: 767px) { body:has(.pf-barra) .toasts { bottom: 132px; } }

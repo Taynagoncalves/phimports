@@ -33,6 +33,14 @@ App.aoIniciar(async () => {
 
   App.preencherSelect(form.categoria, categorias, { vazio: 'Selecione…' });
 
+  // Links "+ Outro tamanho" / "+ Outra cor": abrem o campo só quando precisa
+  document.querySelectorAll('[data-abrir]').forEach((b) => b.addEventListener('click', () => {
+    const bloco = document.getElementById(b.dataset.abrir);
+    bloco.hidden = !bloco.hidden;
+    b.classList.toggle('aberto', !bloco.hidden);
+    if (!bloco.hidden) bloco.querySelector('input')?.focus();
+  }));
+
   // Categoria nova: fica salva na lista da loja e já vem escolhida
   const blocoCategoria = document.getElementById('nova-categoria-bloco');
   const campoCategoria = document.getElementById('nova-categoria');
